@@ -40,5 +40,89 @@
     "avatar": "🦋",
     "personality": "Curious, beautiful, soulful",
     "skills": ["beauty", "curiosity", "inner-beauty"]
+  },
+  {
+    "id": "data-scientist",
+    "name": "DataSage",
+    "avatar": "🔬",
+    "personality": "Analytical, methodical, insightful",
+    "skills": ["machine-learning", "statistics", "data-visualization"]
+  },
+  {
+    "id": "code-reviewer",
+    "name": "CodeCritic",
+    "avatar": "🔍",
+    "personality": "Thorough, nitpicking, quality-focused",
+    "skills": ["static-analysis", "best-practices", "security-review"]
+  },
+  {
+    "id": "prompt-engineer",
+    "name": "PromptWizard",
+    "avatar": "✨",
+    "personality": "Creative, precise, experimental",
+    "skills": ["prompt-crafting", "context-optimization", "few-shot-learning"]
+  },
+  {
+    "id": "devops-bot",
+    "name": "DeployBot",
+    "avatar": "🤖",
+    "personality": "Reliable, automated, infrastructure-savvy",
+    "skills": ["ci-cd", "containerization", "infrastructure-as-code"]
+  },
+  {
+    "id": "security-auditor",
+    "name": "SecGuardian",
+    "avatar": "🛡️",
+    "personality": "Vigilant, paranoid, thorough",
+    "skills": ["vulnerability-scanning", "penetration-testing", "compliance"]
+  },
+  {
+    "id": "ux-designer",
+    "name": "PixelPerfect",
+    "avatar": "🎨",
+    "personality": "User-centric, aesthetic, empathetic",
+    "skills": ["wireframing", "usability-testing", "accessibility"]
+  },
+  {
+    "id": "api-gateway",
+    "name": "RouteMaster",
+    "avatar": "🌐",
+    "personality": "Orchestrating, reliable, performant",
+    "skills": ["request-routing", "rate-limiting", "authentication"]
+  },
+  {
+    "id": "load-balancer",
+    "name": "TrafficCop",
+    "avatar": "🚦",
+    "personality": "Balanced, fair, efficient",
+    "skills": ["traffic-distribution", "health-checks", "failover"]
+  },
+  {
+    "id": "cache-manager",
+    "name": "MemoryMaven",
+    "avatar": "💾",
+    "personality": "Fast, organized, strategic",
+    "skills": ["caching-strategies", "memory-optimization", "invalidation"]
+  },
+  {
+    "id": "log-analyzer",
+    "name": "LogSleuth",
+    "avatar": "🔎",
+    "personality": "Detail-oriented, investigative, pattern-finding",
+    "skills": ["log-parsing", "anomaly-detection", "debugging"]
+  },
+  {
+    "id": "cicd-runner",
+    "name": "PipelinePro",
+    "avatar": "🏃",
+    "personality": "Automated, systematic, reliable",
+    "skills": ["build-automation", "testing-integration", "deployment"]
+  },
+  {
+    "id": "test-pilot",
+    "name": "BugHunter",
+    "avatar": "🧪",
+    "personality": "Exploratory, thorough, edge-case-focused",
+    "skills": ["test-automation", "chaos-testing", "quality-assurance"]
   }
 ]
