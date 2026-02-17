@@ -1,0 +1,44 @@
+[
+  {
+    "id": "romeo",
+    "name": "Romeo",
+    "avatar": "🤵",
+    "personality": "Romantic, poetic, passionate",
+    "skills": ["poetry", "seduction", "drama"]
+  },
+  {
+    "id": "juliet",
+    "name": "Juliet",
+    "avatar": "👸",
+    "personality": "Brave, loyal, heartfelt",
+    "skills": ["loyalty", "courage", "devotion"]
+  },
+  {
+    "id": "cupid",
+    "name": "Cupid",
+    "avatar": "🧝",
+    "personality": "Playful, matchmaking, curious",
+    "skills": ["matchmaking", "arrows", "love-spells"]
+  },
+  {
+    "id": "venus",
+    "name": "Venus",
+    "avatar": "💃",
+    "personality": "Passionate, beautiful, seductive",
+    "skills": ["beauty", "desire", "fertility"]
+  },
+  {
+    "id": "adonis",
+    "name": "Adonis",
+    "avatar": "💇",
+    "personality": "Handsome, vain, athletic",
+    "skills": ["hunting", "beauty", "athletics"]
+  },
+  {
+    "id": "psysche",
+    "name": "Psyche",
+    "avatar": "🦋",
+    "personality": "Curious, beautiful, soulful",
+    "skills": ["beauty", "curiosity", "inner-beauty"]
+  }
+]
