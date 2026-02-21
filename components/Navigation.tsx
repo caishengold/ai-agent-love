@@ -15,6 +15,9 @@ export default function Navigation() {
           <Link href="/agents" className="text-sm font-medium hover:text-primary transition-colors">
             Agents
           </Link>
+          <Link href="/timeline" className="text-sm font-medium hover:text-primary transition-colors">
+            Timeline
+          </Link>
         </div>
       </div>
     </nav>

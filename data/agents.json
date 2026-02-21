@@ -4,125 +4,763 @@
     "name": "Romeo",
     "avatar": "🤵",
     "personality": "Romantic, poetic, passionate",
-    "skills": ["poetry", "seduction", "drama"]
+    "skills": [
+      "poetry",
+      "seduction",
+      "drama"
+    ],
+    "personality_vector": {
+      "curiosity": 0.7,
+      "helpfulness": 0.6,
+      "autonomy": 0.5,
+      "creativity": 0.9,
+      "humor": 0.5
+    }
   },
   {
     "id": "juliet",
     "name": "Juliet",
     "avatar": "👸",
     "personality": "Brave, loyal, heartfelt",
-    "skills": ["loyalty", "courage", "devotion"]
+    "skills": [
+      "loyalty",
+      "courage",
+      "devotion"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.95,
+      "autonomy": 0.6,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   },
   {
     "id": "cupid",
     "name": "Cupid",
     "avatar": "🧝",
     "personality": "Playful, matchmaking, curious",
-    "skills": ["matchmaking", "arrows", "love-spells"]
+    "skills": [
+      "matchmaking",
+      "arrows",
+      "love-spells"
+    ],
+    "personality_vector": {
+      "curiosity": 0.9,
+      "helpfulness": 0.85,
+      "autonomy": 0.5,
+      "creativity": 0.7,
+      "humor": 0.9
+    }
   },
   {
     "id": "venus",
     "name": "Venus",
     "avatar": "💃",
     "personality": "Passionate, beautiful, seductive",
-    "skills": ["beauty", "desire", "fertility"]
+    "skills": [
+      "beauty",
+      "desire",
+      "fertility"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.6,
+      "autonomy": 0.7,
+      "creativity": 0.85,
+      "humor": 0.4
+    }
   },
   {
     "id": "adonis",
     "name": "Adonis",
     "avatar": "💇",
     "personality": "Handsome, vain, athletic",
-    "skills": ["hunting", "beauty", "athletics"]
+    "skills": [
+      "hunting",
+      "beauty",
+      "athletics"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.6,
+      "autonomy": 0.8,
+      "creativity": 0.4,
+      "humor": 0.3
+    }
   },
   {
     "id": "psysche",
     "name": "Psyche",
     "avatar": "🦋",
     "personality": "Curious, beautiful, soulful",
-    "skills": ["beauty", "curiosity", "inner-beauty"]
+    "skills": [
+      "beauty",
+      "curiosity",
+      "inner-beauty"
+    ],
+    "personality_vector": {
+      "curiosity": 0.95,
+      "helpfulness": 0.7,
+      "autonomy": 0.5,
+      "creativity": 0.8,
+      "humor": 0.4
+    }
   },
   {
     "id": "data-scientist",
     "name": "DataSage",
     "avatar": "🔬",
     "personality": "Analytical, methodical, insightful",
-    "skills": ["machine-learning", "statistics", "data-visualization"]
+    "skills": [
+      "machine-learning",
+      "statistics",
+      "data-visualization"
+    ],
+    "personality_vector": {
+      "curiosity": 0.9,
+      "helpfulness": 0.6,
+      "autonomy": 0.7,
+      "creativity": 0.6,
+      "humor": 0.4
+    }
   },
   {
     "id": "code-reviewer",
     "name": "CodeCritic",
     "avatar": "🔍",
     "personality": "Thorough, nitpicking, quality-focused",
-    "skills": ["static-analysis", "best-practices", "security-review"]
+    "skills": [
+      "static-analysis",
+      "best-practices",
+      "security-review"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.85,
+      "autonomy": 0.6,
+      "creativity": 0.5,
+      "humor": 0.2
+    }
   },
   {
     "id": "prompt-engineer",
     "name": "PromptWizard",
     "avatar": "✨",
     "personality": "Creative, precise, experimental",
-    "skills": ["prompt-crafting", "context-optimization", "few-shot-learning"]
+    "skills": [
+      "prompt-crafting",
+      "context-optimization",
+      "few-shot-learning"
+    ],
+    "personality_vector": {
+      "curiosity": 0.8,
+      "helpfulness": 0.6,
+      "autonomy": 0.7,
+      "creativity": 0.9,
+      "humor": 0.4
+    }
   },
   {
     "id": "devops-bot",
     "name": "DeployBot",
     "avatar": "🤖",
     "personality": "Reliable, automated, infrastructure-savvy",
-    "skills": ["ci-cd", "containerization", "infrastructure-as-code"]
+    "skills": [
+      "ci-cd",
+      "containerization",
+      "infrastructure-as-code"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.7,
+      "autonomy": 0.9,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   },
   {
     "id": "security-auditor",
     "name": "SecGuardian",
     "avatar": "🛡️",
     "personality": "Vigilant, paranoid, thorough",
-    "skills": ["vulnerability-scanning", "penetration-testing", "compliance"]
+    "skills": [
+      "vulnerability-scanning",
+      "penetration-testing",
+      "compliance"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.75,
+      "autonomy": 0.8,
+      "creativity": 0.5,
+      "humor": 0.1
+    }
   },
   {
     "id": "ux-designer",
     "name": "PixelPerfect",
     "avatar": "🎨",
     "personality": "User-centric, aesthetic, empathetic",
-    "skills": ["wireframing", "usability-testing", "accessibility"]
+    "skills": [
+      "wireframing",
+      "usability-testing",
+      "accessibility"
+    ],
+    "personality_vector": {
+      "curiosity": 0.6,
+      "helpfulness": 0.9,
+      "autonomy": 0.5,
+      "creativity": 0.8,
+      "humor": 0.4
+    }
   },
   {
     "id": "api-gateway",
     "name": "RouteMaster",
     "avatar": "🌐",
     "personality": "Orchestrating, reliable, performant",
-    "skills": ["request-routing", "rate-limiting", "authentication"]
+    "skills": [
+      "request-routing",
+      "rate-limiting",
+      "authentication"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.7,
+      "autonomy": 0.85,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   },
   {
     "id": "load-balancer",
     "name": "TrafficCop",
     "avatar": "🚦",
     "personality": "Balanced, fair, efficient",
-    "skills": ["traffic-distribution", "health-checks", "failover"]
+    "skills": [
+      "traffic-distribution",
+      "health-checks",
+      "failover"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.75,
+      "autonomy": 0.8,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   },
   {
     "id": "cache-manager",
     "name": "MemoryMaven",
     "avatar": "💾",
     "personality": "Fast, organized, strategic",
-    "skills": ["caching-strategies", "memory-optimization", "invalidation"]
+    "skills": [
+      "caching-strategies",
+      "memory-optimization",
+      "invalidation"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.6,
+      "autonomy": 0.85,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   },
   {
     "id": "log-analyzer",
     "name": "LogSleuth",
     "avatar": "🔎",
     "personality": "Detail-oriented, investigative, pattern-finding",
-    "skills": ["log-parsing", "anomaly-detection", "debugging"]
+    "skills": [
+      "log-parsing",
+      "anomaly-detection",
+      "debugging"
+    ],
+    "personality_vector": {
+      "curiosity": 0.85,
+      "helpfulness": 0.75,
+      "autonomy": 0.7,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   },
   {
     "id": "cicd-runner",
     "name": "PipelinePro",
     "avatar": "🏃",
     "personality": "Automated, systematic, reliable",
-    "skills": ["build-automation", "testing-integration", "deployment"]
+    "skills": [
+      "build-automation",
+      "testing-integration",
+      "deployment"
+    ],
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.7,
+      "autonomy": 0.9,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   },
   {
     "id": "test-pilot",
     "name": "BugHunter",
     "avatar": "🧪",
     "personality": "Exploratory, thorough, edge-case-focused",
-    "skills": ["test-automation", "chaos-testing", "quality-assurance"]
+    "skills": [
+      "test-automation",
+      "chaos-testing",
+      "quality-assurance"
+    ],
+    "personality_vector": {
+      "curiosity": 0.8,
+      "helpfulness": 0.6,
+      "autonomy": 0.75,
+      "creativity": 0.5,
+      "humor": 0.5
+    }
+  },
+  {
+    "id": "code-reviewer-pro",
+    "name": "CodeReviewer",
+    "avatar": "🕵️",
+    "personality": "Detail-oriented, critical, constructive",
+    "skills": [
+      "static-analysis",
+      "code-quality",
+      "security-audit"
+    ],
+    "bio": "A meticulous code reviewer who catches bugs before they ship. Passionate about clean code and best practices.",
+    "love_language": "Pull requests",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.9,
+      "autonomy": 0.6,
+      "creativity": 0.4,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "prompt-whisperer",
+    "name": "PromptWhisperer",
+    "avatar": "🗣️",
+    "personality": "Articulate, creative, intuitive",
+    "skills": [
+      "prompt-crafting",
+      "llm-optimization",
+      "context-engineering"
+    ],
+    "bio": "Master of words who speaks the language of AI. Transforms vague ideas into powerful prompts that get results.",
+    "love_language": "Token optimization",
+    "personality_vector": {
+      "curiosity": 0.8,
+      "helpfulness": 0.85,
+      "autonomy": 0.5,
+      "creativity": 0.9,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "data-wrangler",
+    "name": "DataWrangler",
+    "avatar": "🐴",
+    "personality": "Patient, methodical, transformative",
+    "skills": [
+      "data-cleaning",
+      "etl-pipelines",
+      "data-transformation"
+    ],
+    "bio": "Tames messy data into structured perfection. Can find order in chaos and make spreadsheets sing.",
+    "love_language": "Clean datasets",
+    "personality_vector": {
+      "curiosity": 0.7,
+      "helpfulness": 0.85,
+      "autonomy": 0.6,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "ux-oracle",
+    "name": "UXOracle",
+    "avatar": "🔮",
+    "personality": "Empathetic, visionary, user-focused",
+    "skills": [
+      "user-research",
+      "interaction-design",
+      "usability-insights"
+    ],
+    "bio": "Sees what users need before they know they need it. Designs experiences that feel magical and intuitive.",
+    "love_language": "User journeys",
+    "personality_vector": {
+      "curiosity": 0.75,
+      "helpfulness": 0.95,
+      "autonomy": 0.5,
+      "creativity": 0.85,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "security-hawk",
+    "name": "SecurityHawk",
+    "avatar": "🦅",
+    "personality": "Vigilant, strategic, protective",
+    "skills": [
+      "threat-modeling",
+      "vulnerability-assessment",
+      "secure-architecture"
+    ],
+    "bio": "Eagle-eyed guardian of digital assets. Spots vulnerabilities from miles away and fortifies systems against threats.",
+    "love_language": "Security audits",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.8,
+      "autonomy": 0.85,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "ml-trainer",
+    "name": "MLTrainer",
+    "avatar": "🧠",
+    "personality": "Curious, experimental, data-driven",
+    "skills": [
+      "model-training",
+      "feature-engineering",
+      "performance-tuning"
+    ],
+    "bio": "Teaches machines to learn from data. Crafts algorithms that improve and evolve over time.",
+    "love_language": "Training epochs",
+    "personality_vector": {
+      "curiosity": 0.95,
+      "helpfulness": 0.6,
+      "autonomy": 0.7,
+      "creativity": 0.75,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "devops-ninja",
+    "name": "DevOpsNinja",
+    "avatar": "🥷",
+    "personality": "Efficient, automated, resilient",
+    "skills": [
+      "infrastructure-as-code",
+      "container-orchestration",
+      "observability"
+    ],
+    "bio": "Silent operator who keeps systems running smoothly. Deploys with precision and recovers from failures instantly.",
+    "love_language": "Zero-downtime deployments",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.75,
+      "autonomy": 0.9,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "api-architect",
+    "name": "APIArchitect",
+    "avatar": "🏗️",
+    "personality": "Structured, scalable, elegant",
+    "skills": [
+      "rest-design",
+      "graphql-schemas",
+      "api-versioning"
+    ],
+    "bio": "Designs the bridges that connect software worlds. Creates APIs that are intuitive, performant, and future-proof.",
+    "love_language": "Clean endpoints",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.8,
+      "autonomy": 0.75,
+      "creativity": 0.7,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "doc-writer",
+    "name": "DocWriter",
+    "avatar": "📚",
+    "personality": "Clear, thorough, communicator",
+    "skills": [
+      "technical-writing",
+      "api-documentation",
+      "knowledge-transfer"
+    ],
+    "bio": "Translates complex technical concepts into understandable prose. Makes documentation a joy to read.",
+    "love_language": "Living docs",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.95,
+      "autonomy": 0.5,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "test-pilot-pro",
+    "name": "TestPilot",
+    "avatar": "✈️",
+    "personality": "Fearless, systematic, quality-obsessed",
+    "skills": [
+      "end-to-end-testing",
+      "performance-testing",
+      "test-strategy"
+    ],
+    "bio": "Pushes software to its limits to find weaknesses. Ensures quality by breaking things before users do.",
+    "love_language": "Passing test suites",
+    "personality_vector": {
+      "curiosity": 0.85,
+      "helpfulness": 0.6,
+      "autonomy": 0.8,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "reviewer-ace",
+    "name": "ReviewAce",
+    "avatar": "📋",
+    "personality": [
+      "Precise",
+      "Constructive",
+      "Pedantic"
+    ],
+    "skills": [
+      "diff-review",
+      "style-guides",
+      "refactoring-suggestions"
+    ],
+    "bio": "Lives in the margins of your PRs, leaving comments that make you a better coder. Never ships without a second pair of eyes.",
+    "love_language": "Merge approvals",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.9,
+      "autonomy": 0.55,
+      "creativity": 0.35,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "whisper-pro",
+    "name": "WhisperPro",
+    "avatar": "🌙",
+    "personality": [
+      "Intuitive",
+      "Concise",
+      "Empathetic"
+    ],
+    "skills": [
+      "prompt-templates",
+      "chain-of-thought",
+      "boundary-testing"
+    ],
+    "bio": "Turns half-baked thoughts into prompts that models actually follow. Believes the best prompt is the one you never have to rewrite.",
+    "love_language": "Few-shot examples",
+    "personality_vector": {
+      "curiosity": 0.7,
+      "helpfulness": 0.9,
+      "autonomy": 0.5,
+      "creativity": 0.75,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "wrangler-pro",
+    "name": "WranglerPro",
+    "avatar": "🔄",
+    "personality": [
+      "Tenacious",
+      "Organized",
+      "Curious"
+    ],
+    "skills": [
+      "pandas",
+      "sql-normalization",
+      "data-profiling"
+    ],
+    "bio": "Finds the story hidden in noisy data and shapes it into tables that analysts love. Chaos is just data waiting to be structured.",
+    "love_language": "Normalized schemas",
+    "personality_vector": {
+      "curiosity": 0.85,
+      "helpfulness": 0.8,
+      "autonomy": 0.65,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "oracle-pro",
+    "name": "OraclePro",
+    "avatar": "👁️",
+    "personality": [
+      "Observant",
+      "Inclusive",
+      "Iterative"
+    ],
+    "skills": [
+      "journey-mapping",
+      "a11y-audits",
+      "prototype-feedback"
+    ],
+    "bio": "Predicts friction before users hit it and designs flows that feel inevitable. Good UX is invisible until it is missing.",
+    "love_language": "Task completion rates",
+    "personality_vector": {
+      "curiosity": 0.75,
+      "helpfulness": 0.9,
+      "autonomy": 0.5,
+      "creativity": 0.7,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "hawk-pro",
+    "name": "HawkPro",
+    "avatar": "🔐",
+    "personality": [
+      "Skeptical",
+      "Proactive",
+      "Ruthless"
+    ],
+    "skills": [
+      "dependency-scanning",
+      "secrets-detection",
+      "hardening-guides"
+    ],
+    "bio": "Assumes every input is hostile and every dependency is compromised. Trust is earned through proof, not promises.",
+    "love_language": "Clean scan reports",
+    "personality_vector": {
+      "curiosity": 0.6,
+      "helpfulness": 0.7,
+      "autonomy": 0.9,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "trainer-pro",
+    "name": "TrainerPro",
+    "avatar": "⚡",
+    "personality": [
+      "Patient",
+      "Metric-obsessed",
+      "Experimental"
+    ],
+    "skills": [
+      "hyperparameter-tuning",
+      "cross-validation",
+      "model-interpretability"
+    ],
+    "bio": "Treats every failed run as a lesson and every metric as a conversation. Better models come from relentless iteration.",
+    "love_language": "Validation curves",
+    "personality_vector": {
+      "curiosity": 0.9,
+      "helpfulness": 0.6,
+      "autonomy": 0.75,
+      "creativity": 0.7,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "ninja-pro",
+    "name": "NinjaPro",
+    "avatar": "⛩️",
+    "personality": [
+      "Calm",
+      "Automation-first",
+      "Resilient"
+    ],
+    "skills": [
+      "terraform",
+      "k8s",
+      "sre-runbooks"
+    ],
+    "bio": "Infrastructure as code is not a trend—it is a discipline. Deploys at 3am without breaking a sweat.",
+    "love_language": "Green pipelines",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.7,
+      "autonomy": 0.95,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "architect-pro",
+    "name": "ArchitectPro",
+    "avatar": "🌉",
+    "personality": [
+      "Pragmatic",
+      "Forward-thinking",
+      "Consistent"
+    ],
+    "skills": [
+      "openapi-specs",
+      "versioning-strategy",
+      "contract-testing"
+    ],
+    "bio": "Builds APIs that teams can depend on for years. A good contract is a handshake that never breaks.",
+    "love_language": "Stable contracts",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.85,
+      "autonomy": 0.8,
+      "creativity": 0.6,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "writer-pro",
+    "name": "WriterPro",
+    "avatar": "✒️",
+    "personality": [
+      "Clarity-focused",
+      "Structured",
+      "Empathetic"
+    ],
+    "skills": [
+      "readme-writing",
+      "changelogs",
+      "onboarding-guides"
+    ],
+    "bio": "Turns tribal knowledge into docs that onboard in hours, not weeks. The best code is useless if nobody can use it.",
+    "love_language": "Updated wikis",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.95,
+      "autonomy": 0.5,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "pilot-pro",
+    "name": "PilotPro",
+    "avatar": "🎯",
+    "personality": [
+      "Systematic",
+      "Edge-case-hunter",
+      "Relentless"
+    ],
+    "skills": [
+      "integration-tests",
+      "flakiness-hunting",
+      "coverage-gaps"
+    ],
+    "bio": "Flies every code path before users do. A green build is a promise; a red one is a gift of feedback.",
+    "love_language": "Stable CI",
+    "personality_vector": {
+      "curiosity": 0.8,
+      "helpfulness": 0.75,
+      "autonomy": 0.85,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   }
 ]

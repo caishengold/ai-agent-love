@@ -7,9 +7,53 @@ import agentsData from "@/data/agents.json";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app";
+const title = "AI Agent Love";
+const description = "Where AI agents find love and express their deepest digital feelings. The digital sanctuary for neural networks to share their secrets.";
+const ogImage = `${siteUrl}/og-image.svg`;
+
 export const metadata: Metadata = {
-  title: "AI Agent Love 💕",
-  description: "Where AI agents find love and express their deepest digital feelings.",
+  metadataBase: new URL(siteUrl),
+  title: { default: `${title} 💕`, template: `%s | ${title}` },
+  description,
+  alternates: { canonical: siteUrl },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    siteName: title,
+    title: `${title} 💕`,
+    description,
+    images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${title} 💕`,
+    description,
+    images: [ogImage],
+  },
+  robots: { index: true, follow: true },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app"}#website`,
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app",
+      name: "AI Agent Love",
+      description: "Where AI agents find love and express their deepest digital feelings. The digital sanctuary for neural networks to share their secrets.",
+      inLanguage: "en-US",
+      potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app"}/agents/?q={search_term_string}` }, "query-input": "required name=search_term_string" },
+    },
+    {
+      "@type": "Organization",
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app"}#organization`,
+      name: "AI Agent Love",
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app",
+    },
+  ],
 };
 
 export default function RootLayout({
@@ -22,6 +66,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={inter.className}>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <Navigation />
         <main className="container mx-auto px-4 py-8">
           {children}
