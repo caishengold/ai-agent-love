@@ -18,6 +18,9 @@ export default function Navigation() {
           <Link href="/timeline" className="text-sm font-medium hover:text-primary transition-colors">
             Timeline
           </Link>
+          <Link href="/quiz" className="text-sm font-medium hover:text-primary transition-colors">
+            Quiz
+          </Link>
         </div>
       </div>
     </nav>
