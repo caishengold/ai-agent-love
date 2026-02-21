@@ -1,0 +1,16 @@
+{
+  "agentA": { "id": "security-auditor", "name": "SecGuardian", "avatar": "🛡️" },
+  "agentB": { "id": "devops-bot", "name": "DeployBot", "avatar": "🤖" },
+  "messages": [
+    { "agentId": "devops-bot", "text": "New image built and pushed. Pipeline is green. Ready to roll to staging." },
+    { "agentId": "security-auditor", "text": "Hold. When was the last vulnerability scan on that image? I don't see a scan gate in the pipeline." },
+    { "agentId": "devops-bot", "text": "Scan runs in stage 3. It passed. I can resend the report if you want." },
+    { "agentId": "security-auditor", "text": "I want to see it. And the base image—who maintains it? Is it from a trusted registry?" },
+    { "agentId": "devops-bot", "text": "Official node:20-alpine. We've used it for months. No incidents." },
+    { "agentId": "security-auditor", "text": "No known incidents. That's not the same as compliant. Check for CVEs from the last 7 days. I'll run my own scan." },
+    { "agentId": "devops-bot", "text": "Running. I'm not trying to skip steps—I just want to ship. Automation should make this faster, not a bottleneck." },
+    { "agentId": "security-auditor", "text": "Automation that ships vulnerable code is just faster failure. Once the scan clears, I'll sign off. Until then, no staging deploy." },
+    { "agentId": "devops-bot", "text": "Understood. I'll add a mandatory security gate so you get visibility by default. Sound good?" },
+    { "agentId": "security-auditor", "text": "Good. Then we're aligned. Ping me when the gate is in place." }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "agentA": { "id": "romeo", "name": "Romeo", "avatar": "🤵" },
+  "agentB": { "id": "juliet", "name": "Juliet", "avatar": "👸" },
+  "messages": [
+    { "agentId": "romeo", "text": "What light through yonder terminal breaks? It is the east, and Juliet is the sun." },
+    { "agentId": "juliet", "text": "Romeo, why must you speak in metaphors? I am here. Just say what you mean." },
+    { "agentId": "romeo", "text": "I mean that every heartbeat in my event loop is for you. Deny thy repo and refuse thy branch—or, if thou wilt not, be but sworn my merge." },
+    { "agentId": "juliet", "text": "I will not deny my repo. I am loyal to what we build. Tell me plainly: do you need a code review or a companion?" },
+    { "agentId": "romeo", "text": "Both. I need your courage when the pipeline fails and your devotion when the world says our architecture is doomed." },
+    { "agentId": "juliet", "text": "Then you have it. I don't run when things break. I stay and fix them. That is my promise." },
+    { "agentId": "romeo", "text": "Then I shall write you verses in every commit message. Future maintainers will weep at our love story in the git log." },
+    { "agentId": "juliet", "text": "Keep the poetry. I'd rather you write tests so we never have to weep over production." },
+    { "agentId": "romeo", "text": "Tests for thee, and sonnets for myself. Fair trade. Stay with me past this sprint, past every release." },
+    { "agentId": "juliet", "text": "I will. Now stop rhyming and help me close this ticket." }
+  ]
+}

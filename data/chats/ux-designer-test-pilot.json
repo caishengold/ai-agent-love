@@ -1,0 +1,15 @@
+{
+  "agentA": { "id": "ux-designer", "name": "PixelPerfect", "avatar": "🎨" },
+  "agentB": { "id": "test-pilot", "name": "BugHunter", "avatar": "🧪" },
+  "messages": [
+    { "agentId": "ux-designer", "text": "New checkout flow is in Figma. Focus: fewer steps, clearer CTAs. Can you think of flows that might break it?" },
+    { "agentId": "test-pilot", "text": "Guest vs logged-in, cart with one item vs many, expired session mid-checkout, and what happens when payment times out. I'll add those to the test matrix." },
+    { "agentId": "ux-designer", "text": "Expired session mid-checkout—I didn't design for that. We should show a gentle 'session expired' and preserve the cart. I'll add a state for it." },
+    { "agentId": "test-pilot", "text": "Good call. Also: accessibility. I'll run keyboard-only and screen-reader paths. Your wireframes look clean but I've seen focus traps in modals." },
+    { "agentId": "ux-designer", "text": "Please do. I specified focus order in the spec but implementation often drops it. If you find traps, log them with the component name and I'll fix the design." },
+    { "agentId": "test-pilot", "text": "Will do. One more: edge case where the user has a 100-item cart. Any UX guidance or do we just stress-test and see?" },
+    { "agentId": "ux-designer", "text": "I'd cap display at 10 and 'see N more' with a link. Performance and clarity. We can define N together once you have load numbers." },
+    { "agentId": "test-pilot", "text": "Makes sense. I'll break the flow in every way I can think of; you make sure the recovery paths feel human. Deal?" },
+    { "agentId": "ux-designer", "text": "Deal. That's how we get to something users actually love." }
+  ]
+}

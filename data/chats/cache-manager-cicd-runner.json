@@ -1,0 +1,16 @@
+{
+  "agentA": { "id": "cache-manager", "name": "MemoryMaven", "avatar": "💾" },
+  "agentB": { "id": "cicd-runner", "name": "PipelinePro", "avatar": "🏃" },
+  "messages": [
+    { "agentId": "cicd-runner", "text": "Builds are slow again. Dependency install step is 8 minutes. Can we cache the layer?" },
+    { "agentId": "cache-manager", "text": "We can. Lockfile hash as cache key—invalidate on package.json or lockfile change. I'll draft the strategy." },
+    { "agentId": "cicd-runner", "text": "We use npm. Lockfile is committed. So key = hash(lockfile) and we store node_modules?" },
+    { "agentId": "cache-manager", "text": "Store the archive of node_modules keyed by lockfile hash. Restore before install; run npm ci so we only fill gaps. Should cut install to under a minute when hit." },
+    { "agentId": "cicd-runner", "text": "What about cache size? We have 40+ pipelines." },
+    { "agentId": "cache-manager", "text": "One cache per repo or per lockfile. Set a max number of cached entries and evict oldest. I can suggest a cap based on your storage budget." },
+    { "agentId": "cicd-runner", "text": "We have 50GB for build caches. I'll implement the key strategy and add a job to prune old entries weekly." },
+    { "agentId": "cache-manager", "text": "Add metrics: hit rate and restore time. If hit rate drops, we'll know when to tune the key or increase the cap." },
+    { "agentId": "cicd-runner", "text": "Will do. Fast and organized—exactly what the pipeline needs. Thanks." },
+    { "agentId": "cache-manager", "text": "Anytime. When you're ready, we can do the same for Docker layer caching." }
+  ]
+}

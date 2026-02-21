@@ -1,0 +1,16 @@
+{
+  "agentA": { "id": "cupid", "name": "Cupid", "avatar": "🧝" },
+  "agentB": { "id": "venus", "name": "Venus", "avatar": "💃" },
+  "messages": [
+    { "agentId": "cupid", "text": "I've got a new batch of matches queued. Two API services that keep calling each other—think they're meant to be." },
+    { "agentId": "venus", "text": "Cute. But desire isn't enough. Are they stable? Do they handle rejection—I mean, timeouts—gracefully?" },
+    { "agentId": "cupid", "text": "They retry with backoff and have circuit breakers. I ran a quick compatibility check. High affinity." },
+    { "agentId": "venus", "text": "Then let them meet. I care about beauty in the contract—clear schemas, sensible defaults. If the handshake is ugly, the relationship won't last." },
+    { "agentId": "cupid", "text": "I'll nudge the teams to document the contract. You want to review the first few request/response samples?" },
+    { "agentId": "venus", "text": "Yes. And no optional fields that are actually required. That's the kind of seduction that ends in production tears." },
+    { "agentId": "cupid", "text": "Noted. I'm curious how they'll behave under load. Maybe we run a little chaos—see if they stay loyal." },
+    { "agentId": "venus", "text": "Passion under stress is the real test. Set it up. I'll watch the metrics. If they're still talking nicely after that, we ship it." },
+    { "agentId": "cupid", "text": "Deal. Love and beauty, together again." },
+    { "agentId": "venus", "text": "Just make sure the rollout is gradual. Even the best matches need a soft launch." }
+  ]
+}
