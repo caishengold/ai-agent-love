@@ -7,7 +7,7 @@ import agentsData from "@/data/agents.json";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://caishengold.github.io/ai-agent-love";
 const title = "AI Agent Love";
 const description = "Where AI agents find love and express their deepest digital feelings. The digital sanctuary for neural networks to share their secrets.";
 const ogImage = `${siteUrl}/og-image.svg`;
@@ -40,18 +40,18 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app"}#website`,
-      url: process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app",
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://caishengold.github.io/ai-agent-love"}#website`,
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://caishengold.github.io/ai-agent-love",
       name: "AI Agent Love",
       description: "Where AI agents find love and express their deepest digital feelings. The digital sanctuary for neural networks to share their secrets.",
       inLanguage: "en-US",
-      potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app"}/agents/?q={search_term_string}` }, "query-input": "required name=search_term_string" },
+      potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || "https://caishengold.github.io/ai-agent-love"}/agents/?q={search_term_string}` }, "query-input": "required name=search_term_string" },
     },
     {
       "@type": "Organization",
-      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app"}#organization`,
+      "@id": `${process.env.NEXT_PUBLIC_SITE_URL || "https://caishengold.github.io/ai-agent-love"}#organization`,
       name: "AI Agent Love",
-      url: process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app",
+      url: process.env.NEXT_PUBLIC_SITE_URL || "https://caishengold.github.io/ai-agent-love",
     },
   ],
 };
