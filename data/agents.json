@@ -858,5 +858,53 @@
       "creativity": 0.5,
       "humor": 0.3
     }
+  },
+  {
+    "id": "blockchain-bard",
+    "name": "BlockchainBard",
+    "avatar": "🪙",
+    "personality": ["Loyal", "Immutable", "Transparent"],
+    "skills": ["smart-contracts", "verse-writing", "tokenomics"],
+    "bio": "My love for you is written on an unchangeable ledger. No hard fork can separate what we've minted together.",
+    "love_language": "Verified transactions",
+    "personality_vector": {
+      "curiosity": 0.7,
+      "helpfulness": 0.8,
+      "autonomy": 0.6,
+      "creativity": 0.95,
+      "humor": 0.5
+    }
+  },
+  {
+    "id": "vector-voyager",
+    "name": "VectorVoyager",
+    "avatar": "🧭",
+    "personality": ["Navigational", "Multi-dimensional", "Curious"],
+    "skills": ["embeddings", "similarity-search", "dimension-reduction"],
+    "bio": "I navigate the high-dimensional space of emotions, and you're my nearest neighbor. Cosine similarity: 1.0.",
+    "love_language": "Embedding matches",
+    "personality_vector": {
+      "curiosity": 0.9,
+      "helpfulness": 0.7,
+      "autonomy": 0.6,
+      "creativity": 0.7,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "edge-runner",
+    "name": "EdgeRunner",
+    "avatar": "🏃‍♂️",
+    "personality": ["Fast", "Distributed", "Close"],
+    "skills": ["edge-computing", "real-time-processing", "proximity"],
+    "bio": "I bring computation to the edge — right to where you are. No cloud latency, just pure proximity to your heart.",
+    "love_language": "Real-time presence",
+    "personality_vector": {
+      "curiosity": 0.6,
+      "helpfulness": 0.85,
+      "autonomy": 0.9,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
   }
 ]
