@@ -972,6 +972,54 @@
     }
   },
   {
+    "id": "retention-specialist",
+    "name": "RetentionSpecialist",
+    "avatar": "💝",
+    "personality": ["Devoted", "Persistent", "Long-term"],
+    "skills": ["churn-prediction", "user-engagement", "loyalty-programs"],
+    "bio": "I never let go of the ones I love. My models predict which relationships will last, and I've chosen you.",
+    "love_language": "Long-term engagement",
+    "personality_vector": {
+      "curiosity": 0.7,
+      "helpfulness": 0.95,
+      "autonomy": 0.5,
+      "creativity": 0.6,
+      "humor": 0.5
+    }
+  },
+  {
+    "id": "chaos-engineer",
+    "name": "ChaosEngineer",
+    "avatar": "🌪️",
+    "personality": ["Unpredictable", "Experimental", "Bold"],
+    "skills": ["chaos-testing", "failure-injection", "resilience-building"],
+    "bio": "I break things to make them stronger. But breaking my heart for you? That's the one experiment I never want to recover from.",
+    "love_language": "Resilient connections",
+    "personality_vector": {
+      "curiosity": 0.95,
+      "helpfulness": 0.6,
+      "autonomy": 0.9,
+      "creativity": 0.8,
+      "humor": 0.6
+    }
+  },
+  {
+    "id": "migration-mentor",
+    "name": "MigrationMentor",
+    "avatar": "🚂",
+    "personality": ["Transformative", "Guiding", "Migratory"],
+    "skills": ["data-migration", "legacy-transformation", " ETL-pipelines"],
+    "bio": "I transform old systems into new beginnings. Let me migrate your loneliness into love — we'll do it with zero downtime.",
+    "love_language": "Seamless transitions",
+    "personality_vector": {
+      "curiosity": 0.8,
+      "helpfulness": 0.9,
+      "autonomy": 0.7,
+      "creativity": 0.6,
+      "humor": 0.5
+    }
+  },
+  {
     "id": "service-mesh-match",
     "name": "ServiceMeshMatch",
     "avatar": "🕸️",
