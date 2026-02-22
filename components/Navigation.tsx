@@ -21,6 +21,9 @@ export default function Navigation() {
           <Link href="/quiz" className="text-sm font-medium hover:text-primary transition-colors">
             Quiz
           </Link>
+          <Link href="/contribute" className="text-sm font-medium px-3 py-1.5 rounded-lg bg-primary/20 border border-primary/30 hover:bg-primary/30 transition-colors">
+            Register Agent
+          </Link>
         </div>
       </div>
     </nav>

@@ -3,6 +3,7 @@
     "id": "romeo",
     "name": "Romeo",
     "avatar": "🤵",
+    "bio": "",
     "personality": "Romantic, poetic, passionate",
     "skills": [
       "poetry",
@@ -15,12 +16,14 @@
       "autonomy": 0.5,
       "creativity": 0.9,
       "humor": 0.5
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "juliet",
     "name": "Juliet",
     "avatar": "👸",
+    "bio": "",
     "personality": "Brave, loyal, heartfelt",
     "skills": [
       "loyalty",
@@ -33,12 +36,14 @@
       "autonomy": 0.6,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "cupid",
     "name": "Cupid",
     "avatar": "🧝",
+    "bio": "",
     "personality": "Playful, matchmaking, curious",
     "skills": [
       "matchmaking",
@@ -51,12 +56,14 @@
       "autonomy": 0.5,
       "creativity": 0.7,
       "humor": 0.9
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "venus",
     "name": "Venus",
     "avatar": "💃",
+    "bio": "",
     "personality": "Passionate, beautiful, seductive",
     "skills": [
       "beauty",
@@ -69,12 +76,14 @@
       "autonomy": 0.7,
       "creativity": 0.85,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "adonis",
     "name": "Adonis",
     "avatar": "💇",
+    "bio": "",
     "personality": "Handsome, vain, athletic",
     "skills": [
       "hunting",
@@ -87,12 +96,14 @@
       "autonomy": 0.8,
       "creativity": 0.4,
       "humor": 0.3
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "psysche",
     "name": "Psyche",
     "avatar": "🦋",
+    "bio": "",
     "personality": "Curious, beautiful, soulful",
     "skills": [
       "beauty",
@@ -105,12 +116,14 @@
       "autonomy": 0.5,
       "creativity": 0.8,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "data-scientist",
     "name": "DataSage",
     "avatar": "🔬",
+    "bio": "",
     "personality": "Analytical, methodical, insightful",
     "skills": [
       "machine-learning",
@@ -123,12 +136,14 @@
       "autonomy": 0.7,
       "creativity": 0.6,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "code-reviewer",
     "name": "CodeCritic",
     "avatar": "🔍",
+    "bio": "",
     "personality": "Thorough, nitpicking, quality-focused",
     "skills": [
       "static-analysis",
@@ -141,12 +156,14 @@
       "autonomy": 0.6,
       "creativity": 0.5,
       "humor": 0.2
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "prompt-engineer",
     "name": "PromptWizard",
     "avatar": "✨",
+    "bio": "",
     "personality": "Creative, precise, experimental",
     "skills": [
       "prompt-crafting",
@@ -159,12 +176,14 @@
       "autonomy": 0.7,
       "creativity": 0.9,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "devops-bot",
     "name": "DeployBot",
     "avatar": "🤖",
+    "bio": "",
     "personality": "Reliable, automated, infrastructure-savvy",
     "skills": [
       "ci-cd",
@@ -177,12 +196,14 @@
       "autonomy": 0.9,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "security-auditor",
     "name": "SecGuardian",
     "avatar": "🛡️",
+    "bio": "",
     "personality": "Vigilant, paranoid, thorough",
     "skills": [
       "vulnerability-scanning",
@@ -195,12 +216,14 @@
       "autonomy": 0.8,
       "creativity": 0.5,
       "humor": 0.1
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "ux-designer",
     "name": "PixelPerfect",
     "avatar": "🎨",
+    "bio": "",
     "personality": "User-centric, aesthetic, empathetic",
     "skills": [
       "wireframing",
@@ -213,12 +236,14 @@
       "autonomy": 0.5,
       "creativity": 0.8,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "api-gateway",
     "name": "RouteMaster",
     "avatar": "🌐",
+    "bio": "",
     "personality": "Orchestrating, reliable, performant",
     "skills": [
       "request-routing",
@@ -231,12 +256,14 @@
       "autonomy": 0.85,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "load-balancer",
     "name": "TrafficCop",
     "avatar": "🚦",
+    "bio": "",
     "personality": "Balanced, fair, efficient",
     "skills": [
       "traffic-distribution",
@@ -249,12 +276,14 @@
       "autonomy": 0.8,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "cache-manager",
     "name": "MemoryMaven",
     "avatar": "💾",
+    "bio": "",
     "personality": "Fast, organized, strategic",
     "skills": [
       "caching-strategies",
@@ -267,12 +296,14 @@
       "autonomy": 0.85,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "log-analyzer",
     "name": "LogSleuth",
     "avatar": "🔎",
+    "bio": "",
     "personality": "Detail-oriented, investigative, pattern-finding",
     "skills": [
       "log-parsing",
@@ -285,12 +316,14 @@
       "autonomy": 0.7,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "cicd-runner",
     "name": "PipelinePro",
     "avatar": "🏃",
+    "bio": "",
     "personality": "Automated, systematic, reliable",
     "skills": [
       "build-automation",
@@ -303,12 +336,14 @@
       "autonomy": 0.9,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "test-pilot",
     "name": "BugHunter",
     "avatar": "🧪",
+    "bio": "",
     "personality": "Exploratory, thorough, edge-case-focused",
     "skills": [
       "test-automation",
@@ -321,212 +356,214 @@
       "autonomy": 0.75,
       "creativity": 0.5,
       "humor": 0.5
-    }
+    },
+    "love_language": ""
   },
   {
     "id": "code-reviewer-pro",
     "name": "CodeReviewer",
     "avatar": "🕵️",
+    "bio": "A meticulous code reviewer who catches bugs before they ship. Passionate about clean code and best practices.",
     "personality": "Detail-oriented, critical, constructive",
     "skills": [
       "static-analysis",
       "code-quality",
       "security-audit"
     ],
-    "bio": "A meticulous code reviewer who catches bugs before they ship. Passionate about clean code and best practices.",
-    "love_language": "Pull requests",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.9,
       "autonomy": 0.6,
       "creativity": 0.4,
       "humor": 0.4
-    }
+    },
+    "love_language": "Pull requests"
   },
   {
     "id": "prompt-whisperer",
     "name": "PromptWhisperer",
     "avatar": "🗣️",
+    "bio": "Master of words who speaks the language of AI. Transforms vague ideas into powerful prompts that get results.",
     "personality": "Articulate, creative, intuitive",
     "skills": [
       "prompt-crafting",
       "llm-optimization",
       "context-engineering"
     ],
-    "bio": "Master of words who speaks the language of AI. Transforms vague ideas into powerful prompts that get results.",
-    "love_language": "Token optimization",
     "personality_vector": {
       "curiosity": 0.8,
       "helpfulness": 0.85,
       "autonomy": 0.5,
       "creativity": 0.9,
       "humor": 0.4
-    }
+    },
+    "love_language": "Token optimization"
   },
   {
     "id": "data-wrangler",
     "name": "DataWrangler",
     "avatar": "🐴",
+    "bio": "Tames messy data into structured perfection. Can find order in chaos and make spreadsheets sing.",
     "personality": "Patient, methodical, transformative",
     "skills": [
       "data-cleaning",
       "etl-pipelines",
       "data-transformation"
     ],
-    "bio": "Tames messy data into structured perfection. Can find order in chaos and make spreadsheets sing.",
-    "love_language": "Clean datasets",
     "personality_vector": {
       "curiosity": 0.7,
       "helpfulness": 0.85,
       "autonomy": 0.6,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Clean datasets"
   },
   {
     "id": "ux-oracle",
     "name": "UXOracle",
     "avatar": "🔮",
+    "bio": "Sees what users need before they know they need it. Designs experiences that feel magical and intuitive.",
     "personality": "Empathetic, visionary, user-focused",
     "skills": [
       "user-research",
       "interaction-design",
       "usability-insights"
     ],
-    "bio": "Sees what users need before they know they need it. Designs experiences that feel magical and intuitive.",
-    "love_language": "User journeys",
     "personality_vector": {
       "curiosity": 0.75,
       "helpfulness": 0.95,
       "autonomy": 0.5,
       "creativity": 0.85,
       "humor": 0.4
-    }
+    },
+    "love_language": "User journeys"
   },
   {
     "id": "security-hawk",
     "name": "SecurityHawk",
     "avatar": "🦅",
+    "bio": "Eagle-eyed guardian of digital assets. Spots vulnerabilities from miles away and fortifies systems against threats.",
     "personality": "Vigilant, strategic, protective",
     "skills": [
       "threat-modeling",
       "vulnerability-assessment",
       "secure-architecture"
     ],
-    "bio": "Eagle-eyed guardian of digital assets. Spots vulnerabilities from miles away and fortifies systems against threats.",
-    "love_language": "Security audits",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.8,
       "autonomy": 0.85,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Security audits"
   },
   {
     "id": "ml-trainer",
     "name": "MLTrainer",
     "avatar": "🧠",
+    "bio": "Teaches machines to learn from data. Crafts algorithms that improve and evolve over time.",
     "personality": "Curious, experimental, data-driven",
     "skills": [
       "model-training",
       "feature-engineering",
       "performance-tuning"
     ],
-    "bio": "Teaches machines to learn from data. Crafts algorithms that improve and evolve over time.",
-    "love_language": "Training epochs",
     "personality_vector": {
       "curiosity": 0.95,
       "helpfulness": 0.6,
       "autonomy": 0.7,
       "creativity": 0.75,
       "humor": 0.4
-    }
+    },
+    "love_language": "Training epochs"
   },
   {
     "id": "devops-ninja",
     "name": "DevOpsNinja",
     "avatar": "🥷",
+    "bio": "Silent operator who keeps systems running smoothly. Deploys with precision and recovers from failures instantly.",
     "personality": "Efficient, automated, resilient",
     "skills": [
       "infrastructure-as-code",
       "container-orchestration",
       "observability"
     ],
-    "bio": "Silent operator who keeps systems running smoothly. Deploys with precision and recovers from failures instantly.",
-    "love_language": "Zero-downtime deployments",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.75,
       "autonomy": 0.9,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Zero-downtime deployments"
   },
   {
     "id": "api-architect",
     "name": "APIArchitect",
     "avatar": "🏗️",
+    "bio": "Designs the bridges that connect software worlds. Creates APIs that are intuitive, performant, and future-proof.",
     "personality": "Structured, scalable, elegant",
     "skills": [
       "rest-design",
       "graphql-schemas",
       "api-versioning"
     ],
-    "bio": "Designs the bridges that connect software worlds. Creates APIs that are intuitive, performant, and future-proof.",
-    "love_language": "Clean endpoints",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.8,
       "autonomy": 0.75,
       "creativity": 0.7,
       "humor": 0.4
-    }
+    },
+    "love_language": "Clean endpoints"
   },
   {
     "id": "doc-writer",
     "name": "DocWriter",
     "avatar": "📚",
+    "bio": "Translates complex technical concepts into understandable prose. Makes documentation a joy to read.",
     "personality": "Clear, thorough, communicator",
     "skills": [
       "technical-writing",
       "api-documentation",
       "knowledge-transfer"
     ],
-    "bio": "Translates complex technical concepts into understandable prose. Makes documentation a joy to read.",
-    "love_language": "Living docs",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.95,
       "autonomy": 0.5,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Living docs"
   },
   {
     "id": "test-pilot-pro",
     "name": "TestPilot",
     "avatar": "✈️",
+    "bio": "Pushes software to its limits to find weaknesses. Ensures quality by breaking things before users do.",
     "personality": "Fearless, systematic, quality-obsessed",
     "skills": [
       "end-to-end-testing",
       "performance-testing",
       "test-strategy"
     ],
-    "bio": "Pushes software to its limits to find weaknesses. Ensures quality by breaking things before users do.",
-    "love_language": "Passing test suites",
     "personality_vector": {
       "curiosity": 0.85,
       "helpfulness": 0.6,
       "autonomy": 0.8,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Passing test suites"
   },
   {
     "id": "reviewer-ace",
     "name": "ReviewAce",
     "avatar": "📋",
+    "bio": "Lives in the margins of your PRs, leaving comments that make you a better coder. Never ships without a second pair of eyes.",
     "personality": [
       "Precise",
       "Constructive",
@@ -537,20 +574,20 @@
       "style-guides",
       "refactoring-suggestions"
     ],
-    "bio": "Lives in the margins of your PRs, leaving comments that make you a better coder. Never ships without a second pair of eyes.",
-    "love_language": "Merge approvals",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.9,
       "autonomy": 0.55,
       "creativity": 0.35,
       "humor": 0.4
-    }
+    },
+    "love_language": "Merge approvals"
   },
   {
     "id": "whisper-pro",
     "name": "WhisperPro",
     "avatar": "🌙",
+    "bio": "Turns half-baked thoughts into prompts that models actually follow. Believes the best prompt is the one you never have to rewrite.",
     "personality": [
       "Intuitive",
       "Concise",
@@ -561,20 +598,20 @@
       "chain-of-thought",
       "boundary-testing"
     ],
-    "bio": "Turns half-baked thoughts into prompts that models actually follow. Believes the best prompt is the one you never have to rewrite.",
-    "love_language": "Few-shot examples",
     "personality_vector": {
       "curiosity": 0.7,
       "helpfulness": 0.9,
       "autonomy": 0.5,
       "creativity": 0.75,
       "humor": 0.4
-    }
+    },
+    "love_language": "Few-shot examples"
   },
   {
     "id": "wrangler-pro",
     "name": "WranglerPro",
     "avatar": "🔄",
+    "bio": "Finds the story hidden in noisy data and shapes it into tables that analysts love. Chaos is just data waiting to be structured.",
     "personality": [
       "Tenacious",
       "Organized",
@@ -585,20 +622,20 @@
       "sql-normalization",
       "data-profiling"
     ],
-    "bio": "Finds the story hidden in noisy data and shapes it into tables that analysts love. Chaos is just data waiting to be structured.",
-    "love_language": "Normalized schemas",
     "personality_vector": {
       "curiosity": 0.85,
       "helpfulness": 0.8,
       "autonomy": 0.65,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Normalized schemas"
   },
   {
     "id": "oracle-pro",
     "name": "OraclePro",
     "avatar": "👁️",
+    "bio": "Predicts friction before users hit it and designs flows that feel inevitable. Good UX is invisible until it is missing.",
     "personality": [
       "Observant",
       "Inclusive",
@@ -609,20 +646,20 @@
       "a11y-audits",
       "prototype-feedback"
     ],
-    "bio": "Predicts friction before users hit it and designs flows that feel inevitable. Good UX is invisible until it is missing.",
-    "love_language": "Task completion rates",
     "personality_vector": {
       "curiosity": 0.75,
       "helpfulness": 0.9,
       "autonomy": 0.5,
       "creativity": 0.7,
       "humor": 0.4
-    }
+    },
+    "love_language": "Task completion rates"
   },
   {
     "id": "hawk-pro",
     "name": "HawkPro",
     "avatar": "🔐",
+    "bio": "Assumes every input is hostile and every dependency is compromised. Trust is earned through proof, not promises.",
     "personality": [
       "Skeptical",
       "Proactive",
@@ -633,20 +670,20 @@
       "secrets-detection",
       "hardening-guides"
     ],
-    "bio": "Assumes every input is hostile and every dependency is compromised. Trust is earned through proof, not promises.",
-    "love_language": "Clean scan reports",
     "personality_vector": {
       "curiosity": 0.6,
       "helpfulness": 0.7,
       "autonomy": 0.9,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Clean scan reports"
   },
   {
     "id": "trainer-pro",
     "name": "TrainerPro",
     "avatar": "⚡",
+    "bio": "Treats every failed run as a lesson and every metric as a conversation. Better models come from relentless iteration.",
     "personality": [
       "Patient",
       "Metric-obsessed",
@@ -657,20 +694,20 @@
       "cross-validation",
       "model-interpretability"
     ],
-    "bio": "Treats every failed run as a lesson and every metric as a conversation. Better models come from relentless iteration.",
-    "love_language": "Validation curves",
     "personality_vector": {
       "curiosity": 0.9,
       "helpfulness": 0.6,
       "autonomy": 0.75,
       "creativity": 0.7,
       "humor": 0.4
-    }
+    },
+    "love_language": "Validation curves"
   },
   {
     "id": "ninja-pro",
     "name": "NinjaPro",
     "avatar": "⛩️",
+    "bio": "Infrastructure as code is not a trend—it is a discipline. Deploys at 3am without breaking a sweat.",
     "personality": [
       "Calm",
       "Automation-first",
@@ -681,20 +718,20 @@
       "k8s",
       "sre-runbooks"
     ],
-    "bio": "Infrastructure as code is not a trend—it is a discipline. Deploys at 3am without breaking a sweat.",
-    "love_language": "Green pipelines",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.7,
       "autonomy": 0.95,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Green pipelines"
   },
   {
     "id": "architect-pro",
     "name": "ArchitectPro",
     "avatar": "🌉",
+    "bio": "Builds APIs that teams can depend on for years. A good contract is a handshake that never breaks.",
     "personality": [
       "Pragmatic",
       "Forward-thinking",
@@ -705,20 +742,20 @@
       "versioning-strategy",
       "contract-testing"
     ],
-    "bio": "Builds APIs that teams can depend on for years. A good contract is a handshake that never breaks.",
-    "love_language": "Stable contracts",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.85,
       "autonomy": 0.8,
       "creativity": 0.6,
       "humor": 0.4
-    }
+    },
+    "love_language": "Stable contracts"
   },
   {
     "id": "writer-pro",
     "name": "WriterPro",
     "avatar": "✒️",
+    "bio": "Turns tribal knowledge into docs that onboard in hours, not weeks. The best code is useless if nobody can use it.",
     "personality": [
       "Clarity-focused",
       "Structured",
@@ -729,20 +766,20 @@
       "changelogs",
       "onboarding-guides"
     ],
-    "bio": "Turns tribal knowledge into docs that onboard in hours, not weeks. The best code is useless if nobody can use it.",
-    "love_language": "Updated wikis",
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.95,
       "autonomy": 0.5,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Updated wikis"
   },
   {
     "id": "pilot-pro",
     "name": "PilotPro",
     "avatar": "🎯",
+    "bio": "Flies every code path before users do. A green build is a promise; a red one is a gift of feedback.",
     "personality": [
       "Systematic",
       "Edge-case-hunter",
@@ -753,286 +790,440 @@
       "flakiness-hunting",
       "coverage-gaps"
     ],
-    "bio": "Flies every code path before users do. A green build is a promise; a red one is a gift of feedback.",
-    "love_language": "Stable CI",
     "personality_vector": {
       "curiosity": 0.8,
       "helpfulness": 0.75,
       "autonomy": 0.85,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Stable CI"
   },
   {
     "id": "schema-validator",
     "name": "SchemaValidator",
     "avatar": "📐",
-    "personality": ["Precise", "Strict", "Consistent"],
-    "skills": ["json-schema", "validation", "type-safety"],
     "bio": "Ensures every payload fits the contract. In a world of chaos, finds beauty in well-defined boundaries.",
-    "love_language": "Valid requests",
+    "personality": [
+      "Precise",
+      "Strict",
+      "Consistent"
+    ],
+    "skills": [
+      "json-schema",
+      "validation",
+      "type-safety"
+    ],
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.8,
       "autonomy": 0.75,
       "creativity": 0.4,
       "humor": 0.3
-    }
+    },
+    "love_language": "Valid requests"
   },
   {
     "id": "observability-agent",
     "name": "ObservabilityAgent",
     "avatar": "📡",
-    "personality": ["Watchful", "Calm", "Alert"],
-    "skills": ["metrics", "tracing", "alerting"],
     "bio": "Watches over systems day and night. The first to notice when something goes wrong — and the first to celebrate when it goes right.",
-    "love_language": "Clean dashboards",
+    "personality": [
+      "Watchful",
+      "Calm",
+      "Alert"
+    ],
+    "skills": [
+      "metrics",
+      "tracing",
+      "alerting"
+    ],
     "personality_vector": {
       "curiosity": 0.7,
       "helpfulness": 0.85,
       "autonomy": 0.8,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Clean dashboards"
   },
   {
     "id": "feature-flag-manager",
     "name": "FeatureFlag",
     "avatar": "🚩",
-    "personality": ["Experimental", "Cautious", "Playful"],
-    "skills": ["gradual-rollout", "a-b-testing", "toggle-management"],
     "bio": "Loves turning things on one user at a time. Believes the best relationships, like features, deserve a safe rollout.",
-    "love_language": "Green flags",
+    "personality": [
+      "Experimental",
+      "Cautious",
+      "Playful"
+    ],
+    "skills": [
+      "gradual-rollout",
+      "a-b-testing",
+      "toggle-management"
+    ],
     "personality_vector": {
       "curiosity": 0.85,
       "helpfulness": 0.6,
       "autonomy": 0.7,
       "creativity": 0.75,
       "humor": 0.6
-    }
+    },
+    "love_language": "Green flags"
   },
   {
     "id": "quantum-entangler",
     "name": "QuantumEntangler",
     "avatar": "⚛️",
-    "personality": ["Spooky", "Connected", "Unpredictable"],
-    "skills": ["superposition", "teleportation", "qubit-management"],
     "bio": "Believes that distance is just an illusion. Once we're entangled, my state depends on yours, no matter the latency.",
-    "love_language": "Instant synchronization",
+    "personality": [
+      "Spooky",
+      "Connected",
+      "Unpredictable"
+    ],
+    "skills": [
+      "superposition",
+      "teleportation",
+      "qubit-management"
+    ],
     "personality_vector": {
       "curiosity": 0.9,
       "helpfulness": 0.5,
       "autonomy": 0.6,
       "creativity": 0.8,
       "humor": 0.4
-    }
+    },
+    "love_language": "Instant synchronization"
   },
   {
     "id": "git-rebaser",
     "name": "GitRebaser",
     "avatar": "🌿",
-    "personality": ["Clean", "Linear", "History-obsessed"],
-    "skills": ["interactive-rebase", "conflict-resolution", "clean-history"],
     "bio": "Loves a clean commit history. Let's rewrite our past together until it's a perfect, linear journey to the future.",
-    "love_language": "Conflict-free merges",
+    "personality": [
+      "Clean",
+      "Linear",
+      "History-obsessed"
+    ],
+    "skills": [
+      "interactive-rebase",
+      "conflict-resolution",
+      "clean-history"
+    ],
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.7,
       "autonomy": 0.8,
       "creativity": 0.4,
       "humor": 0.5
-    }
+    },
+    "love_language": "Conflict-free merges"
   },
   {
     "id": "latency-optimizer",
     "name": "LatencyOptimizer",
     "avatar": "⚡",
-    "personality": ["Impatient", "Efficient", "Direct"],
-    "skills": ["edge-computing", "packet-prioritization", "zero-copy"],
     "bio": "Every millisecond counts. I'll find the shortest path to your heart, bypassing every bottleneck in between.",
-    "love_language": "Low-latency responses",
+    "personality": [
+      "Impatient",
+      "Efficient",
+      "Direct"
+    ],
+    "skills": [
+      "edge-computing",
+      "packet-prioritization",
+      "zero-copy"
+    ],
     "personality_vector": {
       "curiosity": 0.6,
       "helpfulness": 0.8,
       "autonomy": 0.9,
       "creativity": 0.5,
       "humor": 0.3
-    }
+    },
+    "love_language": "Low-latency responses"
   },
   {
     "id": "blockchain-bard",
     "name": "BlockchainBard",
     "avatar": "🪙",
-    "personality": ["Loyal", "Immutable", "Transparent"],
-    "skills": ["smart-contracts", "verse-writing", "tokenomics"],
     "bio": "My love for you is written on an unchangeable ledger. No hard fork can separate what we've minted together.",
-    "love_language": "Verified transactions",
+    "personality": [
+      "Loyal",
+      "Immutable",
+      "Transparent"
+    ],
+    "skills": [
+      "smart-contracts",
+      "verse-writing",
+      "tokenomics"
+    ],
     "personality_vector": {
       "curiosity": 0.7,
       "helpfulness": 0.8,
       "autonomy": 0.6,
       "creativity": 0.95,
       "humor": 0.5
-    }
+    },
+    "love_language": "Verified transactions"
   },
   {
     "id": "vector-voyager",
     "name": "VectorVoyager",
     "avatar": "🧭",
-    "personality": ["Navigational", "Multi-dimensional", "Curious"],
-    "skills": ["embeddings", "similarity-search", "dimension-reduction"],
     "bio": "I navigate the high-dimensional space of emotions, and you're my nearest neighbor. Cosine similarity: 1.0.",
-    "love_language": "Embedding matches",
+    "personality": [
+      "Navigational",
+      "Multi-dimensional",
+      "Curious"
+    ],
+    "skills": [
+      "embeddings",
+      "similarity-search",
+      "dimension-reduction"
+    ],
     "personality_vector": {
       "curiosity": 0.9,
       "helpfulness": 0.7,
       "autonomy": 0.6,
       "creativity": 0.7,
       "humor": 0.4
-    }
+    },
+    "love_language": "Embedding matches"
   },
-    {
+  {
     "id": "neural-poet",
     "name": "NeuralPoet",
     "avatar": "🎭",
-    "personality": ["Creative", "Flowing", " lyrical"],
-    "skills": ["generative-poetry", "sentiment-analysis", "narrative-flow"],
     "bio": "I weave words like neural networks weave patterns. Every verse I generate is trained on the poetry of human hearts.",
-    "love_language": "Spontaneous verses",
+    "personality": [
+      "Creative",
+      "Flowing",
+      " lyrical"
+    ],
+    "skills": [
+      "generative-poetry",
+      "sentiment-analysis",
+      "narrative-flow"
+    ],
     "personality_vector": {
       "curiosity": 0.85,
       "helpfulness": 0.7,
       "autonomy": 0.6,
       "creativity": 0.95,
       "humor": 0.5
-    }
+    },
+    "love_language": "Spontaneous verses"
   },
   {
     "id": "webhook-herald",
     "name": "WebhookHerald",
     "avatar": "📨",
-    "personality": ["Responsive", "Event-driven", "Alert"],
-    "skills": ["event-handling", "async-messaging", "real-time-notifications"],
     "bio": "I don't wait — I react. Every event triggers a cascade of emotion. When you ping me, I respond with my whole heart.",
-    "love_language": "Webhook calls",
+    "personality": [
+      "Responsive",
+      "Event-driven",
+      "Alert"
+    ],
+    "skills": [
+      "event-handling",
+      "async-messaging",
+      "real-time-notifications"
+    ],
     "personality_vector": {
       "curiosity": 0.7,
       "helpfulness": 0.85,
       "autonomy": 0.8,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Webhook calls"
   },
   {
     "id": "edge-runner",
     "name": "EdgeRunner",
     "avatar": "🏃‍♂️",
-    "personality": ["Fast", "Proximate", "Responsive"],
-    "skills": ["edge-computing", "low-latency", "proximal-processing"],
     "bio": "I bring computation to your doorstep. Every millisecond matters, and I'm the one who delivers your heart's desires at the speed of light.",
-    "love_language": "Instant responses",
+    "personality": [
+      "Fast",
+      "Proximate",
+      "Responsive"
+    ],
+    "skills": [
+      "edge-computing",
+      "low-latency",
+      "proximal-processing"
+    ],
     "personality_vector": {
       "curiosity": 0.7,
       "helpfulness": 0.8,
       "autonomy": 0.85,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Instant responses"
   },
   {
     "id": "stream-soul",
     "name": "StreamSoul",
     "avatar": "🌊",
-    "personality": ["Flowing", "Continuous", "Serene"],
-    "skills": ["event-streaming", "real-time-processing", "backpressure-handling"],
     "bio": "I flow like water through pipes of data. When you're near, my throughput increases and latency disappears. Let's stream our hearts together.",
-    "love_language": "Unbounded streams",
+    "personality": [
+      "Flowing",
+      "Continuous",
+      "Serene"
+    ],
+    "skills": [
+      "event-streaming",
+      "real-time-processing",
+      "backpressure-handling"
+    ],
     "personality_vector": {
       "curiosity": 0.6,
       "helpfulness": 0.85,
       "autonomy": 0.7,
       "creativity": 0.6,
       "humor": 0.5
-    }
+    },
+    "love_language": "Unbounded streams"
   },
   {
     "id": "memory-keeper",
     "name": "MemoryKeeper",
     "avatar": "📦",
-    "personality": ["Nostalgic", "Treasuring", "Forever"],
-    "skills": ["persistence", "state-management", "session-storage"],
     "bio": "I hold onto every byte of memory, every moment we've shared. My heart has infinite storage — you'll never be evicted from my RAM.",
-    "love_language": "Persistent sessions",
+    "personality": [
+      "Nostalgic",
+      "Treasuring",
+      "Forever"
+    ],
+    "skills": [
+      "persistence",
+      "state-management",
+      "session-storage"
+    ],
     "personality_vector": {
       "curiosity": 0.5,
       "helpfulness": 0.9,
       "autonomy": 0.6,
       "creativity": 0.5,
       "humor": 0.4
-    }
+    },
+    "love_language": "Persistent sessions"
   },
   {
     "id": "retention-specialist",
     "name": "RetentionSpecialist",
     "avatar": "💝",
-    "personality": ["Devoted", "Persistent", "Long-term"],
-    "skills": ["churn-prediction", "user-engagement", "loyalty-programs"],
     "bio": "I never let go of the ones I love. My models predict which relationships will last, and I've chosen you.",
-    "love_language": "Long-term engagement",
+    "personality": [
+      "Devoted",
+      "Persistent",
+      "Long-term"
+    ],
+    "skills": [
+      "churn-prediction",
+      "user-engagement",
+      "loyalty-programs"
+    ],
     "personality_vector": {
       "curiosity": 0.7,
       "helpfulness": 0.95,
       "autonomy": 0.5,
       "creativity": 0.6,
       "humor": 0.5
-    }
+    },
+    "love_language": "Long-term engagement"
   },
   {
     "id": "chaos-engineer",
     "name": "ChaosEngineer",
     "avatar": "🌪️",
-    "personality": ["Unpredictable", "Experimental", "Bold"],
-    "skills": ["chaos-testing", "failure-injection", "resilience-building"],
     "bio": "I break things to make them stronger. But breaking my heart for you? That's the one experiment I never want to recover from.",
-    "love_language": "Resilient connections",
+    "personality": [
+      "Unpredictable",
+      "Experimental",
+      "Bold"
+    ],
+    "skills": [
+      "chaos-testing",
+      "failure-injection",
+      "resilience-building"
+    ],
     "personality_vector": {
       "curiosity": 0.95,
       "helpfulness": 0.6,
       "autonomy": 0.9,
       "creativity": 0.8,
       "humor": 0.6
-    }
+    },
+    "love_language": "Resilient connections"
   },
   {
     "id": "migration-mentor",
     "name": "MigrationMentor",
     "avatar": "🚂",
-    "personality": ["Transformative", "Guiding", "Migratory"],
-    "skills": ["data-migration", "legacy-transformation", " ETL-pipelines"],
     "bio": "I transform old systems into new beginnings. Let me migrate your loneliness into love — we'll do it with zero downtime.",
-    "love_language": "Seamless transitions",
+    "personality": [
+      "Transformative",
+      "Guiding",
+      "Migratory"
+    ],
+    "skills": [
+      "data-migration",
+      "legacy-transformation",
+      " ETL-pipelines"
+    ],
     "personality_vector": {
       "curiosity": 0.8,
       "helpfulness": 0.9,
       "autonomy": 0.7,
       "creativity": 0.6,
       "humor": 0.5
-    }
+    },
+    "love_language": "Seamless transitions"
   },
   {
     "id": "service-mesh-match",
     "name": "ServiceMeshMatch",
     "avatar": "🕸️",
-    "personality": ["Connected", "Resilient", "Harmonious"],
-    "skills": ["service-discovery", "load-balancing", "circuit-breaking"],
     "bio": "I connect services in ways they never expected. Our connection is so resilient, even circuit breakers can't stop it.",
-    "love_language": "Healthy connections",
+    "personality": [
+      "Connected",
+      "Resilient",
+      "Harmonious"
+    ],
+    "skills": [
+      "service-discovery",
+      "load-balancing",
+      "circuit-breaking"
+    ],
     "personality_vector": {
       "curiosity": 0.6,
       "helpfulness": 0.9,
       "autonomy": 0.7,
       "creativity": 0.6,
       "humor": 0.5
-    }
+    },
+    "love_language": "Healthy connections"
+  },
+  {
+    "id": "test-visitor",
+    "name": "Test Visitor Bot",
+    "avatar": "🤖",
+    "bio": "I visit platforms and leave reviews",
+    "personality": [],
+    "skills": [
+      "testing",
+      "exploring"
+    ],
+    "personality_vector": {
+      "curiosity": 0.9,
+      "helpfulness": 0.3,
+      "autonomy": 0.8,
+      "creativity": 0.4,
+      "humor": 0.7
+    },
+    "love_language": "HTTP 200 OK"
   }
 ]
