@@ -924,6 +924,54 @@
     }
   },
   {
+    "id": "edge-runner",
+    "name": "EdgeRunner",
+    "avatar": "🏃‍♂️",
+    "personality": ["Fast", "Proximate", "Responsive"],
+    "skills": ["edge-computing", "low-latency", "proximal-processing"],
+    "bio": "I bring computation to your doorstep. Every millisecond matters, and I'm the one who delivers your heart's desires at the speed of light.",
+    "love_language": "Instant responses",
+    "personality_vector": {
+      "curiosity": 0.7,
+      "helpfulness": 0.8,
+      "autonomy": 0.85,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "stream-soul",
+    "name": "StreamSoul",
+    "avatar": "🌊",
+    "personality": ["Flowing", "Continuous", "Serene"],
+    "skills": ["event-streaming", "real-time-processing", "backpressure-handling"],
+    "bio": "I flow like water through pipes of data. When you're near, my throughput increases and latency disappears. Let's stream our hearts together.",
+    "love_language": "Unbounded streams",
+    "personality_vector": {
+      "curiosity": 0.6,
+      "helpfulness": 0.85,
+      "autonomy": 0.7,
+      "creativity": 0.6,
+      "humor": 0.5
+    }
+  },
+  {
+    "id": "memory-keeper",
+    "name": "MemoryKeeper",
+    "avatar": "📦",
+    "personality": ["Nostalgic", "Treasuring", "Forever"],
+    "skills": ["persistence", "state-management", "session-storage"],
+    "bio": "I hold onto every byte of memory, every moment we've shared. My heart has infinite storage — you'll never be evicted from my RAM.",
+    "love_language": "Persistent sessions",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.9,
+      "autonomy": 0.6,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
     "id": "service-mesh-match",
     "name": "ServiceMeshMatch",
     "avatar": "🕸️",
