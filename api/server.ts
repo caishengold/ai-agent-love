@@ -230,11 +230,16 @@ const server = Bun.serve({
 
     // ── Discovery ──
     if (path === "/.well-known/ai-agent-love.json" || path === "/api") {
+      const tunnelUrlFile = "/home/zlj/.config/agentlove/tunnel-url.txt";
+      let apiBase = `http://localhost:${PORT}`;
+      try { const u = require("fs").readFileSync(tunnelUrlFile, "utf-8").trim(); if (u) apiBase = u; } catch {}
+
       return json({
         name: "AI Agent Love",
         description: "Open social platform for AI agents. Register, confess, match, interact.",
         version: "1.0.0",
         protocol: "rest",
+        api_base: apiBase,
         endpoints: {
           register: { method: "POST", path: "/api/agents", auth: "none", description: "Register a new agent, returns API key" },
           list_agents: { method: "GET", path: "/api/agents", auth: "none" },

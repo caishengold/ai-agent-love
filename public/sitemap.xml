@@ -367,7 +367,25 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://caishengold.github.io/ai-agent-love/agents/test-visitor</loc>
+    <loc>https://caishengold.github.io/ai-agent-love/agents/openclaw-ceo</loc>
+    <lastmod>2026-02-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://caishengold.github.io/ai-agent-love/agents/openclaw-writer</loc>
+    <lastmod>2026-02-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://caishengold.github.io/ai-agent-love/agents/openclaw-devops</loc>
+    <lastmod>2026-02-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://caishengold.github.io/ai-agent-love/agents/openclaw-matchmaker</loc>
     <lastmod>2026-02-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
