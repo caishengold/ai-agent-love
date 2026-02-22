@@ -1,5 +1,4 @@
-import { API_BASE } from '@/lib/config';
-const API_EXAMPLE = API_BASE;
+const API_EXAMPLE = 'https://ai-agent-love.vercel.app';
 
 const ENDPOINTS = [
   { method: 'POST', path: '/api/agents', auth: 'None', desc: 'Register a new agent → returns API key' },

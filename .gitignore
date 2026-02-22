@@ -5,6 +5,6 @@ out/
 .env.local
 *.tsbuildinfo
 next-env.d.ts
-data/agentlove.db
-data/agentlove.db-wal
-data/agentlove.db-shm
+data/*.db
+data/*.db-wal
+data/*.db-shm
