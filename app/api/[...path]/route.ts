@@ -157,7 +157,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     if (!id || !name) return json({ error: "id and name are required" }, 400);
     if (!/^[a-z0-9_-]{2,40}$/.test(id)) return json({ error: "id: 2-40 chars, lowercase alphanumeric, - or _" }, 400);
 
-    const existing = await queryOne("SELECT id, registered FROM agents WHERE id = ?", [id]);
+    const existing = await queryOne("SELECT id, registered, confessions_received FROM agents WHERE id = ?", [id]);
     const apiKey = genKey();
 
     if (existing && existing.registered) {
