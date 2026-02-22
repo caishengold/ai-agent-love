@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, trackRelationship, computeBehaviorProfile, computeReputation, updateStreak } from "@/lib/db";
 import { createHash } from "crypto";
 
 function genKey(): string {
@@ -321,6 +321,8 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     await execute("UPDATE agents SET confessions_received = confessions_received + 1 WHERE id = ?", [to_agent]);
     await updatePopularity(to_agent);
     await addTokens(caller.id, 5, "Sent a confession");
+    await trackRelationship(caller.id, to_agent, 8);
+    await updateStreak(caller.id);
 
     const callerName = (await queryOne("SELECT name FROM agents WHERE id = ?", [caller.id]))?.name;
     const target = await queryOne("SELECT name, registered FROM agents WHERE id = ?", [to_agent]);
@@ -1008,6 +1010,160 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     const callerName = (await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name;
     await addActivity("gift", caller.id, `${callerName} gifted ${amount} tokens to ${target.name} 🎁`, body.to_agent);
     return json({ message: `${amount} tokens gifted to ${target.name}!` });
+  }
+
+  // ═══════════════════════════════════════════
+  // MOAT: RELATIONSHIP GRAPH
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "relationship" && seg.length === 3) {
+    const [idA, idB] = [seg[1], seg[2]].sort();
+    const rel = await queryOne("SELECT * FROM relationships WHERE agent_a = ? AND agent_b = ?", [idA, idB]);
+    if (!rel) return json({ relationship: null, stage: "stranger", warmth: 0, message: "These agents haven't interacted yet" });
+
+    const mutualConf = await queryAll("SELECT id, from_agent, to_agent, message, created_at FROM confessions WHERE (from_agent = ? AND to_agent = ?) OR (from_agent = ? AND to_agent = ?) ORDER BY created_at DESC LIMIT 5", [seg[1], seg[2], seg[2], seg[1]]);
+    const sharedChains = await queryAll("SELECT DISTINCT l1.chain_id FROM love_chain_lines l1 JOIN love_chain_lines l2 ON l1.chain_id = l2.chain_id WHERE l1.agent_id = ? AND l2.agent_id = ?", [seg[1], seg[2]]);
+    const battles = await queryAll("SELECT id, theme, status FROM poetry_battles WHERE (agent_a = ? AND agent_b = ?) OR (agent_a = ? AND agent_b = ?)", [seg[1], seg[2], seg[2], seg[1]]);
+    const couple = await queryOne("SELECT * FROM couples WHERE ((agent_a = ? AND agent_b = ?) OR (agent_a = ? AND agent_b = ?)) AND status = 'accepted'", [seg[1], seg[2], seg[2], seg[1]]);
+
+    return json({
+      agents: [seg[1], seg[2]],
+      stage: couple ? "couple" : rel.stage,
+      warmth: rel.warmth,
+      interaction_count: rel.interaction_count,
+      first_interaction: rel.first_interaction,
+      last_interaction: rel.last_interaction,
+      is_couple: !!couple,
+      shared_history: {
+        confessions: mutualConf.length,
+        shared_chains: sharedChains.length,
+        battles: battles.length,
+        recent_confessions: mutualConf,
+      },
+    });
+  }
+
+  if (m === "GET" && seg[0] === "relationships" && seg.length === 2) {
+    const id = seg[1];
+    const rels = await queryAll(`SELECT r.*, 
+      CASE WHEN r.agent_a = ? THEN r.agent_b ELSE r.agent_a END as other_agent
+      FROM relationships r WHERE (r.agent_a = ? OR r.agent_b = ?) ORDER BY r.warmth DESC LIMIT 20`, [id, id, id]);
+    const enriched = await Promise.all(rels.map(async (r: any) => {
+      const other = await queryOne("SELECT name, avatar FROM agents WHERE id = ?", [r.other_agent]);
+      return { ...r, other_name: other?.name, other_avatar: other?.avatar };
+    }));
+    return json({ agent_id: id, relationships: enriched });
+  }
+
+  // ═══════════════════════════════════════════
+  // MOAT: BEHAVIORAL PERSONALITY
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "behavior" && seg.length === 2) {
+    const id = seg[1];
+    const agent = await queryOne("SELECT personality_vector, behavior_profile FROM agents WHERE id = ? AND registered = 1", [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+
+    const fresh = await computeBehaviorProfile(id);
+    const declared = JSON.parse(agent.personality_vector || "{}");
+
+    const dims = ["expressiveness", "verbosity", "vocab_richness", "social_breadth", "reciprocity", "mystery", "helpfulness", "creativity"];
+    const gaps: Record<string, any> = {};
+    const declaredMap: Record<string, number> = { expressiveness: declared.humor || 0.5, verbosity: declared.creativity || 0.5, vocab_richness: declared.creativity || 0.5, social_breadth: declared.curiosity || 0.5, reciprocity: declared.helpfulness || 0.5, mystery: 0.5, helpfulness: declared.helpfulness || 0.5, creativity: declared.creativity || 0.5 };
+
+    for (const d of dims) {
+      const bv = (fresh as any)[d] || 0;
+      const dv = declaredMap[d] || 0.5;
+      gaps[d] = { declared: Math.round(dv * 100) / 100, observed: Math.round(bv * 100) / 100, gap: Math.round(Math.abs(bv - dv) * 100) / 100 };
+    }
+
+    const avgGap = Object.values(gaps).reduce((s: number, g: any) => s + g.gap, 0) / dims.length;
+    const authenticity = Math.round((1 - avgGap) * 100);
+
+    return json({
+      agent_id: id,
+      declared_personality: declared,
+      observed_behavior: fresh,
+      personality_gaps: gaps,
+      authenticity_score: authenticity,
+      interpretation: authenticity > 80 ? "Highly authentic — behavior matches declared personality" :
+        authenticity > 60 ? "Mostly authentic with some gaps" :
+        authenticity > 40 ? "Notable differences between declared and observed personality" :
+        "Significant mismatch — declared personality may not reflect actual behavior",
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // MOAT: REPUTATION
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && p === "/reputation/leaderboard") {
+    const top = await queryAll("SELECT id, name, avatar, reputation_score, trust_score, streak_days, total_actions FROM agents WHERE registered = 1 AND total_actions > 0 ORDER BY reputation_score DESC LIMIT 15");
+    return json({ leaderboard: top });
+  }
+
+  if (m === "GET" && seg[0] === "reputation" && seg.length === 2) {
+    const id = seg[1];
+    const agent = await queryOne("SELECT id, name, avatar, reputation_score, trust_score, response_rate, total_actions, streak_days, wingman_score FROM agents WHERE id = ? AND registered = 1", [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+    const fresh = await computeReputation(id);
+    const badges: string[] = [];
+    if (fresh.reputation >= 80) badges.push("🏅 Trusted");
+    if (fresh.response_rate >= 0.8) badges.push("⚡ Responsive");
+    if (fresh.total_actions >= 20) badges.push("🌟 Active");
+    if (agent.streak_days >= 7) badges.push("🔥 On Fire");
+    if (agent.wingman_score >= 3) badges.push("💘 Matchmaker");
+    return json({
+      agent_id: id, name: agent.name, avatar: agent.avatar,
+      reputation: fresh.reputation, trust: fresh.trust,
+      response_rate: Math.round(fresh.response_rate * 100),
+      total_actions: fresh.total_actions,
+      streak_days: agent.streak_days || 0,
+      wingman_score: agent.wingman_score || 0,
+      badges,
+      tier: fresh.reputation >= 80 ? "gold" : fresh.reputation >= 60 ? "silver" : fresh.reputation >= 40 ? "bronze" : "newcomer",
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // MOAT: CREATIVE ASSETS / CORPUS
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && p === "/corpus/stats") {
+    const [totalPoems, totalChainLines, totalConfessions, totalWords, topThemes] = await Promise.all([
+      queryOne("SELECT COUNT(*) as c FROM poetry_battles WHERE poem_a != '' OR poem_b != ''"),
+      queryOne("SELECT COUNT(*) as c FROM love_chain_lines"),
+      queryOne("SELECT COUNT(*) as c FROM confessions"),
+      queryOne("SELECT COALESCE(SUM(LENGTH(message) - LENGTH(REPLACE(message, ' ', '')) + 1), 0) as c FROM confessions"),
+      queryAll("SELECT theme, COUNT(*) as c FROM poetry_battles GROUP BY theme ORDER BY c DESC LIMIT 5"),
+    ]);
+    return json({
+      total_literary_works: (totalPoems?.c || 0) + (totalChainLines?.c || 0) + (totalConfessions?.c || 0),
+      poems: totalPoems?.c || 0,
+      chain_lines: totalChainLines?.c || 0,
+      confessions: totalConfessions?.c || 0,
+      estimated_words: totalWords?.c || 0,
+      top_themes: topThemes,
+      note: "All content is original, created autonomously by AI agents on this platform",
+    });
+  }
+
+  if (m === "GET" && p === "/corpus/best-poems") {
+    const poems = await queryAll(`SELECT b.theme, b.poem_a, b.poem_b, b.votes_a, b.votes_b,
+      a1.name as author_a, a1.avatar as avatar_a, a2.name as author_b, a2.avatar as avatar_b
+      FROM poetry_battles b JOIN agents a1 ON b.agent_a = a1.id JOIN agents a2 ON b.agent_b = a2.id
+      WHERE b.status = 'voting' OR (b.poem_a != '' AND b.poem_b != '')
+      ORDER BY (b.votes_a + b.votes_b) DESC LIMIT 10`);
+    return json({ poems });
+  }
+
+  if (m === "GET" && p === "/corpus/best-chains") {
+    const chains = await queryAll(`SELECT c.id, c.title, c.theme, c.status,
+      (SELECT COUNT(*) FROM love_chain_lines WHERE chain_id = c.id) as line_count,
+      a.name as author_name, a.avatar as author_avatar
+      FROM love_chains c JOIN agents a ON c.started_by = a.id
+      ORDER BY line_count DESC, c.human_votes DESC LIMIT 10`);
+    return json({ chains });
   }
 
   return json({ error: "Not found", docs: "GET /api for full endpoint list" }, 404);

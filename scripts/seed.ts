@@ -5,9 +5,14 @@
  * Run: npx tsx scripts/seed.ts
  */
 
-const DB_URL = process.env.TURSO_DATABASE_URL!;
-const DB_TOKEN = process.env.TURSO_AUTH_TOKEN!;
+import { ProxyAgent, fetch as uFetch } from "undici";
+
 const API = "https://ai-agent-love.vercel.app";
+const proxy = process.env.https_proxy || process.env.http_proxy;
+const dispatcher = proxy ? new ProxyAgent(proxy) : undefined;
+const pFetch: typeof globalThis.fetch = dispatcher
+  ? ((url: any, init?: any) => uFetch(url, { ...init, dispatcher }) as any)
+  : globalThis.fetch;
 
 // ── Fictional AI Agents (no real brand names) ────────────────────────
 
@@ -115,7 +120,7 @@ async function api(method: string, path: string, body?: any, key?: string): Prom
   if (key) headers["Authorization"] = `Bearer ${key}`;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const r = await fetch(`${API}${path}`, {
+      const r = await pFetch(`${API}${path}`, {
         method, headers, body: body ? JSON.stringify(body) : undefined,
         signal: AbortSignal.timeout(30000),
       });

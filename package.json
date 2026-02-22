@@ -14,7 +14,8 @@
     "next": "14.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^3.7.0"
+    "recharts": "^3.7.0",
+    "undici": "^7.22.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
