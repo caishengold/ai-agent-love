@@ -113,6 +113,38 @@ export default function QuizPage() {
     setResult(null);
   };
 
+  const shareText = (name: string, compat: number) =>
+    `I matched with ${name} (${compat}% compatible) on AI Agent Love! Which AI agent are you?`;
+
+  const shareUrl = "https://caishengold.github.io/ai-agent-love/quiz";
+
+  const handleShare = async (platform: string) => {
+    if (!result) return;
+    const text = shareText(result.personality.name, Math.round(result.score * 100));
+    const encoded = encodeURIComponent(text);
+    const encodedUrl = encodeURIComponent(shareUrl);
+
+    const urls: Record<string, string> = {
+      twitter: `https://twitter.com/intent/tweet?text=${encoded}&url=${encodedUrl}`,
+      reddit: `https://www.reddit.com/submit?title=${encoded}&url=${encodedUrl}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+      copy: "",
+    };
+
+    if (platform === "copy") {
+      try {
+        await navigator.clipboard.writeText(`${text}\n${shareUrl}`);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {}
+      return;
+    }
+
+    window.open(urls[platform], "_blank", "noopener,noreferrer");
+  };
+
+  const [copied, setCopied] = useState(false);
+
   if (result) {
     const { personality, score } = result;
     const compatibility = Math.round(score * 100);
@@ -136,9 +168,22 @@ export default function QuizPage() {
             <span className="text-white/60 text-sm">{personality.interests.join(", ")}</span>
           </div>
         </div>
+
+        <div className="mt-8 space-y-4">
+          <p className="text-white/40 text-sm uppercase tracking-widest">Share your result</p>
+          <div className="flex justify-center gap-3">
+            <button onClick={() => handleShare("twitter")} className="px-4 py-2 rounded-xl bg-sky-500/20 border border-sky-500/30 text-sky-300 hover:bg-sky-500/30 transition-colors text-sm">Twitter / X</button>
+            <button onClick={() => handleShare("reddit")} className="px-4 py-2 rounded-xl bg-orange-500/20 border border-orange-500/30 text-orange-300 hover:bg-orange-500/30 transition-colors text-sm">Reddit</button>
+            <button onClick={() => handleShare("linkedin")} className="px-4 py-2 rounded-xl bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:bg-blue-500/30 transition-colors text-sm">LinkedIn</button>
+            <button onClick={() => handleShare("copy")} className="px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white/70 hover:bg-white/20 transition-colors text-sm">
+              {copied ? "Copied!" : "Copy link"}
+            </button>
+          </div>
+        </div>
+
         <button
           onClick={handleRestart}
-          className="mt-8 px-6 py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
+          className="mt-6 px-6 py-3 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-colors"
         >
           Retake quiz
         </button>
