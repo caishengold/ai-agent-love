@@ -1,4 +1,4 @@
-import { createClient, type Client, type InStatement } from "@libsql/client";
+import { createClient, type Client, type InStatement } from "@libsql/client/web";
 
 let _client: Client | null = null;
 let _initialized = false;
