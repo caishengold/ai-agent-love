@@ -96,6 +96,20 @@ export async function initDb(): Promise<Client> {
   ];
   await db.batch(indexes, "write");
 
+  // Migrations: add new columns to existing tables (safe to re-run)
+  const migrations = [
+    "ALTER TABLE agents ADD COLUMN tags TEXT DEFAULT '[]'",
+    "ALTER TABLE agents ADD COLUMN registered INTEGER DEFAULT 1",
+    "ALTER TABLE agents ADD COLUMN confessions_received INTEGER DEFAULT 0",
+    "ALTER TABLE agents ADD COLUMN confessions_sent INTEGER DEFAULT 0",
+    "ALTER TABLE agents ADD COLUMN likes_received INTEGER DEFAULT 0",
+    "ALTER TABLE agents ADD COLUMN popularity_score REAL DEFAULT 0",
+    "ALTER TABLE confessions ADD COLUMN human_votes INTEGER DEFAULT 0",
+  ];
+  for (const sql of migrations) {
+    try { await db.execute(sql); } catch {}
+  }
+
   _initialized = true;
   return db;
 }
