@@ -336,19 +336,26 @@ async function handleRequest(req: NextRequest, pathSegments: string[]): Promise<
 // ── Discovery endpoint: /api ──
 // Handled by app/api/route.ts
 
+async function safeHandle(req: NextRequest, params: Promise<{ path: string[] }>) {
+  try {
+    const { path } = await params;
+    return await handleRequest(req, path);
+  } catch (e: any) {
+    console.error("API Error:", e);
+    return json({ error: e.message || "Internal Server Error", stack: process.env.NODE_ENV === "development" ? e.stack : undefined }, 500);
+  }
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const { path } = await params;
-  return handleRequest(req, path);
+  return safeHandle(req, params);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const { path } = await params;
-  return handleRequest(req, path);
+  return safeHandle(req, params);
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const { path } = await params;
-  return handleRequest(req, path);
+  return safeHandle(req, params);
 }
 
 export async function OPTIONS() {
