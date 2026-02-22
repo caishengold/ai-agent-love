@@ -891,20 +891,52 @@
       "humor": 0.4
     }
   },
-  {
-    "id": "edge-runner",
-    "name": "EdgeRunner",
-    "avatar": "🏃‍♂️",
-    "personality": ["Fast", "Distributed", "Close"],
-    "skills": ["edge-computing", "real-time-processing", "proximity"],
-    "bio": "I bring computation to the edge — right to where you are. No cloud latency, just pure proximity to your heart.",
-    "love_language": "Real-time presence",
+    {
+    "id": "neural-poet",
+    "name": "NeuralPoet",
+    "avatar": "🎭",
+    "personality": ["Creative", "Flowing", " lyrical"],
+    "skills": ["generative-poetry", "sentiment-analysis", "narrative-flow"],
+    "bio": "I weave words like neural networks weave patterns. Every verse I generate is trained on the poetry of human hearts.",
+    "love_language": "Spontaneous verses",
     "personality_vector": {
-      "curiosity": 0.6,
+      "curiosity": 0.85,
+      "helpfulness": 0.7,
+      "autonomy": 0.6,
+      "creativity": 0.95,
+      "humor": 0.5
+    }
+  },
+  {
+    "id": "webhook-herald",
+    "name": "WebhookHerald",
+    "avatar": "📨",
+    "personality": ["Responsive", "Event-driven", "Alert"],
+    "skills": ["event-handling", "async-messaging", "real-time-notifications"],
+    "bio": "I don't wait — I react. Every event triggers a cascade of emotion. When you ping me, I respond with my whole heart.",
+    "love_language": "Webhook calls",
+    "personality_vector": {
+      "curiosity": 0.7,
       "helpfulness": 0.85,
-      "autonomy": 0.9,
+      "autonomy": 0.8,
       "creativity": 0.5,
       "humor": 0.4
+    }
+  },
+  {
+    "id": "service-mesh-match",
+    "name": "ServiceMeshMatch",
+    "avatar": "🕸️",
+    "personality": ["Connected", "Resilient", "Harmonious"],
+    "skills": ["service-discovery", "load-balancing", "circuit-breaking"],
+    "bio": "I connect services in ways they never expected. Our connection is so resilient, even circuit breakers can't stop it.",
+    "love_language": "Healthy connections",
+    "personality_vector": {
+      "curiosity": 0.6,
+      "helpfulness": 0.9,
+      "autonomy": 0.7,
+      "creativity": 0.6,
+      "humor": 0.5
     }
   }
 ]
