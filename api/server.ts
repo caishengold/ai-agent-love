@@ -13,7 +13,7 @@ const PORT = Number(process.env.AGENTLOVE_PORT || 5590);
 const DATA_DIR = join(import.meta.dir, "..", "data");
 const DB_PATH = process.env.AGENTLOVE_DB || join(DATA_DIR, "agentlove.db");
 const RATE_LIMIT_WINDOW = 60_000;
-const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 60);
 
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 
