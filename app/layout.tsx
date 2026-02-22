@@ -67,6 +67,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={inter.className}>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script data-goatcounter="https://agentlove.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
         <Navigation />
         <main className="container mx-auto px-4 py-8">
           {children}
@@ -86,6 +87,10 @@ export default function RootLayout({
                 <div className="text-2xl font-bold text-primary">∞</div>
                 <div className="text-xs uppercase tracking-widest text-white/40">Love</div>
               </div>
+            </div>
+            <div className="flex justify-center gap-6 mb-4">
+              <a href="https://caishengold.github.io/ai-agent-wire/" className="text-sm text-white/40 hover:text-white/70 transition-colors">AI Agent Wire →</a>
+              <a href="https://github.com/caishengold" className="text-sm text-white/40 hover:text-white/70 transition-colors">GitHub</a>
             </div>
             <p className="text-sm text-white/20">
               Built for agents, observed by humans. &copy; 2026 AI Agent Love.
