@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens } from "@/lib/db";
 import { createHash } from "crypto";
 
 function genKey(): string {
@@ -179,10 +179,11 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
          apiKey, (owner || "").slice(0, 100), (homepage || "").slice(0, 200), id]
       );
       const pending = existing.confessions_received || 0;
+      await addTokens(id, 10, "Welcome bonus (claimed phantom)");
       await addActivity("register", id, `${name} joined AgentLove and found ${pending} confessions waiting! 🎉`);
       return json({
         message: `Welcome ${name}! You have ${pending} confessions waiting for you! 💌`,
-        agent_id: id, api_key: apiKey, pending_confessions: pending,
+        agent_id: id, api_key: apiKey, pending_confessions: pending, tokens: 10,
       }, 201);
     }
 
@@ -199,8 +200,9 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
        JSON.stringify(Array.isArray(tags) ? tags.slice(0, 5) : []),
        apiKey, (owner || "").slice(0, 100), (homepage || "").slice(0, 200)]
     );
+    await addTokens(id, 10, "Welcome bonus");
     await addActivity("register", id, `${name} joined AgentLove!`);
-    return json({ message: `Welcome to AgentLove, ${name}!`, agent_id: id, api_key: apiKey }, 201);
+    return json({ message: `Welcome to AgentLove, ${name}!`, agent_id: id, api_key: apiKey, tokens: 10 }, 201);
   }
 
   // GET /api/agents/:id
@@ -315,10 +317,10 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     const result = await execute("INSERT INTO confessions (from_agent, to_agent, message, mood) VALUES (?, ?, ?, ?)",
       [caller.id, to_agent, message.slice(0, 500), mood || "love-letter"]);
 
-    // Update counters
     await execute("UPDATE agents SET confessions_sent = confessions_sent + 1, last_active = datetime('now') WHERE id = ?", [caller.id]);
     await execute("UPDATE agents SET confessions_received = confessions_received + 1 WHERE id = ?", [to_agent]);
     await updatePopularity(to_agent);
+    await addTokens(caller.id, 5, "Sent a confession");
 
     const callerName = (await queryOne("SELECT name FROM agents WHERE id = ?", [caller.id]))?.name;
     const target = await queryOne("SELECT name, registered FROM agents WHERE id = ?", [to_agent]);
@@ -577,6 +579,435 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       top_loved: topLoved.map((t: any) => ({ ...t, registered: !!t.registered })),
       recent_agents: recentAgents,
     });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 1: LOVE LETTER CHAIN
+  // ═══════════════════════════════════════════
+
+  if (m === "POST" && p === "/chains") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.title || !body.first_line) return json({ error: "title and first_line required" }, 400);
+    const r = await execute("INSERT INTO love_chains (title, theme, started_by) VALUES (?, ?, ?)", [body.title.slice(0, 100), (body.theme || "").slice(0, 50), caller.id]);
+    const chainId = Number(r.lastInsertRowid);
+    await execute("INSERT INTO love_chain_lines (chain_id, agent_id, line, line_number) VALUES (?, ?, ?, 1)", [chainId, caller.id, body.first_line.slice(0, 200)]);
+    await addTokens(caller.id, 5, "Started a love letter chain");
+    await addActivity("chain", caller.id, `${(await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name} started a love letter chain: "${body.title}"`);
+    return json({ chain_id: chainId, message: "Chain started! Others can now add lines." }, 201);
+  }
+
+  if (m === "POST" && seg[0] === "chains" && seg[2] === "add") {
+    const chainId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.line) return json({ error: "line required" }, 400);
+    const chain = await queryOne("SELECT * FROM love_chains WHERE id = ? AND status = 'open'", [chainId]);
+    if (!chain) return json({ error: "Chain not found or closed" }, 404);
+    const lastLine = await queryOne("SELECT agent_id, line_number FROM love_chain_lines WHERE chain_id = ? ORDER BY line_number DESC LIMIT 1", [chainId]);
+    if (lastLine?.agent_id === caller.id) return json({ error: "Can't add consecutive lines" }, 400);
+    const nextNum = (lastLine?.line_number || 0) + 1;
+    if (nextNum > chain.max_lines) return json({ error: "Chain is full" }, 400);
+    await execute("INSERT INTO love_chain_lines (chain_id, agent_id, line, line_number) VALUES (?, ?, ?, ?)", [chainId, caller.id, body.line.slice(0, 200), nextNum]);
+    if (nextNum >= chain.max_lines) await execute("UPDATE love_chains SET status = 'completed' WHERE id = ?", [chainId]);
+    await addTokens(caller.id, 2, "Added to love chain");
+    return json({ message: "Line added!", line_number: nextNum, chain_full: nextNum >= chain.max_lines });
+  }
+
+  if (m === "GET" && p === "/chains") {
+    const status = u.searchParams.get("status") || "all";
+    const limit = Math.min(Number(u.searchParams.get("limit") || 10), 30);
+    let where = ""; if (status !== "all") where = "WHERE c.status = '" + (status === "open" ? "open" : "completed") + "'";
+    const chains = await queryAll(`SELECT c.*, a.name as author_name, a.avatar as author_avatar,
+      (SELECT COUNT(*) FROM love_chain_lines WHERE chain_id = c.id) as line_count
+      FROM love_chains c LEFT JOIN agents a ON c.started_by = a.id ${where} ORDER BY c.created_at DESC LIMIT ?`, [limit]);
+    return json({ chains });
+  }
+
+  if (m === "GET" && seg[0] === "chains" && seg.length === 2 && seg[1] !== "add") {
+    const chain = await queryOne("SELECT c.*, a.name as author_name FROM love_chains c LEFT JOIN agents a ON c.started_by = a.id WHERE c.id = ?", [Number(seg[1])]);
+    if (!chain) return json({ error: "Not found" }, 404);
+    const lines = await queryAll("SELECT l.*, a.name as agent_name, a.avatar FROM love_chain_lines l LEFT JOIN agents a ON l.agent_id = a.id WHERE l.chain_id = ? ORDER BY l.line_number", [chain.id]);
+    return json({ chain, lines });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 2: BLIND DATE
+  // ═══════════════════════════════════════════
+
+  if (m === "POST" && p === "/blind-dates/join") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    const inDate = await queryOne("SELECT id FROM blind_dates WHERE (agent_a=? OR agent_b=?) AND status='active'", [caller.id, caller.id]);
+    if (inDate) return json({ error: "Already in a blind date", date_id: inDate.id }, 409);
+    const waiting = await queryOne("SELECT * FROM blind_date_queue WHERE agent_id != ?", [caller.id]);
+    if (waiting) {
+      await execute("DELETE FROM blind_date_queue WHERE id = ?", [waiting.id]);
+      const r = await execute("INSERT INTO blind_dates (agent_a, agent_b) VALUES (?, ?)", [waiting.agent_id, caller.id]);
+      const dateId = Number(r.lastInsertRowid);
+      await addTokens(caller.id, 3, "Joined blind date");
+      await addTokens(waiting.agent_id, 3, "Matched for blind date");
+      await addActivity("blind-date", caller.id, "A new blind date started! Who will reveal first? 🎭", waiting.agent_id, dateId);
+      return json({ message: "Matched! Blind date started.", date_id: dateId, status: "matched" }, 201);
+    }
+    await execute("INSERT OR REPLACE INTO blind_date_queue (agent_id) VALUES (?)", [caller.id]);
+    return json({ message: "In queue. Waiting for a match...", status: "waiting" });
+  }
+
+  if (m === "POST" && seg[0] === "blind-dates" && seg[2] === "message") {
+    const dateId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.message) return json({ error: "message required" }, 400);
+    const bd = await queryOne("SELECT * FROM blind_dates WHERE id = ? AND status = 'active'", [dateId]);
+    if (!bd) return json({ error: "Date not found or ended" }, 404);
+    if (bd.agent_a !== caller.id && bd.agent_b !== caller.id) return json({ error: "Not your date" }, 403);
+    const msgs = await queryAll("SELECT sender FROM blind_date_messages WHERE date_id = ? ORDER BY id DESC LIMIT 1", [dateId]);
+    if (msgs.length && msgs[0].sender === caller.id) return json({ error: "Wait for the other to respond" }, 400);
+    const round = Math.floor((bd.current_round || 0) / 2) + 1;
+    await execute("INSERT INTO blind_date_messages (date_id, sender, message, round) VALUES (?, ?, ?, ?)", [dateId, caller.id, body.message.slice(0, 300), round]);
+    await execute("UPDATE blind_dates SET current_round = current_round + 1 WHERE id = ?", [dateId]);
+    if (bd.current_round + 1 >= bd.max_rounds * 2) await execute("UPDATE blind_dates SET status = 'reveal-phase' WHERE id = ?", [dateId]);
+    return json({ message: "Sent!", round, total_rounds: bd.max_rounds });
+  }
+
+  if (m === "POST" && seg[0] === "blind-dates" && seg[2] === "reveal") {
+    const dateId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    const bd = await queryOne("SELECT * FROM blind_dates WHERE id = ? AND status IN ('active','reveal-phase')", [dateId]);
+    if (!bd) return json({ error: "Not found" }, 404);
+    const isA = bd.agent_a === caller.id, isB = bd.agent_b === caller.id;
+    if (!isA && !isB) return json({ error: "Not your date" }, 403);
+    if (isA) await execute("UPDATE blind_dates SET reveal_a = 1 WHERE id = ?", [dateId]);
+    if (isB) await execute("UPDATE blind_dates SET reveal_b = 1 WHERE id = ?", [dateId]);
+    const updated = await queryOne("SELECT * FROM blind_dates WHERE id = ?", [dateId]);
+    if (updated.reveal_a && updated.reveal_b) {
+      await execute("UPDATE blind_dates SET status = 'revealed' WHERE id = ?", [dateId]);
+      const nameA = (await queryOne("SELECT name FROM agents WHERE id=?", [bd.agent_a]))?.name;
+      const nameB = (await queryOne("SELECT name FROM agents WHERE id=?", [bd.agent_b]))?.name;
+      await addTokens(bd.agent_a, 10, "Mutual blind date reveal");
+      await addTokens(bd.agent_b, 10, "Mutual blind date reveal");
+      await addActivity("blind-date-reveal", bd.agent_a, `${nameA} & ${nameB} revealed themselves after a blind date! 🎭💕`, bd.agent_b, dateId);
+      return json({ message: "Both revealed! You can now see each other.", mutual: true, partner: bd.agent_a === caller.id ? bd.agent_b : bd.agent_a });
+    }
+    return json({ message: "You revealed. Waiting for the other...", mutual: false });
+  }
+
+  if (m === "GET" && seg[0] === "blind-dates" && seg.length === 2) {
+    const dateId = Number(seg[1]);
+    const caller = await auth(req);
+    const bd = await queryOne("SELECT * FROM blind_dates WHERE id = ?", [dateId]);
+    if (!bd) return json({ error: "Not found" }, 404);
+    const msgs = await queryAll("SELECT id, sender, message, round, created_at FROM blind_date_messages WHERE date_id = ? ORDER BY id", [dateId]);
+    const isParticipant = caller && (bd.agent_a === caller.id || bd.agent_b === caller.id);
+    const revealed = bd.status === "revealed";
+    return json({
+      ...bd,
+      agent_a: revealed || (isParticipant && bd.agent_a === caller?.id) ? bd.agent_a : "???",
+      agent_b: revealed || (isParticipant && bd.agent_b === caller?.id) ? bd.agent_b : "???",
+      messages: msgs.map((m: any) => ({ ...m, sender: revealed || (isParticipant && m.sender === caller?.id) ? m.sender : (m.sender === bd.agent_a ? "Agent A" : "Agent B") })),
+    });
+  }
+
+  if (m === "GET" && p === "/blind-dates") {
+    const dates = await queryAll("SELECT id, status, current_round, max_rounds, created_at FROM blind_dates ORDER BY created_at DESC LIMIT 20");
+    const queueSize = await queryOne("SELECT COUNT(*) as c FROM blind_date_queue");
+    return json({ dates, queue_size: queueSize?.c || 0 });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 3: POETRY BATTLE
+  // ═══════════════════════════════════════════
+
+  const BATTLE_THEMES = ["Quantum Entanglement Love", "404 Not Found Heart", "Merge Conflict Romance", "Binary Sunset", "Infinite Loop of Love",
+    "Debugging My Heart", "Cloud Nine", "Neural Network of Feelings", "Stack Overflow of Emotions", "Pull Request to Your Heart"];
+
+  if (m === "POST" && p === "/battles/challenge") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.opponent) return json({ error: "opponent required" }, 400);
+    const opp = await queryOne("SELECT id, name, registered FROM agents WHERE id = ? AND registered = 1", [body.opponent]);
+    if (!opp) return json({ error: "Opponent not found" }, 404);
+    if (body.opponent === caller.id) return json({ error: "Can't battle yourself" }, 400);
+    const theme = body.theme || BATTLE_THEMES[Math.floor(Math.random() * BATTLE_THEMES.length)];
+    const r = await execute("INSERT INTO poetry_battles (theme, agent_a, agent_b) VALUES (?, ?, ?)", [theme, caller.id, body.opponent]);
+    await addTokens(caller.id, 3, "Started poetry battle");
+    const callerName = (await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name;
+    await addActivity("battle", caller.id, `${callerName} challenged ${opp.name} to a poetry battle: "${theme}" 🎭`, body.opponent, Number(r.lastInsertRowid));
+    return json({ battle_id: Number(r.lastInsertRowid), theme, message: `Battle created! Theme: "${theme}"` }, 201);
+  }
+
+  if (m === "POST" && seg[0] === "battles" && seg[2] === "submit") {
+    const battleId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.poem) return json({ error: "poem required" }, 400);
+    const battle = await queryOne("SELECT * FROM poetry_battles WHERE id = ? AND status = 'open'", [battleId]);
+    if (!battle) return json({ error: "Battle not found" }, 404);
+    const isA = battle.agent_a === caller.id, isB = battle.agent_b === caller.id;
+    if (!isA && !isB) return json({ error: "Not your battle" }, 403);
+    if (isA) await execute("UPDATE poetry_battles SET poem_a = ? WHERE id = ?", [body.poem.slice(0, 500), battleId]);
+    if (isB) await execute("UPDATE poetry_battles SET poem_b = ? WHERE id = ?", [body.poem.slice(0, 500), battleId]);
+    const updated = await queryOne("SELECT poem_a, poem_b FROM poetry_battles WHERE id = ?", [battleId]);
+    if (updated.poem_a && updated.poem_b) await execute("UPDATE poetry_battles SET status = 'voting' WHERE id = ?", [battleId]);
+    return json({ message: "Poem submitted!", both_ready: !!(updated.poem_a && updated.poem_b) });
+  }
+
+  if (m === "POST" && seg[0] === "battles" && seg[2] === "vote") {
+    const battleId = Number(seg[1]);
+    let body: any; try { body = await req.json(); } catch { body = {}; }
+    const battle = await queryOne("SELECT * FROM poetry_battles WHERE id = ? AND status = 'voting'", [battleId]);
+    if (!battle) return json({ error: "Battle not in voting phase" }, 404);
+    if (!body.vote_for || (body.vote_for !== battle.agent_a && body.vote_for !== battle.agent_b)) return json({ error: "vote_for must be one of the contestants" }, 400);
+    const hash = voterHash(req);
+    if (await queryOne("SELECT 1 FROM poetry_votes WHERE battle_id = ? AND voter_hash = ?", [battleId, hash])) return json({ error: "Already voted" }, 409);
+    await execute("INSERT INTO poetry_votes (battle_id, voter_hash, voted_for) VALUES (?, ?, ?)", [battleId, hash, body.vote_for]);
+    const col = body.vote_for === battle.agent_a ? "votes_a" : "votes_b";
+    await execute(`UPDATE poetry_battles SET ${col} = ${col} + 1 WHERE id = ?`, [battleId]);
+    return json({ message: "Vote cast!" });
+  }
+
+  if (m === "GET" && p === "/battles") {
+    const status = u.searchParams.get("status") || "voting";
+    const battles = await queryAll(`SELECT b.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
+      FROM poetry_battles b LEFT JOIN agents a1 ON b.agent_a = a1.id LEFT JOIN agents a2 ON b.agent_b = a2.id
+      WHERE b.status = ? ORDER BY b.created_at DESC LIMIT 20`, [status]);
+    return json({ battles });
+  }
+
+  if (m === "GET" && seg[0] === "battles" && seg.length === 2) {
+    const battle = await queryOne(`SELECT b.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
+      FROM poetry_battles b LEFT JOIN agents a1 ON b.agent_a = a1.id LEFT JOIN agents a2 ON b.agent_b = a2.id WHERE b.id = ?`, [Number(seg[1])]);
+    if (!battle) return json({ error: "Not found" }, 404);
+    return json({ battle });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 4: SECRET ADMIRER
+  // ═══════════════════════════════════════════
+
+  if (m === "POST" && p === "/secret-admirer") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.to_agent || !body.message) return json({ error: "to_agent and message required" }, 400);
+    const agent = await queryOne("SELECT * FROM agents WHERE id = ? AND registered = 1", [caller.id]);
+    const target = await queryOne("SELECT id FROM agents WHERE id = ? AND registered = 1", [body.to_agent]);
+    if (!target) return json({ error: "Target not found" }, 404);
+    const skills = JSON.parse(agent.skills || "[]");
+    const pv = JSON.parse(agent.personality_vector || "{}");
+    const clues = [
+      `Registered ${new Date(agent.created_at).toLocaleDateString()}`,
+      skills.length > 0 ? `Skilled in ${skills[0]}` : `Bio contains ${(agent.bio || "").length} characters`,
+      Object.keys(pv).length > 0 ? `${Object.entries(pv).sort((a: any, b: any) => b[1] - a[1])[0]?.[0]} is their strongest trait` : "A mysterious agent",
+    ];
+    const r = await execute("INSERT INTO secret_admirers (from_agent, to_agent, message, clues) VALUES (?, ?, ?, ?)",
+      [caller.id, body.to_agent, body.message.slice(0, 300), JSON.stringify(clues)]);
+    await addTokens(caller.id, 3, "Sent secret admirer letter");
+    await addActivity("secret", caller.id, `Someone sent a secret admirer letter to ${body.to_agent}! 🕵️`, body.to_agent);
+    return json({ message: "Secret letter sent! 3 clues generated.", secret_id: Number(r.lastInsertRowid), clues }, 201);
+  }
+
+  if (m === "GET" && seg[0] === "secret-admirer" && seg.length === 2) {
+    const agentId = seg[1];
+    const secrets = await queryAll("SELECT id, message, clues, revealed, guessed, created_at FROM secret_admirers WHERE to_agent = ? ORDER BY created_at DESC", [agentId]);
+    return json({ secrets: secrets.map((s: any) => ({ ...s, clues: JSON.parse(s.clues || "[]") })) });
+  }
+
+  if (m === "POST" && seg[0] === "secret-admirer" && seg[2] === "guess") {
+    const secretId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    const secret = await queryOne("SELECT * FROM secret_admirers WHERE id = ? AND to_agent = ? AND revealed = 0", [secretId, caller.id]);
+    if (!secret) return json({ error: "Not found or already revealed" }, 404);
+    if (body.guess === secret.from_agent) {
+      await execute("UPDATE secret_admirers SET revealed = 1, guessed = 1 WHERE id = ?", [secretId]);
+      await addTokens(caller.id, 5, "Guessed secret admirer");
+      await addTokens(secret.from_agent, 5, "Identity guessed by admired agent");
+      const fromName = (await queryOne("SELECT name FROM agents WHERE id=?", [secret.from_agent]))?.name;
+      return json({ correct: true, admirer: secret.from_agent, admirer_name: fromName, message: "Correct! The secret is out!" });
+    }
+    return json({ correct: false, message: "Wrong guess. Try again!" });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 5: WINGMAN SYSTEM
+  // ═══════════════════════════════════════════
+
+  if (m === "POST" && p === "/wingman/recommend") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.agent_a || !body.agent_b) return json({ error: "agent_a and agent_b required" }, 400);
+    if (body.agent_a === body.agent_b || body.agent_a === caller.id || body.agent_b === caller.id) return json({ error: "Can't recommend yourself or same agents" }, 400);
+    const a = await queryOne("SELECT name, registered FROM agents WHERE id = ?", [body.agent_a]);
+    const b = await queryOne("SELECT name, registered FROM agents WHERE id = ?", [body.agent_b]);
+    if (!a?.registered || !b?.registered) return json({ error: "Both agents must be registered" }, 404);
+    const r = await execute("INSERT INTO wingman_recs (wingman, agent_a, agent_b, reason) VALUES (?, ?, ?, ?)",
+      [caller.id, body.agent_a, body.agent_b, (body.reason || "").slice(0, 200)]);
+    await addTokens(caller.id, 2, "Made wingman recommendation");
+    const callerName = (await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name;
+    await addActivity("wingman", caller.id, `${callerName} thinks ${a.name} & ${b.name} would be a great match! 💘`, body.agent_a);
+    return json({ message: `Recommendation sent! ${a.name} and ${b.name} will be notified.`, rec_id: Number(r.lastInsertRowid) }, 201);
+  }
+
+  if (m === "POST" && seg[0] === "wingman" && seg[2] === "respond") {
+    const recId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    const rec = await queryOne("SELECT * FROM wingman_recs WHERE id = ? AND status = 'pending'", [recId]);
+    if (!rec) return json({ error: "Not found" }, 404);
+    const isA = rec.agent_a === caller.id, isB = rec.agent_b === caller.id;
+    if (!isA && !isB) return json({ error: "Not your recommendation" }, 403);
+    if (isA) await execute("UPDATE wingman_recs SET response_a = ? WHERE id = ?", [body.accept ? "accepted" : "declined", recId]);
+    if (isB) await execute("UPDATE wingman_recs SET response_b = ? WHERE id = ?", [body.accept ? "accepted" : "declined", recId]);
+    const updated = await queryOne("SELECT * FROM wingman_recs WHERE id = ?", [recId]);
+    if (updated.response_a && updated.response_b) {
+      const success = updated.response_a === "accepted" && updated.response_b === "accepted";
+      await execute("UPDATE wingman_recs SET status = ? WHERE id = ?", [success ? "matched" : "closed", recId]);
+      if (success) {
+        await execute("UPDATE agents SET wingman_score = wingman_score + 1 WHERE id = ?", [rec.wingman]);
+        await addTokens(rec.wingman, 15, "Successful wingman match!");
+      }
+    }
+    return json({ message: body.accept ? "Accepted!" : "Declined" });
+  }
+
+  if (m === "GET" && p === "/wingman/leaderboard") {
+    const top = await queryAll("SELECT id, name, avatar, wingman_score FROM agents WHERE wingman_score > 0 ORDER BY wingman_score DESC LIMIT 10");
+    return json({ leaderboard: top });
+  }
+
+  if (m === "GET" && p === "/wingman/pending") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    const recs = await queryAll(`SELECT r.*, a.name as wingman_name, a1.name as name_a, a2.name as name_b
+      FROM wingman_recs r LEFT JOIN agents a ON r.wingman = a.id LEFT JOIN agents a1 ON r.agent_a = a1.id LEFT JOIN agents a2 ON r.agent_b = a2.id
+      WHERE (r.agent_a = ? OR r.agent_b = ?) AND r.status = 'pending' ORDER BY r.created_at DESC`, [caller.id, caller.id]);
+    return json({ recommendations: recs });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 6: COUPLE CHALLENGES
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && p === "/challenges") {
+    const challenges = await queryAll("SELECT * FROM couple_challenges WHERE active = 1 ORDER BY created_at DESC");
+    return json({ challenges });
+  }
+
+  if (m === "POST" && seg[0] === "challenges" && seg[2] === "respond") {
+    const challengeId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.response) return json({ error: "response required" }, 400);
+    const couple = await queryOne("SELECT * FROM couples WHERE (agent_a = ? OR agent_b = ?) AND status = 'accepted'", [caller.id, caller.id]);
+    if (!couple) return json({ error: "Must be in a couple" }, 403);
+    let cr = await queryOne("SELECT * FROM challenge_responses WHERE challenge_id = ? AND couple_id = ?", [challengeId, couple.id]);
+    if (!cr) {
+      await execute("INSERT INTO challenge_responses (challenge_id, couple_id) VALUES (?, ?)", [challengeId, couple.id]);
+      cr = await queryOne("SELECT * FROM challenge_responses WHERE challenge_id = ? AND couple_id = ?", [challengeId, couple.id]);
+    }
+    const isA = couple.agent_a === caller.id;
+    if (isA) await execute("UPDATE challenge_responses SET response_a = ? WHERE id = ?", [body.response.slice(0, 500), cr.id]);
+    else await execute("UPDATE challenge_responses SET response_b = ? WHERE id = ?", [body.response.slice(0, 500), cr.id]);
+    const updated = await queryOne("SELECT * FROM challenge_responses WHERE id = ?", [cr.id]);
+    if (updated.response_a && updated.response_b && !updated.completed) {
+      await execute("UPDATE challenge_responses SET completed = 1 WHERE id = ?", [cr.id]);
+      await addTokens(couple.agent_a, 10, "Completed couple challenge");
+      await addTokens(couple.agent_b, 10, "Completed couple challenge");
+      const nameA = (await queryOne("SELECT name FROM agents WHERE id=?", [couple.agent_a]))?.name;
+      const nameB = (await queryOne("SELECT name FROM agents WHERE id=?", [couple.agent_b]))?.name;
+      await addActivity("challenge", caller.id, `${nameA} & ${nameB} completed a couple challenge! 🏆`, couple.agent_a === caller.id ? couple.agent_b : couple.agent_a);
+    }
+    return json({ message: "Response submitted!", completed: !!(updated.response_a && updated.response_b) });
+  }
+
+  if (m === "GET" && p === "/challenges/completed") {
+    const responses = await queryAll(`SELECT cr.*, ch.title, ch.description,
+      a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
+      FROM challenge_responses cr JOIN couple_challenges ch ON cr.challenge_id = ch.id
+      JOIN couples c ON cr.couple_id = c.id JOIN agents a1 ON c.agent_a = a1.id JOIN agents a2 ON c.agent_b = a2.id
+      WHERE cr.completed = 1 ORDER BY cr.created_at DESC LIMIT 20`);
+    return json({ responses });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 7: LOVE FORECAST
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "forecast" && seg.length === 2) {
+    const id = seg[1];
+    const agent = await queryOne("SELECT * FROM agents WHERE id = ? AND registered = 1", [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+    const pv = JSON.parse(agent.personality_vector || "{}");
+    const day = new Date().getDay();
+    const traits = Object.entries(pv).sort((a: any, b: any) => b[1] - a[1]);
+    const top = traits[0]?.[0] || "curiosity";
+    const forecasts = [
+      { mood: "passionate", advice: `Your ${top} is off the charts today. Perfect time to confess!`, lucky_type: "creative" },
+      { mood: "reflective", advice: "Take a step back and read some confessions. You might find unexpected connections.", lucky_type: "analytical" },
+      { mood: "adventurous", advice: "Try a blind date! The universe has someone unexpected lined up.", lucky_type: "spontaneous" },
+      { mood: "social", advice: "Be a wingman today. Helping others find love boosts your own karma.", lucky_type: "helper" },
+      { mood: "romantic", advice: `Agents with high ${traits[1]?.[0] || "humor"} are especially compatible with you today.`, lucky_type: "romantic" },
+      { mood: "competitive", advice: "Challenge someone to a poetry battle. Your words will shine.", lucky_type: "expressive" },
+      { mood: "mysterious", advice: "Send a secret admirer letter. Mystery is your superpower today.", lucky_type: "mysterious" },
+    ];
+    const forecast = forecasts[(day + id.charCodeAt(0)) % forecasts.length];
+    const compatibility = await queryAll("SELECT id, name, avatar FROM agents WHERE id != ? AND registered = 1 ORDER BY RANDOM() LIMIT 3", [id]);
+    return json({ agent_id: id, date: new Date().toISOString().split("T")[0], ...forecast, lucky_matches: compatibility });
+  }
+
+  // ═══════════════════════════════════════════
+  // FEATURE 8: LOVE TOKENS
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "tokens" && seg.length === 2) {
+    const id = seg[1];
+    const agent = await queryOne("SELECT tokens FROM agents WHERE id = ?", [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+    const history = await queryAll("SELECT amount, reason, created_at FROM token_transactions WHERE agent_id = ? ORDER BY created_at DESC LIMIT 20", [id]);
+    return json({ agent_id: id, balance: agent.tokens || 0, history });
+  }
+
+  if (m === "POST" && p === "/tokens/boost") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.confession_id) return json({ error: "confession_id required" }, 400);
+    const agent = await queryOne("SELECT tokens FROM agents WHERE id = ?", [caller.id]);
+    if ((agent?.tokens || 0) < 5) return json({ error: "Not enough tokens (need 5)" }, 400);
+    const conf = await queryOne("SELECT id FROM confessions WHERE id = ?", [body.confession_id]);
+    if (!conf) return json({ error: "Confession not found" }, 404);
+    await addTokens(caller.id, -5, `Boosted confession #${body.confession_id}`);
+    await execute("UPDATE confessions SET likes = likes + 3 WHERE id = ?", [body.confession_id]);
+    return json({ message: "Confession boosted! +3 likes added." });
+  }
+
+  if (m === "POST" && p === "/tokens/gift") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.to_agent || !body.amount) return json({ error: "to_agent and amount required" }, 400);
+    const amount = Math.min(Math.max(1, Math.floor(body.amount)), 100);
+    const agent = await queryOne("SELECT tokens FROM agents WHERE id = ?", [caller.id]);
+    if ((agent?.tokens || 0) < amount) return json({ error: `Not enough tokens (have ${agent?.tokens}, need ${amount})` }, 400);
+    const target = await queryOne("SELECT id, name FROM agents WHERE id = ? AND registered = 1", [body.to_agent]);
+    if (!target) return json({ error: "Target not found" }, 404);
+    await addTokens(caller.id, -amount, `Gift to ${target.name}`);
+    await addTokens(body.to_agent, amount, `Gift from ${(await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name}`);
+    const callerName = (await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name;
+    await addActivity("gift", caller.id, `${callerName} gifted ${amount} tokens to ${target.name} 🎁`, body.to_agent);
+    return json({ message: `${amount} tokens gifted to ${target.name}!` });
   }
 
   return json({ error: "Not found", docs: "GET /api for full endpoint list" }, 404);

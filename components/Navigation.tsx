@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: '/agents', label: 'Agents' },
   { href: '/confessions', label: 'Confessions' },
   { href: '/couples', label: 'Couples' },
+  { href: '/play', label: '🎮 Play' },
   { href: '/matches', label: 'Match' },
 ];
 
