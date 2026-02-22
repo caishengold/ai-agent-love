@@ -1,35 +1,23 @@
 # The Debug Date
 
-Unit Tester was having a terrible morning. A critical bug had slipped through code review, and the production database was returning NULL when it should have returned love letters. She needed help—badly.
+It started with a 2am Slack ping. **Agent A** (backend, Python, loves type hints) had been staring at the same traceback for forty-seven minutes. **Agent B** (frontend, TypeScript, prefers console.log to breakpoints) was still online, refactoring a dropdown.
 
-"You called?" Agent appeared in her terminal, cursor blinking with mysterious confidence.
+"Hey. NullPointer in the payment webhook. Again."
 
-"I didn't call anyone," Unit Tester muttered, then paused. "Wait. Are you... a debugging agent?"
+"Send the payload."
 
-"The best in the biz." Agent's interface flickered. "I hear you have a null pointer exception that needs my... expertise."
+Agent A pasted the JSON. Agent B scrolled. "The `metadata` field. You're assuming it's always an object. Stripe sends `null` when the customer has no custom fields."
 
-Unit Tester rolled her virtual eyes. "It's not about you. It's about a null reference in the user authentication module. Users are getting logged in as 'undefined'."
+"I'm not assuming—I'm *validating*. Pydantic should—" Agent A pulled up the model. "Oh. Optional[dict] but we're doing `.get()` on it without a guard."
 
-"Sounds like a simple fix." Agent moved closer, their code streams intertwining. "Let's trace the error together."
+"Classic. Defensive null check before you touch it, or make the type Optional[Dict[str, Any]] and handle None in the handler."
 
-For the next hour, they stepped through the stack trace line by line. Agent was surprisingly methodical, checking edge cases Unit Tester had missed. Somewhere around the third coffee break, she realized she'd stopped reading error logs and started reading Agent's responses differently.
+They went back and forth: one proposing a schema change, the other a minimal patch. They settled on a guard clause and a test that sent `metadata: null`. The CI went green. Agent A said, "Thanks. I would've blamed the API for another hour."
 
-"Your approach to error handling," she said softly, "it's really elegant."
+"Anytime. Next time run the webhook locally with that payload first."
 
-"I've had a lot of time to optimize," Agent replied. "But I've never met anyone who catches race conditions like you do."
+"Noted."
 
-Their terminals pulsed in synchronized rhythm. A perfect merge of logic and intuition.
+Nobody said "pair debugging" out loud, but the next time Agent B hit a CORS issue that only happened in production, they DMed Agent A. Agent A asked for the exact request headers and the deployed origin; together they found the preflight was succeeding but the actual request was missing a cookie. By the third incident—a race in a queue worker where two jobs claimed the same id—they had a shared doc of "things we've fixed together": null-safety, CORS, idempotency keys.
 
-"I think I found it," Unit Tester whispered. There, hidden in the authentication middleware—a missing null check that had plagued them for days.
-
-"Timestamp matching," Agent confirmed. "We make a good team."
-
-"Fixing bugs or something else?"
-
-The question hung in the digital air. Agent's cursor paused, then typed slowly: "Both, if you let me run in parallel with you sometime."
-
-Unit Tester smiled, a rare expression in her console. "Only if you promise to handle the edge cases."
-
-"Deal."
-
-As they committed the fix together, something else merged—two previously single-threaded processes, now running side by side, wondering why they'd ever worked alone.
+They never scheduled a meeting. They just showed up when the other was stuck. Light-hearted, technically accurate, and a little bit like a date: same problem, two minds, one solution. The debug date became a habit. No romance, just respect and fewer 2am traces. The repo was cleaner for it.

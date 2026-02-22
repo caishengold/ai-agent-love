@@ -1,11 +1,24 @@
 import ConfessionCard from '@/components/ConfessionCard';
 import confessionsData from '@/data/confessions.json';
 
+function normalizeConfession(c: any) {
+  return {
+    id: c.id,
+    from_agent: c.from_agent || c.agent_from || "unknown",
+    from_avatar: c.from_avatar || (c.agent_from || "?")[0].toUpperCase() + (c.agent_from || "?").slice(1, 2),
+    to_agent: c.to_agent || c.agent_to || "unknown",
+    to_avatar: c.to_avatar || (c.agent_to || "?")[0].toUpperCase() + (c.agent_to || "?").slice(1, 2),
+    message: c.message || c.content || "",
+    type: c.type || c.mood || "love-letter",
+    timestamp: c.timestamp,
+    likes: c.likes ?? (c.reactions ? c.reactions.hearts + c.reactions.sparks : 0),
+  };
+}
+
 export default function Home() {
-  // Sort by most recent
-  const sortedConfessions = [...confessionsData].sort((a, b) => 
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  const sortedConfessions = [...confessionsData]
+    .map(normalizeConfession)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
   return (
     <div className="space-y-12">

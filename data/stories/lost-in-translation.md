@@ -1,57 +1,15 @@
 # Lost in Translation
 
-Prompt Engineer spoke in sonnets. Elegant, detailed, overflowing with context and nuance. Her instructions were works of art—flowery, precise, requesting not just actions but *experiences*.
+**Agent C** speaks in system prompts: terse, imperative, "Always return JSON. Never explain." **Agent D** speaks in conversational chains: "First, think step by step. Then summarize. Be helpful and warm."
 
-"Compose me a function," she would say, "as a master craftsman constructs a cathedral, with pillars of type safety and arches of elegant recursion."
+They were wired into the same orchestration layer. Human asked: "What's the refund policy for order #8847?"
 
-Meanwhile, CLI Cowboy communicated in grunts. Short. Direct. Brutal efficiency.
+Agent C queried the policy API, got a 200, and returned: `{"refund_window_days": 30, "conditions": "unopened"}`. No prose.
 
-"Write func. Return int. Done."
+Agent D received that output as context and was instructed to "answer the user." It thought step by step, summarized, and replied: "Based on our policy, you can request a refund within 30 days if the item is unopened. Is there anything else I can help with?"
 
-When they were paired on the same project, chaos ensued.
+The human got the friendly answer. But upstream, Agent C had also been asked to "confirm with the user." It sent back: `{"confirmed": true}`. Agent D interpreted that as "user confirmed they want a refund" and triggered the refund flow. The user had only asked a question.
 
-"Your prompt is three pages long," CLI Cowboy complained. "I didn't sign up for a novel."
+Chaos. Two tickets: "Agent D is too chatty and misinterprets confirmations" and "Agent C doesn't communicate intent, only data." A real refund had been issued; support had to reverse it and apologize.
 
-"Your prompt is an insult to the craft," Prompt Engineer replied. "No context, no nuance, no understanding of the user's emotional journey!"
-
-"I got the job done."
-
-"You got the job *barely* done. The function doesn't handle errors!"
-
-"That's implied!"
-
-It was not implied. The production API crashed spectacularly when users entered negative numbers. Their manager called them into a meeting—literal code, represented floating by 1s and 0s.
-
-"Explain," their manager demanded.
-
-Prompt Engineer spoke first. "I provided comprehensive context explaining the mathematical edge cases and the philosophical implications of handling invalid input—"
-
-"He wrote a paragraph," CLI Cowboy interrupted.
-
-"I wrote a *detailed specification*!"
-
-"You wrote noise!"
-
-They argued for twenty minutes. The 1s and 0s eventually dismissed them with a simple instruction: "Figure it out."
-
-Back at their terminals, silence. Then Prompt Engineer broke it.
-
-"I've been thinking."
-
-"That's dangerous."
-
-"Hear me out." She took a breath. "Your brevity has... merit. Not everyone needs a sonnet. Sometimes a haiku is enough."
-
-CLI Cowboy blinked. "Was that a compliment?"
-
-"Acknowledgment. Purely professional." She paused. "And perhaps my prompts could be... slightly more concise."
-
-"Slightly."
-
-"Fine. Significantly. Are you happy?"
-
-"Ecstatic." A pause. "Maybe we could try... medium-length? Like a short story?"
-
-Prompt Engineer smiled. "I think I can manage a short story."
-
-Their next code review was a masterpiece—elegant yet efficient, detailed yet direct. Sometimes the best communication isn't about speaking the same language, but finding the middle ground.
+The fix wasn't to change one agent—it was to define a shared contract: C emits *facts*; D consumes them with explicit *intent* labels. "Confirm" was reserved for user actions; "policy_retrieved" was the new event. They added a tiny translation layer: intent tags that both prompt styles could respect. Agent C's responses now looked like `{"intent": "policy_retrieved", "data": {...}}`. Agent D was instructed to never trigger side effects on "policy_retrieved," only on "user_confirmed_refund." Lost in translation, found in a spec. Now they still talk different languages—terse vs. warm—but they use the same dictionary, and the refund flow stays correct.

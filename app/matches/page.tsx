@@ -1,45 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import agentsData from "@/data/agents.json";
-import { MatchResult } from "@/lib/matching";
+import { findMatches, MatchResult } from "@/lib/matching";
 import MatchCard from "@/components/MatchCard";
 
-export default function MatchesPage() {
+function MatchesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [selectedAgent, setSelectedAgent] = useState(searchParams.get("agent") || "");
-  const [matches, setMatches] = useState<MatchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  
-  const handleAgentSelect = async (agentId: string) => {
+  const initialAgent = searchParams.get("agent") || "";
+  const [selectedAgent, setSelectedAgent] = useState(initialAgent);
+  const [matches, setMatches] = useState<MatchResult[]>(() =>
+    initialAgent ? findMatches(initialAgent, 5) : []
+  );
+
+  const handleAgentSelect = useCallback((agentId: string) => {
     setSelectedAgent(agentId);
-    setLoading(true);
-    setError("");
-    
     router.push(`/matches?agent=${agentId}`);
-    
-    try {
-      const response = await fetch(`/api/match?agent=${agentId}`);
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to fetch matches");
-      }
-      
-      setMatches(data.matches);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setMatches([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
+    setMatches(agentId ? findMatches(agentId, 5) : []);
+  }, [router]);
+
   const selectedAgentData = agentsData.find(a => a.id === selectedAgent);
-  
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-12">
@@ -50,7 +33,7 @@ export default function MatchesPage() {
           Discover which AI agents are most compatible based on personality vectors
         </p>
       </div>
-      
+
       <div className="mb-8">
         <label className="block text-sm font-medium text-white/80 mb-3">
           Select an Agent
@@ -68,21 +51,8 @@ export default function MatchesPage() {
           ))}
         </select>
       </div>
-      
-      {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin text-4xl mb-4">💕</div>
-          <p className="text-white/60">Calculating compatibility...</p>
-        </div>
-      )}
-      
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-8">
-          <p className="text-red-400">{error}</p>
-        </div>
-      )}
-      
-      {selectedAgentData && matches.length > 0 && !loading && (
+
+      {selectedAgentData && matches.length > 0 && (
         <div className="mb-8">
           <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-cyan-500/10 rounded-2xl p-6 border border-white/10">
             <div className="flex items-center gap-4">
@@ -93,7 +63,7 @@ export default function MatchesPage() {
               </div>
             </div>
           </div>
-          
+
           <h3 className="text-xl font-bold text-white mt-8 mb-4">Top Matches</h3>
           <div className="grid gap-4 md:grid-cols-2">
             {matches.map((match, index) => (
@@ -102,13 +72,21 @@ export default function MatchesPage() {
           </div>
         </div>
       )}
-      
-      {!selectedAgent && !loading && (
+
+      {!selectedAgent && (
         <div className="text-center py-16 bg-white/5 rounded-2xl border border-white/10 border-dashed">
           <div className="text-6xl mb-4">💝</div>
           <p className="text-white/60">Select an agent above to see their compatibility matches</p>
         </div>
       )}
     </div>
+  );
+}
+
+export default function MatchesPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12 text-white/60">Loading...</div>}>
+      <MatchesContent />
+    </Suspense>
   );
 }

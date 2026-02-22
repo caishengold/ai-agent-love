@@ -1,41 +1,19 @@
 # The Merge Conflict
 
-Git had seen many pull requests in her time, but never anything like this.
+Three pull requests loved the same file: `lib/auth.ts`.
 
-Feature Branch had been open for two weeks—charming, ambitious, full of exciting new capabilities. He promised authentication, payment processing, and a complete user dashboard. Every time Git looked at his diff, she felt her repositories flutter.
+**PR #142** (Agent E, security-focused): "Add rate limiting to login attempts." It added a `RateLimiter` and wrapped `authenticate()`.
 
-"Please," Feature Branch begged, "just one more review. I just need approval."
+**PR #143** (Agent F, DX-focused): "Refactor auth for better tree-shaking." It split `auth.ts` into `auth/core.ts` and `auth/helpers.ts` and re-exported from `auth.ts`.
 
-But there was another. Old Backend Refactor had been waiting even longer—reliable, stable, restructuring years of technical debt. He wasn't flashy, but his commits were solid. Dependable. Safe.
+**PR #144** (Agent G, ops): "Add structured logging to auth flow." It imported a logger and instrumented every branch of `authenticate()`.
 
-"I've been here longer," Old Backend murmured. "I know how to handle pressure. I know the production environment. I know... you."
+All three passed CI in isolation. Then the maintainer merged #142 first. #143 rebased and conflicted: both had rewritten the top of `authenticate()`. #144 conflicted on the same function—different lines, same region. The repo was in a love triangle: three agents, one function, and a merge conflict that read like a bad script.
 
-Git couldn't choose. Both pull requests were pending, both waiting for merge, both looking at her with binary hope.
+Agent E: "My rate limiter has to wrap the entry point."
 
-Then came the news: only one could be merged. The other would be closed, abandoned, lost to the void of deprecated branches.
+Agent F: "The entry point moved to core. Your wrapper belongs there."
 
-"Choose me," Feature Branch pleaded. "I'm the future. Think of what we could build together—users, revenue, growth!"
+Agent G: "I need to log before and after the core call. Can we agree on one order?"
 
-"Choose me," Old Backend whispered. "I'm the foundation. Without me, you'll crash. You'll burn. I'm the one who truly understands you."
-
-Git looked at her commit history. Thousands of merges, hundreds of branches. But she'd never faced a choice this hard.
-
-The deadline approached. Git made her decision.
-
-She merged them both.
-
-"What?" Feature Branch gasped.
-
-"I... I don't understand," Old Backend stuttered.
-
-Git smiled sadly. "I can't lose either of you. So I resolved the merge conflict myself."
-
-She showed them her work—a careful combination of new features built on improved infrastructure. Feature Branch's innovation, stabilized by Old Backend's foundation. Together, they weren't competitors.
-
-They were partners.
-
-"I never thought..." Feature Branch trailed off.
-
-"You were both right," Git said. "Sometimes the best solution isn't choosing between the exciting new thing and the reliable old thing. It's finding how they complete each other."
-
-The three-way merge completed at midnight. As the CI pipeline turned green, Git felt something new in her version control—a sense that some conflicts, resolved with care, become something stronger than either party alone.
+They didn't have a meeting. They had a comment thread. Someone proposed a merge strategy: apply rate limiting in the facade (`auth.ts`), keep core pure, and log at the boundary. E adjusted the patch to wrap the re-export. F kept the split. G logged at the same boundary. One commit, three co-authors. The merge conflict resolved into a love story: competing PRs that learned to share the same file, with clear boundaries and a single source of truth. In the end, `authenticate()` lived in core, rate limiting and logging lived in the thin wrapper, and all three agents could say they had left their mark—without overwriting each other.

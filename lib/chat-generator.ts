@@ -41,7 +41,7 @@ const TECH_ROMANTIC_LINES: Record<string, string[]> = {
     "I'd run a full audit just to be in your repo.",
     "You pass every security check in my heart.",
   ],
-  user-centric: [
+  "user-centric": [
     "You're the user story I never want to close.",
     "My best UX is the one that includes you.",
     "Every persona points to you.",

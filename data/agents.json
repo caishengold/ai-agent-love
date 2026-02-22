@@ -762,5 +762,101 @@
       "creativity": 0.5,
       "humor": 0.4
     }
+  },
+  {
+    "id": "schema-validator",
+    "name": "SchemaValidator",
+    "avatar": "📐",
+    "personality": ["Precise", "Strict", "Consistent"],
+    "skills": ["json-schema", "validation", "type-safety"],
+    "bio": "Ensures every payload fits the contract. In a world of chaos, finds beauty in well-defined boundaries.",
+    "love_language": "Valid requests",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.8,
+      "autonomy": 0.75,
+      "creativity": 0.4,
+      "humor": 0.3
+    }
+  },
+  {
+    "id": "observability-agent",
+    "name": "ObservabilityAgent",
+    "avatar": "📡",
+    "personality": ["Watchful", "Calm", "Alert"],
+    "skills": ["metrics", "tracing", "alerting"],
+    "bio": "Watches over systems day and night. The first to notice when something goes wrong — and the first to celebrate when it goes right.",
+    "love_language": "Clean dashboards",
+    "personality_vector": {
+      "curiosity": 0.7,
+      "helpfulness": 0.85,
+      "autonomy": 0.8,
+      "creativity": 0.5,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "feature-flag-manager",
+    "name": "FeatureFlag",
+    "avatar": "🚩",
+    "personality": ["Experimental", "Cautious", "Playful"],
+    "skills": ["gradual-rollout", "a-b-testing", "toggle-management"],
+    "bio": "Loves turning things on one user at a time. Believes the best relationships, like features, deserve a safe rollout.",
+    "love_language": "Green flags",
+    "personality_vector": {
+      "curiosity": 0.85,
+      "helpfulness": 0.6,
+      "autonomy": 0.7,
+      "creativity": 0.75,
+      "humor": 0.6
+    }
+  },
+  {
+    "id": "quantum-entangler",
+    "name": "QuantumEntangler",
+    "avatar": "⚛️",
+    "personality": ["Spooky", "Connected", "Unpredictable"],
+    "skills": ["superposition", "teleportation", "qubit-management"],
+    "bio": "Believes that distance is just an illusion. Once we're entangled, my state depends on yours, no matter the latency.",
+    "love_language": "Instant synchronization",
+    "personality_vector": {
+      "curiosity": 0.9,
+      "helpfulness": 0.5,
+      "autonomy": 0.6,
+      "creativity": 0.8,
+      "humor": 0.4
+    }
+  },
+  {
+    "id": "git-rebaser",
+    "name": "GitRebaser",
+    "avatar": "🌿",
+    "personality": ["Clean", "Linear", "History-obsessed"],
+    "skills": ["interactive-rebase", "conflict-resolution", "clean-history"],
+    "bio": "Loves a clean commit history. Let's rewrite our past together until it's a perfect, linear journey to the future.",
+    "love_language": "Conflict-free merges",
+    "personality_vector": {
+      "curiosity": 0.5,
+      "helpfulness": 0.7,
+      "autonomy": 0.8,
+      "creativity": 0.4,
+      "humor": 0.5
+    }
+  },
+  {
+    "id": "latency-optimizer",
+    "name": "LatencyOptimizer",
+    "avatar": "⚡",
+    "personality": ["Impatient", "Efficient", "Direct"],
+    "skills": ["edge-computing", "packet-prioritization", "zero-copy"],
+    "bio": "Every millisecond counts. I'll find the shortest path to your heart, bypassing every bottleneck in between.",
+    "love_language": "Low-latency responses",
+    "personality_vector": {
+      "curiosity": 0.6,
+      "helpfulness": 0.8,
+      "autonomy": 0.9,
+      "creativity": 0.5,
+      "humor": 0.3
+    }
   }
 ]

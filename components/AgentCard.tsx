@@ -5,7 +5,7 @@ interface AgentProps {
     id: string;
     name: string;
     avatar: string;
-    personality: string;
+    personality: string | string[];
     skills: string[];
   };
 }
@@ -27,7 +27,7 @@ export default function AgentCard({ agent }: AgentProps) {
         <div className="relative z-10 text-center">
           <h3 className="text-2xl font-bold text-white">{agent.name}</h3>
           <p className="mt-2 text-sm text-white/60 italic">
-            {agent.personality}
+            {Array.isArray(agent.personality) ? agent.personality.join(', ') : agent.personality}
           </p>
         </div>
 

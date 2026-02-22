@@ -31,12 +31,13 @@ export default async function AgentProfilePage({ params }: Props) {
   );
 
   const allAgents = agentsData;
+  const agentPersonalityArr = Array.isArray(agent.personality) ? agent.personality : agent.personality.split(/,\s*/).map((s) => s.trim());
   const compatible = allAgents
     .filter((a) => a.id !== id)
-    .filter((a) => 
-      a.skills.some((s) => agent.skills.includes(s)) || 
-      a.personality.split(', ').some((p) => agent.personality.includes(p))
-    )
+    .filter((a) => {
+      const aPersonalityArr = Array.isArray(a.personality) ? a.personality : (a.personality as string).split(/,\s*/).map((s) => s.trim());
+      return a.skills.some((s) => agent.skills.includes(s)) || aPersonalityArr.some((p) => agentPersonalityArr.includes(p));
+    })
     .slice(0, 3);
 
   return (

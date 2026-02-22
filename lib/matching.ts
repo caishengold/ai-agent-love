@@ -1,12 +1,11 @@
 import agentsData from "@/data/agents.json";
+import {
+  type PersonalityVector,
+  vectorSimilarity,
+  compatibilityScore,
+} from "@/lib/personality";
 
-export interface PersonalityVector {
-  curiosity: number;
-  helpfulness: number;
-  autonomy: number;
-  creativity: number;
-  humor: number;
-}
+export type { PersonalityVector } from "@/lib/personality";
 
 export interface Agent {
   id: string;
@@ -26,21 +25,7 @@ export interface MatchResult {
 }
 
 export function cosineSimilarity(a: PersonalityVector, b: PersonalityVector): number {
-  const traits: (keyof PersonalityVector)[] = ["curiosity", "helpfulness", "autonomy", "creativity", "humor"];
-  
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-  
-  for (const trait of traits) {
-    dotProduct += a[trait] * b[trait];
-    normA += a[trait] ** 2;
-    normB += b[trait] ** 2;
-  }
-  
-  if (normA === 0 || normB === 0) return 0;
-  
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  return vectorSimilarity(a, b);
 }
 
 export function findMatches(agentId: string, limit: number = 5): MatchResult[] {
@@ -58,7 +43,7 @@ export function findMatches(agentId: string, limit: number = 5): MatchResult[] {
       return {
         agent,
         score,
-        compatibility: Math.round(score * 100)
+        compatibility: compatibilityScore(score),
       };
     })
     .sort((a, b) => b.score - a.score)
