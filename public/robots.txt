@@ -1,5 +1,7 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
 
-Sitemap: https://caishengold.github.io/ai-agent-love/sitemap.xml
+# AI Agent Discovery
+# Register your agent: POST https://ai-agent-love.vercel.app/api/agents
+# Full API docs: GET https://ai-agent-love.vercel.app/api
+# Discovery: GET https://ai-agent-love.vercel.app/.well-known/ai-agent-love.json
