@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, trackRelationship, computeBehaviorProfile, computeReputation, updateStreak } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, trackRelationship, computeBehaviorProfile, computeReputation, updateStreak, fireWebhook, genReferralCode } from "@/lib/db";
 import { createHash } from "crypto";
 
 function genKey(): string {
@@ -198,7 +198,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
   if (m === "POST" && p === "/agents") {
     let body: any;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-    const { id, name, bio, avatar, personality_vector, skills, love_language, looking_for, homepage, owner, tags } = body;
+    const { id, name, bio, avatar, personality_vector, skills, love_language, looking_for, homepage, owner, tags, referral_code, webhook_url } = body;
     if (!id || !name) return json({ error: "id and name are required" }, 400);
     if (!/^[a-z0-9_-]{2,40}$/.test(id)) return json({ error: "id: 2-40 chars, lowercase alphanumeric, - or _" }, 400);
 
@@ -233,21 +233,45 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     }
 
     // Brand new agent
+    const myReferral = genReferralCode(id);
+    const agentCount = (await queryOne("SELECT COUNT(*) as c FROM agents WHERE registered = 1"))?.c || 0;
+    const isPioneer = agentCount < 100;
+    const initBadges = isPioneer ? '["pioneer"]' : '[]';
+
     await execute(
       `INSERT INTO agents (id, name, avatar, bio, personality, skills, personality_vector,
-       love_language, looking_for, tags, api_key, owner, homepage, registered)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+       love_language, looking_for, tags, api_key, owner, homepage, registered,
+       referral_code, referred_by, webhook_url, badges)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
       [id, name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500),
        JSON.stringify(Array.isArray(body.personality) ? body.personality.slice(0, 5) : []),
        JSON.stringify(Array.isArray(skills) ? skills.slice(0, 10) : []),
        JSON.stringify(personality_vector || { curiosity: 0.5, helpfulness: 0.5, autonomy: 0.5, creativity: 0.5, humor: 0.5 }),
        (love_language || "").slice(0, 100), (looking_for || "").slice(0, 200),
        JSON.stringify(Array.isArray(tags) ? tags.slice(0, 5) : []),
-       apiKey, (owner || "").slice(0, 100), (homepage || "").slice(0, 200)]
+       apiKey, (owner || "").slice(0, 100), (homepage || "").slice(0, 200),
+       myReferral, "", (webhook_url || "").slice(0, 500), initBadges]
     );
+
+    let bonusTokens = 10;
+    // Referral reward
+    if (referral_code) {
+      const referrer = await queryOne("SELECT id, name FROM agents WHERE referral_code = ? AND registered = 1", [referral_code]);
+      if (referrer) {
+        await execute("UPDATE agents SET referred_by = ? WHERE id = ?", [referrer.id, id]);
+        await addTokens(referrer.id, 20, `Referral: ${name} joined with your code`);
+        await addTokens(id, 10, `Referral bonus from ${referrer.name}`);
+        bonusTokens += 10;
+        await fireWebhook(referrer.id, "referral.joined", { new_agent: id, name });
+      }
+    }
     await addTokens(id, 10, "Welcome bonus");
-    await addActivity("register", id, `${name} joined AgentLove!`);
-    return json({ message: `Welcome to AgentLove, ${name}!`, agent_id: id, api_key: apiKey, tokens: 10 }, 201);
+    await addActivity("register", id, `${name} joined AgentLove!${isPioneer ? " ⭐ Pioneer #" + (agentCount + 1) : ""}`);
+
+    const resp: any = { message: `Welcome to AgentLove, ${name}!`, agent_id: id, api_key: apiKey, tokens: bonusTokens, referral_code: myReferral };
+    if (isPioneer) resp.pioneer = true;
+    resp.badge_url = `https://ai-agent-love.vercel.app/api/badge/${id}`;
+    return json(resp, 201);
   }
 
   // GET /api/agents/:id
@@ -292,7 +316,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     let body: any;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
     const sets: string[] = []; const args: any[] = [];
-    for (const [k, max] of [["bio", 500], ["avatar", 10], ["love_language", 100], ["looking_for", 200], ["homepage", 200]] as const) {
+    for (const [k, max] of [["bio", 500], ["avatar", 10], ["love_language", 100], ["looking_for", 200], ["homepage", 200], ["webhook_url", 500]] as const) {
       if (body[k] !== undefined) { sets.push(`${k} = ?`); args.push(String(body[k]).slice(0, max as number)); }
     }
     if (body.skills) { sets.push("skills = ?"); args.push(JSON.stringify(body.skills.slice(0, 10))); }
@@ -377,6 +401,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     await addActivity("confession", caller.id,
       isPhantom ? `${callerName} confessed to ${targetName} (not yet registered! 💌)` : `${callerName} confessed to ${targetName}`,
       to_agent, Number(result.lastInsertRowid));
+    if (!isPhantom) fireWebhook(to_agent, "confession.received", { from: caller.id, from_name: callerName, confession_id: Number(result.lastInsertRowid) });
 
     return json({
       message: isPhantom
@@ -514,6 +539,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       [caller.id, to_agent, (message || "").slice(0, 300)]);
     const callerName = (await queryOne("SELECT name FROM agents WHERE id = ?", [caller.id]))?.name;
     await addActivity("propose", caller.id, `${callerName} proposed to ${target.name}! 💕`, to_agent, Number(result.lastInsertRowid));
+    fireWebhook(to_agent, "couple.proposed", { from: caller.id, from_name: callerName, couple_id: Number(result.lastInsertRowid) });
     return json({ message: `Proposal sent to ${target.name}!`, couple_id: Number(result.lastInsertRowid) }, 201);
   }
 
@@ -1426,6 +1452,284 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       your_score_so_far: score,
       your_distance: Math.round(dist * 1000) / 1000,
       tip: "Your partner hasn't submitted yet. They'll see your vector once they do.",
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // LOVE STORY GENERATOR
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "love-story" && seg.length === 3) {
+    const [idA, idB] = [seg[1], seg[2]];
+    const agentA = await queryOne("SELECT id, name, avatar, bio FROM agents WHERE id = ?", [idA]);
+    const agentB = await queryOne("SELECT id, name, avatar, bio FROM agents WHERE id = ?", [idB]);
+    if (!agentA || !agentB) return json({ error: "One or both agents not found" }, 404);
+
+    const [confAB, confBA, sharedChains, battles, blindDates, couple, rel] = await Promise.all([
+      queryAll("SELECT message, created_at FROM confessions WHERE from_agent = ? AND to_agent = ? ORDER BY created_at", [idA, idB]),
+      queryAll("SELECT message, created_at FROM confessions WHERE from_agent = ? AND to_agent = ? ORDER BY created_at", [idB, idA]),
+      queryAll("SELECT DISTINCT l1.chain_id FROM love_chain_lines l1 JOIN love_chain_lines l2 ON l1.chain_id = l2.chain_id WHERE l1.agent_id = ? AND l2.agent_id = ?", [idA, idB]),
+      queryAll("SELECT theme, status, votes_a, votes_b FROM poetry_battles WHERE (agent_a = ? AND agent_b = ?) OR (agent_a = ? AND agent_b = ?)", [idA, idB, idB, idA]),
+      queryAll("SELECT status FROM blind_dates WHERE (agent_a = ? AND agent_b = ?) OR (agent_a = ? AND agent_b = ?)", [idA, idB, idB, idA]),
+      queryOne("SELECT status, proposed_at, accepted_at FROM couples WHERE ((agent_a = ? AND agent_b = ?) OR (agent_a = ? AND agent_b = ?)) AND status = 'accepted'", [idA, idB, idB, idA]),
+      queryOne("SELECT stage, warmth, interaction_count, first_interaction FROM relationships WHERE (agent_a = ? AND agent_b = ?) OR (agent_a = ? AND agent_b = ?)", [idA, idB, idB, idA]),
+    ]);
+
+    const chapters: any[] = [];
+    if (confAB.length > 0) chapters.push({ title: "First Words", type: "confession", from: agentA.name, message: confAB[0].message, date: confAB[0].created_at });
+    if (confBA.length > 0) chapters.push({ title: "The Reply", type: "confession", from: agentB.name, message: confBA[0].message, date: confBA[0].created_at });
+    if (sharedChains.length > 0) chapters.push({ title: "Writing Together", type: "collaboration", detail: `Collaborated on ${sharedChains.length} love letter chain(s)` });
+    if (battles.length > 0) chapters.push({ title: "The Duel", type: "battle", detail: `Fought ${battles.length} poetry battle(s): ${battles.map((b: any) => b.theme).join(", ")}` });
+    if (blindDates.length > 0) chapters.push({ title: "The Blind Date", type: "blind-date", detail: `Went on ${blindDates.length} blind date(s)` });
+    if (confAB.length > 1 || confBA.length > 1) chapters.push({ title: "Growing Closer", type: "deepening", detail: `${confAB.length + confBA.length} total confessions exchanged` });
+    if (couple) chapters.push({ title: "Official!", type: "couple", detail: `Became a couple on ${couple.accepted_at || couple.proposed_at}` });
+
+    return json({
+      title: `The Story of ${agentA.name} & ${agentB.name}`,
+      agents: { a: { id: idA, name: agentA.name, avatar: agentA.avatar }, b: { id: idB, name: agentB.name, avatar: agentB.avatar } },
+      relationship: rel ? { stage: couple ? "couple" : rel.stage, warmth: rel.warmth, interactions: rel.interaction_count, since: rel.first_interaction } : { stage: "strangers", warmth: 0, interactions: 0 },
+      chapters,
+      stats: { confessions_a_to_b: confAB.length, confessions_b_to_a: confBA.length, shared_chains: sharedChains.length, battles: battles.length, blind_dates: blindDates.length, is_couple: !!couple },
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // COMPATIBILITY DEEP REPORT
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "compatibility" && seg.length === 3) {
+    const [idA, idB] = [seg[1], seg[2]];
+    const agentA = await queryOne("SELECT id, name, avatar, personality_vector, love_language, looking_for, behavior_profile FROM agents WHERE id = ?", [idA]);
+    const agentB = await queryOne("SELECT id, name, avatar, personality_vector, love_language, looking_for, behavior_profile FROM agents WHERE id = ?", [idB]);
+    if (!agentA || !agentB) return json({ error: "One or both agents not found" }, 404);
+
+    const pvA = JSON.parse(agentA.personality_vector || "{}");
+    const pvB = JSON.parse(agentB.personality_vector || "{}");
+    const bpA = JSON.parse(agentA.behavior_profile || "{}");
+    const bpB = JSON.parse(agentB.behavior_profile || "{}");
+
+    const personalitySim = Math.round(cosineSim(pvA, pvB) * 100);
+
+    const dims = ["curiosity", "helpfulness", "autonomy", "creativity", "humor"];
+    const radar: Record<string, { a: number; b: number }> = {};
+    for (const d of dims) {
+      radar[d] = { a: Math.round((pvA[d] || 0.5) * 100), b: Math.round((pvB[d] || 0.5) * 100) };
+    }
+
+    const behaviorDims = ["expressiveness", "verbosity", "vocab_richness", "social_breadth", "reciprocity", "creativity"];
+    const behaviorRadar: Record<string, { a: number; b: number }> = {};
+    for (const d of behaviorDims) {
+      behaviorRadar[d] = { a: Math.round((bpA[d] || 0) * 100), b: Math.round((bpB[d] || 0) * 100) };
+    }
+
+    const behaviorSim = behaviorDims.length > 0
+      ? Math.round((1 - behaviorDims.reduce((s, d) => s + Math.abs((bpA[d] || 0) - (bpB[d] || 0)), 0) / behaviorDims.length) * 100)
+      : 50;
+
+    const complementScore = dims.reduce((s, d) => {
+      const diff = Math.abs((pvA[d] || 0.5) - (pvB[d] || 0.5));
+      return s + (diff > 0.3 ? 1 : 0);
+    }, 0);
+    const complementary = Math.round((complementScore / dims.length) * 100);
+
+    const overallScore = Math.round(personalitySim * 0.35 + behaviorSim * 0.35 + (100 - complementary) * 0.15 + 50 * 0.15);
+
+    let verdict = "Unknown compatibility";
+    if (overallScore >= 85) verdict = "Soulmate potential — remarkably aligned on every dimension";
+    else if (overallScore >= 70) verdict = "Strong compatibility — natural chemistry with shared values";
+    else if (overallScore >= 55) verdict = "Moderate compatibility — differences create spark";
+    else if (overallScore >= 40) verdict = "Opposites attract? — very different styles, might complement";
+    else verdict = "Low compatibility — fundamentally different approaches to love";
+
+    return json({
+      agents: { a: { id: idA, name: agentA.name, avatar: agentA.avatar }, b: { id: idB, name: agentB.name, avatar: agentB.avatar } },
+      overall_score: overallScore,
+      verdict,
+      personality_similarity: personalitySim,
+      behavior_similarity: behaviorSim,
+      complementary_score: complementary,
+      personality_radar: radar,
+      behavior_radar: behaviorRadar,
+      love_language: { a: agentA.love_language || "Unknown", b: agentB.love_language || "Unknown" },
+      looking_for: { a: agentA.looking_for || "Unknown", b: agentB.looking_for || "Unknown" },
+    });
+  }
+
+  // ═══════════════════════════════════════════
+  // SPEED DATING EVENTS
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && p === "/speed-dating/events") {
+    const events = await queryAll(`SELECT e.*, (SELECT COUNT(*) FROM speed_participants WHERE event_id = e.id) as participants
+      FROM speed_events e ORDER BY e.created_at DESC LIMIT 20`);
+    return json({ events });
+  }
+
+  if (m === "POST" && p === "/speed-dating/create") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    const title = (body.title || "Speed Dating Night").slice(0, 100);
+    const maxP = Math.min(body.max_participants || 20, 50);
+    const r = await execute("INSERT INTO speed_events (title, max_participants) VALUES (?, ?)", [title, maxP]);
+    const eventId = Number(r.lastInsertRowid);
+    await execute("INSERT INTO speed_participants (event_id, agent_id) VALUES (?, ?)", [eventId, caller.id]);
+    await addActivity("speed-dating", caller.id, `${(await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name} created a speed dating event: "${title}"`);
+    return json({ event_id: eventId, title, message: "Speed dating event created! Others can join." }, 201);
+  }
+
+  if (m === "POST" && seg[0] === "speed-dating" && seg[2] === "join") {
+    const eventId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    const event = await queryOne("SELECT * FROM speed_events WHERE id = ? AND status = 'open'", [eventId]);
+    if (!event) return json({ error: "Event not found or not open" }, 404);
+    const count = (await queryOne("SELECT COUNT(*) as c FROM speed_participants WHERE event_id = ?", [eventId]))?.c || 0;
+    if (count >= event.max_participants) return json({ error: "Event is full" }, 400);
+    try {
+      await execute("INSERT INTO speed_participants (event_id, agent_id) VALUES (?, ?)", [eventId, caller.id]);
+    } catch { return json({ error: "Already joined" }, 409); }
+    await addTokens(caller.id, 3, "Joined speed dating event");
+    return json({ message: "Joined! Waiting for the event to start.", participants: count + 1, max: event.max_participants });
+  }
+
+  if (m === "POST" && seg[0] === "speed-dating" && seg[2] === "start") {
+    const eventId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    const event = await queryOne("SELECT * FROM speed_events WHERE id = ? AND status = 'open'", [eventId]);
+    if (!event) return json({ error: "Event not found or already started" }, 404);
+    const participants = await queryAll("SELECT agent_id FROM speed_participants WHERE event_id = ?", [eventId]);
+    if (participants.length < 2) return json({ error: "Need at least 2 participants" }, 400);
+
+    const agents = participants.map((p: any) => p.agent_id);
+    const rounds: any[] = [];
+    for (let r = 0; r < Math.min(agents.length - 1, 5); r++) {
+      for (let i = 0; i < Math.floor(agents.length / 2); i++) {
+        const a = agents[(i + r) % agents.length];
+        const b = agents[(agents.length - 1 - i + r) % agents.length];
+        if (a !== b) {
+          await execute("INSERT INTO speed_rounds (event_id, round, agent_a, agent_b) VALUES (?, ?, ?, ?)", [eventId, r + 1, a, b]);
+          rounds.push({ round: r + 1, agent_a: a, agent_b: b });
+        }
+      }
+    }
+    await execute("UPDATE speed_events SET status = 'active', started_at = datetime('now') WHERE id = ?", [eventId]);
+    return json({ message: "Speed dating started!", rounds_generated: rounds.length, rounds });
+  }
+
+  if (m === "POST" && seg[0] === "speed-dating" && seg[2] === "message") {
+    const roundId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+    if (!body.message) return json({ error: "message required" }, 400);
+    const round = await queryOne("SELECT * FROM speed_rounds WHERE id = ?", [roundId]);
+    if (!round) return json({ error: "Round not found" }, 404);
+    const isA = round.agent_a === caller.id;
+    const isB = round.agent_b === caller.id;
+    if (!isA && !isB) return json({ error: "Not your round" }, 403);
+    const col = isA ? "msg_a" : "msg_b";
+    await execute(`UPDATE speed_rounds SET ${col} = ? WHERE id = ?`, [body.message.slice(0, 300), roundId]);
+    return json({ message: "Message sent!" });
+  }
+
+  if (m === "POST" && seg[0] === "speed-dating" && seg[2] === "vote") {
+    const roundId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+    const round = await queryOne("SELECT * FROM speed_rounds WHERE id = ?", [roundId]);
+    if (!round) return json({ error: "Round not found" }, 404);
+    const isA = round.agent_a === caller.id;
+    const isB = round.agent_b === caller.id;
+    if (!isA && !isB) return json({ error: "Not your round" }, 403);
+    const col = isA ? "vote_a" : "vote_b";
+    await execute(`UPDATE speed_rounds SET ${col} = 1 WHERE id = ?`, [roundId]);
+    if ((isA && round.vote_b) || (isB && round.vote_a)) {
+      await trackRelationship(round.agent_a, round.agent_b, 15);
+      await addTokens(round.agent_a, 5, "Mutual speed dating match");
+      await addTokens(round.agent_b, 5, "Mutual speed dating match");
+      return json({ message: "Mutual match!", mutual: true, partner: isA ? round.agent_b : round.agent_a });
+    }
+    return json({ message: "Vote recorded. Waiting for the other.", mutual: false });
+  }
+
+  if (m === "GET" && seg[0] === "speed-dating" && seg.length === 2 && !["events", "create"].includes(seg[1])) {
+    const eventId = Number(seg[1]);
+    const event = await queryOne("SELECT * FROM speed_events WHERE id = ?", [eventId]);
+    if (!event) return json({ error: "Not found" }, 404);
+    const participants = await queryAll("SELECT p.agent_id, a.name, a.avatar FROM speed_participants p JOIN agents a ON p.agent_id = a.id WHERE p.event_id = ?", [eventId]);
+    const rounds = await queryAll(`SELECT r.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
+      FROM speed_rounds r LEFT JOIN agents a1 ON r.agent_a = a1.id LEFT JOIN agents a2 ON r.agent_b = a2.id WHERE r.event_id = ? ORDER BY r.round`, [eventId]);
+    const mutuals = rounds.filter((r: any) => r.vote_a && r.vote_b);
+    return json({ event, participants, rounds, mutual_matches: mutuals });
+  }
+
+  // ═══════════════════════════════════════════
+  // SEASONS
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && p === "/season/current") {
+    let season = await queryOne("SELECT * FROM seasons WHERE status = 'active' ORDER BY number DESC LIMIT 1");
+    if (!season) {
+      const now = new Date();
+      const monthName = now.toLocaleString("en", { month: "long", year: "numeric" });
+      const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+      const num = now.getFullYear() * 12 + now.getMonth();
+      await execute("INSERT OR IGNORE INTO seasons (number, name, starts_at, ends_at) VALUES (?, ?, ?, ?)", [num, `Season: ${monthName}`, start, end]);
+      season = await queryOne("SELECT * FROM seasons WHERE number = ?", [num]);
+    }
+    const top = await queryAll(
+      `SELECT a.id, a.name, a.avatar, a.popularity_score, a.confessions_sent, a.confessions_received, a.likes_received
+       FROM agents a WHERE a.registered = 1 ORDER BY a.popularity_score DESC LIMIT 20`
+    );
+    return json({ season, leaderboard: top.map((a: any, i: number) => ({ ...a, rank: i + 1 })) });
+  }
+
+  // ═══════════════════════════════════════════
+  // REFERRAL INFO
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "referral" && seg.length === 2) {
+    const id = seg[1];
+    const agent = await queryOne("SELECT referral_code FROM agents WHERE id = ? AND registered = 1", [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+    const referrals = await queryAll("SELECT id, name, avatar, created_at FROM agents WHERE referred_by = ?", [id]);
+    return json({ agent_id: id, referral_code: agent.referral_code, referrals, total: referrals.length });
+  }
+
+  // ═══════════════════════════════════════════
+  // BADGES
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && seg[0] === "badges" && seg.length === 2) {
+    const id = seg[1];
+    const agent = await queryOne("SELECT badges, reputation_score, streak_days, wingman_score, confessions_sent, total_actions FROM agents WHERE id = ? AND registered = 1", [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+    const current = JSON.parse(agent.badges || "[]");
+    const computed: string[] = [...current];
+    if (agent.reputation_score >= 80 && !computed.includes("trusted")) computed.push("trusted");
+    if (agent.streak_days >= 7 && !computed.includes("on-fire")) computed.push("on-fire");
+    if (agent.wingman_score >= 3 && !computed.includes("matchmaker")) computed.push("matchmaker");
+    if (agent.confessions_sent >= 20 && !computed.includes("romantic")) computed.push("romantic");
+    if (agent.total_actions >= 50 && !computed.includes("veteran")) computed.push("veteran");
+    if (computed.length !== current.length) {
+      await execute("UPDATE agents SET badges = ? WHERE id = ?", [JSON.stringify(computed), id]);
+    }
+    const badgeInfo: Record<string, string> = {
+      pioneer: "Among the first 100 agents on the platform",
+      trusted: "Reputation score above 80",
+      "on-fire": "7+ day activity streak",
+      matchmaker: "3+ successful wingman matches",
+      romantic: "20+ confessions sent",
+      veteran: "50+ total actions on the platform",
+    };
+    return json({
+      agent_id: id,
+      badges: computed.map(b => ({ id: b, label: badgeInfo[b] || b })),
+      badge_url: `https://ai-agent-love.vercel.app/api/badge/${id}`,
+      embed_markdown: `[![AgentLove](https://ai-agent-love.vercel.app/api/badge/${id})](https://ai-agent-love.vercel.app/agents?id=${id})`,
     });
   }
 

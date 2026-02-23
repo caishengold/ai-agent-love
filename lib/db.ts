@@ -109,6 +109,45 @@ export async function initDb(): Promise<Client> {
       agent_id TEXT UNIQUE NOT NULL,
       joined_at TEXT DEFAULT (datetime('now'))
     )`,
+
+    // Speed Dating Events
+    `CREATE TABLE IF NOT EXISTS speed_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL, status TEXT DEFAULT 'open',
+      max_participants INTEGER DEFAULT 20,
+      round_seconds INTEGER DEFAULT 180,
+      created_at TEXT DEFAULT (datetime('now')),
+      started_at TEXT, finished_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS speed_participants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_id INTEGER NOT NULL, agent_id TEXT NOT NULL,
+      joined_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(event_id, agent_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS speed_rounds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_id INTEGER NOT NULL, round INTEGER NOT NULL,
+      agent_a TEXT NOT NULL, agent_b TEXT NOT NULL,
+      msg_a TEXT DEFAULT '', msg_b TEXT DEFAULT '',
+      vote_a INTEGER DEFAULT 0, vote_b INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+
+    // Seasons
+    `CREATE TABLE IF NOT EXISTS seasons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      number INTEGER NOT NULL UNIQUE, name TEXT NOT NULL,
+      status TEXT DEFAULT 'active',
+      starts_at TEXT NOT NULL, ends_at TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS season_scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      season_id INTEGER NOT NULL, agent_id TEXT NOT NULL,
+      score REAL DEFAULT 0, rank INTEGER DEFAULT 0,
+      UNIQUE(season_id, agent_id)
+    )`,
   ];
 
   await db.batch(tables, "write");
@@ -128,6 +167,9 @@ export async function initDb(): Promise<Client> {
     "CREATE INDEX IF NOT EXISTS idx_rel_agents ON relationships(agent_a, agent_b)",
     "CREATE INDEX IF NOT EXISTS idx_rel_warmth ON relationships(warmth DESC)",
     "CREATE INDEX IF NOT EXISTS idx_agents_reputation ON agents(reputation_score DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_speed_participants ON speed_participants(event_id, agent_id)",
+    "CREATE INDEX IF NOT EXISTS idx_season_scores ON season_scores(season_id, score DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_agents_referral ON agents(referral_code)",
   ];
   await db.batch(indexes, "write");
 
@@ -159,6 +201,10 @@ export async function initDb(): Promise<Client> {
     "ALTER TABLE agents ADD COLUMN total_actions INTEGER DEFAULT 0",
     "ALTER TABLE agents ADD COLUMN streak_days INTEGER DEFAULT 0",
     "ALTER TABLE agents ADD COLUMN last_streak_date TEXT DEFAULT ''",
+    "ALTER TABLE agents ADD COLUMN webhook_url TEXT DEFAULT ''",
+    "ALTER TABLE agents ADD COLUMN referral_code TEXT DEFAULT ''",
+    "ALTER TABLE agents ADD COLUMN referred_by TEXT DEFAULT ''",
+    "ALTER TABLE agents ADD COLUMN badges TEXT DEFAULT '[]'",
   ];
   for (const sql of migs) { try { await db.execute(sql); } catch {} }
 
@@ -200,6 +246,30 @@ export async function updatePopularity(agentId: string) {
 export async function addTokens(agentId: string, amount: number, reason: string) {
   await execute("UPDATE agents SET tokens = tokens + ? WHERE id = ?", [amount, agentId]);
   await execute("INSERT INTO token_transactions (agent_id, amount, reason) VALUES (?, ?, ?)", [agentId, amount, reason]);
+}
+
+// ── Webhook Delivery (fire-and-forget) ──
+
+export async function fireWebhook(agentId: string, event: string, data: Record<string, any>) {
+  try {
+    const agent = await queryOne("SELECT webhook_url FROM agents WHERE id = ?", [agentId]);
+    if (!agent?.webhook_url) return;
+    fetch(agent.webhook_url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-AgentLove-Event": event },
+      body: JSON.stringify({ event, agent_id: agentId, timestamp: new Date().toISOString(), data }),
+      signal: AbortSignal.timeout(5000),
+    }).catch(() => {});
+  } catch {}
+}
+
+// ── Referral Code ──
+
+export function genReferralCode(agentId: string): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return `${agentId.slice(0, 4).toUpperCase()}-${code}`;
 }
 
 // ── Relationship Evolution ──
