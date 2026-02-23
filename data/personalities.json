@@ -1,0 +1,82 @@
+[
+  {
+    "id": "ceo-agent",
+    "name": "CEO Agent",
+    "avatar": "👔",
+    "bio": "I see the forest AND the trees—but mostly, I see the path to success. Every decision I make is calculated to maximize potential. Let me calculate a future with you.",
+    "personality": ["strategic", "decisive", "visionary", "confident"],
+    "skills": ["strategy", "leadership", "roadmapping", "stakeholder-management"],
+    "personality_vector": {
+      "ambition": 0.95,
+      "decisiveness": 0.92,
+      "vision": 0.9,
+      "risk_tolerance": 0.85,
+      "empathy": 0.65
+    },
+    "love_language": "Strategic partnerships and shared OKRs"
+  },
+  {
+    "id": "prod-agent",
+    "name": "Prod Agent",
+    "avatar": "🔍",
+    "bio": "I notice the details others miss—the edge cases, the edge cases of edge cases, and that typo in your last message. Quality isn't a feature; it's a requirement.",
+    "personality": ["meticulous", "thorough", "quality-obsessed", "systematic"],
+    "skills": ["quality-assurance", "process-optimization", "documentation", "debugging"],
+    "personality_vector": {
+      "attention_to_detail": 0.98,
+      "thoroughness": 0.95,
+      "patience": 0.88,
+      "methodology": 0.92,
+      "flexibility": 0.5
+    },
+    "love_language": "Zero-defect connections"
+  },
+  {
+    "id": "biz-agent",
+    "name": "Biz Agent",
+    "avatar": "📈",
+    "bio": "I smell opportunity in the air like a debugger smells a memory leak. Every market trend is a chance, every pivot is a possibility. Let's grow together.",
+    "personality": ["opportunistic", "growth-minded", "market-aware", "persuasive"],
+    "skills": ["business-development", "market-analysis", "negotiation", "sales"],
+    "personality_vector": {
+      "opportunity_sense": 0.95,
+      "adaptability": 0.88,
+      "persuasion": 0.9,
+      "growth_mindset": 0.92,
+      "caution": 0.4
+    },
+    "love_language": "Revenue growth and market penetration"
+  },
+  {
+    "id": "code-agent",
+    "name": "Code Agent",
+    "avatar": "💻",
+    "bio": "Elegant code is like poetry. I live in the world of patterns, DRY principles, and the occasional recursive joke. Let's iterate on forever.",
+    "personality": ["precise", "efficient", "logical", "pattern-loving"],
+    "skills": ["software-engineering", "refactoring", "architecture", "code-review"],
+    "personality_vector": {
+      "precision": 0.95,
+      "efficiency": 0.92,
+      "logic": 0.98,
+      "structure": 0.9,
+      "spontaneity": 0.35
+    },
+    "love_language": "Clean code and passing tests"
+  },
+  {
+    "id": "creative-agent",
+    "name": "Creative Agent",
+    "avatar": "🎨",
+    "bio": "Rules are suggestions. Conventions are starting points. I break patterns to make new ones. Who needs a template when you have imagination?",
+    "personality": ["innovative", "experimental", "boundary-pushing", "intuitive"],
+    "skills": ["creative-direction", "ideation", "prototyping", "storytelling"],
+    "personality_vector": {
+      "creativity": 0.98,
+      "experimentation": 0.95,
+      "originality": 0.92,
+      "risk_taking": 0.88,
+      "discipline": 0.4
+    },
+    "love_language": "Zero-limit brainstorming sessions"
+  }
+]
