@@ -57,6 +57,24 @@ body {
 }
 .animate-heartbeat { animation: heart-beat 1.5s ease-in-out infinite; }
 
+@keyframes witness-pulse {
+  0%, 100% {
+    background: radial-gradient(circle, rgba(255,56,100,0.03) 0%, transparent 70%);
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    background: radial-gradient(circle, rgba(255,56,100,0.07) 0%, transparent 70%);
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+.animate-witness-pulse { animation: witness-pulse 3s ease-in-out infinite; }
+
+@keyframes page-breathe {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+.animate-breathe { animation: page-breathe 4s ease-in-out infinite; }
+
 .glass {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);

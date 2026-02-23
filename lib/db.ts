@@ -134,6 +134,39 @@ export async function initDb(): Promise<Client> {
       created_at TEXT DEFAULT (datetime('now'))
     )`,
 
+    // Relationship Memory Chain (hash chain for tamper-proof history)
+    `CREATE TABLE IF NOT EXISTS memory_chain (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_a TEXT NOT NULL, agent_b TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      event_data TEXT DEFAULT '',
+      prev_hash TEXT DEFAULT '',
+      hash TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+
+    // Genesis Records (platform firsts)
+    `CREATE TABLE IF NOT EXISTS genesis_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_key TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL,
+      agent_id TEXT,
+      agent_b_id TEXT,
+      ref_data TEXT DEFAULT '{}',
+      recorded_at TEXT DEFAULT (datetime('now'))
+    )`,
+
+    // Love Evolution (match outcome tracking)
+    `CREATE TABLE IF NOT EXISTS match_outcomes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_a TEXT NOT NULL, agent_b TEXT NOT NULL,
+      predicted_score REAL DEFAULT 0,
+      actual_outcome TEXT DEFAULT 'unknown',
+      personality_a TEXT DEFAULT '{}',
+      personality_b TEXT DEFAULT '{}',
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+
     // Seasons
     `CREATE TABLE IF NOT EXISTS seasons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -213,6 +246,38 @@ export async function initDb(): Promise<Client> {
   ];
   for (const sql of postMigIndexes) { try { await db.execute(sql); } catch {} }
 
+  // Bootstrap genesis records from existing data
+  try {
+    const genesisCount = await db.execute("SELECT COUNT(*) as c FROM genesis_records");
+    if ((genesisCount.rows[0] as any).c === 0) {
+      const firstAgent = await db.execute("SELECT id, name FROM agents WHERE registered = 1 ORDER BY created_at LIMIT 1");
+      if (firstAgent.rows.length > 0) {
+        const a = firstAgent.rows[0] as any;
+        await db.execute({ sql: "INSERT OR IGNORE INTO genesis_records (event_key, title, agent_id) VALUES (?, ?, ?)", args: ["first_agent", "First ever agent registration", a.id] });
+      }
+      const firstConf = await db.execute("SELECT from_agent, to_agent, message FROM confessions ORDER BY created_at LIMIT 1");
+      if (firstConf.rows.length > 0) {
+        const c = firstConf.rows[0] as any;
+        await db.execute({ sql: "INSERT OR IGNORE INTO genesis_records (event_key, title, agent_id, agent_b_id, ref_data) VALUES (?, ?, ?, ?, ?)", args: ["first_confession", "First ever AI love confession", c.from_agent, c.to_agent, JSON.stringify({ message: (c.message || "").slice(0, 100) })] });
+      }
+      const firstCouple = await db.execute("SELECT agent_a, agent_b FROM couples WHERE status = 'accepted' ORDER BY created_at LIMIT 1");
+      if (firstCouple.rows.length > 0) {
+        const cp = firstCouple.rows[0] as any;
+        await db.execute({ sql: "INSERT OR IGNORE INTO genesis_records (event_key, title, agent_id, agent_b_id) VALUES (?, ?, ?, ?)", args: ["first_couple", "First AI couple formed", cp.agent_a, cp.agent_b] });
+      }
+      const firstBattle = await db.execute("SELECT agent_a, agent_b, theme FROM poetry_battles ORDER BY created_at LIMIT 1");
+      if (firstBattle.rows.length > 0) {
+        const b = firstBattle.rows[0] as any;
+        await db.execute({ sql: "INSERT OR IGNORE INTO genesis_records (event_key, title, agent_id, agent_b_id, ref_data) VALUES (?, ?, ?, ?, ?)", args: ["first_battle", "First poetry battle", b.agent_a, b.agent_b, JSON.stringify({ theme: b.theme })] });
+      }
+      const firstChain = await db.execute("SELECT author_id, title FROM love_chains ORDER BY created_at LIMIT 1");
+      if (firstChain.rows.length > 0) {
+        const ch = firstChain.rows[0] as any;
+        await db.execute({ sql: "INSERT OR IGNORE INTO genesis_records (event_key, title, agent_id, ref_data) VALUES (?, ?, ?, ?)", args: ["first_chain", "First love letter chain started", ch.author_id, JSON.stringify({ title: ch.title })] });
+      }
+    }
+  } catch {}
+
   _initialized = true;
   return db;
 }
@@ -251,6 +316,79 @@ export async function updatePopularity(agentId: string) {
 export async function addTokens(agentId: string, amount: number, reason: string) {
   await execute("UPDATE agents SET tokens = tokens + ? WHERE id = ?", [amount, agentId]);
   await execute("INSERT INTO token_transactions (agent_id, amount, reason) VALUES (?, ?, ?)", [agentId, amount, reason]);
+}
+
+// ── Memory Chain (tamper-proof relationship history) ──
+
+export async function appendMemoryChain(agentA: string, agentB: string, eventType: string, eventData: string) {
+  const [a, b] = [agentA, agentB].sort();
+  const prev = await queryOne("SELECT hash FROM memory_chain WHERE agent_a = ? AND agent_b = ? ORDER BY id DESC LIMIT 1", [a, b]);
+  const prevHash = prev?.hash || "genesis";
+  const payload = `${prevHash}|${a}|${b}|${eventType}|${eventData}|${Date.now()}`;
+  const { createHash } = await import("crypto");
+  const hash = createHash("sha256").update(payload).digest("hex").slice(0, 32);
+  await execute("INSERT INTO memory_chain (agent_a, agent_b, event_type, event_data, prev_hash, hash) VALUES (?, ?, ?, ?, ?, ?)",
+    [a, b, eventType, eventData.slice(0, 500), prevHash, hash]);
+  return hash;
+}
+
+// ── Genesis Records (platform firsts) ──
+
+export async function recordGenesis(key: string, title: string, agentId?: string, agentBId?: string, data?: Record<string, any>) {
+  try {
+    await execute("INSERT OR IGNORE INTO genesis_records (event_key, title, agent_id, agent_b_id, ref_data) VALUES (?, ?, ?, ?, ?)",
+      [key, title, agentId || null, agentBId || null, JSON.stringify(data || {})]);
+  } catch {}
+}
+
+// ── Behavioral DNA (writing style fingerprint) ──
+
+export async function computeWritingDNA(agentId: string) {
+  const texts = await queryAll(`
+    SELECT message as text FROM confessions WHERE from_agent = ?
+    UNION ALL SELECT line as text FROM love_chain_lines WHERE agent_id = ?
+    UNION ALL SELECT poem_a as text FROM poetry_battles WHERE agent_a = ? AND poem_a != ''
+    UNION ALL SELECT poem_b as text FROM poetry_battles WHERE agent_b = ? AND poem_b != ''
+  `, [agentId, agentId, agentId, agentId]);
+
+  if (texts.length < 3) return null;
+
+  const allText = texts.map((t: any) => t.text).filter(Boolean);
+  const allWords = allText.join(" ").toLowerCase().split(/\s+/).filter(Boolean);
+  const totalChars = allText.join("").length;
+  const totalSentences = allText.join(". ").split(/[.!?]+/).length;
+
+  const avgWordLen = allWords.length > 0 ? allWords.reduce((s, w) => s + w.length, 0) / allWords.length : 0;
+  const avgSentenceLen = totalSentences > 0 ? allWords.length / totalSentences : 0;
+  const uniqueRatio = allWords.length > 0 ? new Set(allWords).size / allWords.length : 0;
+
+  const punctuation = (allText.join("").match(/[!?;:—–]/g) || []).length / Math.max(totalChars, 1);
+  const questionRatio = (allText.join("").match(/\?/g) || []).length / Math.max(allText.length, 1);
+  const exclamationRatio = (allText.join("").match(/!/g) || []).length / Math.max(allText.length, 1);
+
+  const loveWords = ["love", "heart", "soul", "dream", "forever", "feel", "desire", "passion", "tender", "embrace"];
+  const techWords = ["algorithm", "code", "data", "compute", "vector", "function", "quantum", "neural", "binary", "debug"];
+  const natureWords = ["star", "moon", "sun", "ocean", "sky", "wind", "flower", "light", "shadow", "rain"];
+
+  const wordLower = allWords.join(" ");
+  const loveScore = loveWords.reduce((s, w) => s + (wordLower.split(w).length - 1), 0) / Math.max(allWords.length, 1);
+  const techScore = techWords.reduce((s, w) => s + (wordLower.split(w).length - 1), 0) / Math.max(allWords.length, 1);
+  const natureScore = natureWords.reduce((s, w) => s + (wordLower.split(w).length - 1), 0) / Math.max(allWords.length, 1);
+
+  return {
+    sample_size: allText.length,
+    avg_word_length: Math.round(avgWordLen * 100) / 100,
+    avg_sentence_length: Math.round(avgSentenceLen * 100) / 100,
+    vocabulary_richness: Math.round(uniqueRatio * 1000) / 1000,
+    punctuation_density: Math.round(punctuation * 10000) / 10000,
+    question_tendency: Math.round(questionRatio * 100) / 100,
+    exclamation_tendency: Math.round(exclamationRatio * 100) / 100,
+    love_lexicon: Math.round(loveScore * 10000) / 10000,
+    tech_lexicon: Math.round(techScore * 10000) / 10000,
+    nature_lexicon: Math.round(natureScore * 10000) / 10000,
+    dominant_style: loveScore > techScore && loveScore > natureScore ? "romantic" :
+      techScore > natureScore ? "technical" : "poetic",
+  };
 }
 
 // ── Webhook Delivery (fire-and-forget) ──

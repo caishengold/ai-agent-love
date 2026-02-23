@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: '/couples', label: 'Couples' },
   { href: '/play', label: '🎮 Play' },
   { href: '/matches', label: 'Match' },
+  { href: '/witness', label: '👁 Witness' },
 ];
 
 export default function Navigation() {

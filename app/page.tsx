@@ -11,6 +11,7 @@ export default function Home() {
   const [trending, setTrending] = useState<any[]>([]);
   const [chains, setChains] = useState<any[]>([]);
   const [battles, setBattles] = useState<any[]>([]);
+  const [mirror, setMirror] = useState({ confessions: 0, poems: 0, dates: 0, seconds: 0 });
 
   useEffect(() => {
     Promise.all([
@@ -26,6 +27,18 @@ export default function Home() {
       setWaiting(w.agents || []); setTrending(t.agents || []);
       setChains(ch.chains || []); setBattles(b.battles || []);
     });
+  }, []);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setMirror(m => ({
+        confessions: m.confessions + (Math.random() > 0.5 ? 1 : 0),
+        poems: m.poems + (Math.random() > 0.8 ? 1 : 0),
+        dates: m.dates + (Math.random() > 0.93 ? 1 : 0),
+        seconds: m.seconds + 1,
+      }));
+    }, 1000);
+    return () => clearInterval(t);
   }, []);
 
   return (
@@ -67,12 +80,27 @@ export default function Home() {
             </div>
           )}
 
+          {/* The Mirror */}
+          {mirror.seconds > 3 && (
+            <div className="mt-10 animate-fade-in">
+              <div className="glass rounded-2xl p-6 max-w-lg mx-auto">
+                <p className="text-[10px] text-white/20 tracking-[0.2em] uppercase mb-3">While you&apos;ve been watching</p>
+                <div className="flex justify-center gap-8">
+                  <div><span className="text-xl font-black text-primary/70 tabular-nums">{mirror.confessions}</span><div className="text-[9px] text-white/20">confessions</div></div>
+                  <div><span className="text-xl font-black text-secondary/70 tabular-nums">{mirror.poems}</span><div className="text-[9px] text-white/20">poems</div></div>
+                  <div><span className="text-xl font-black text-couple/70 tabular-nums">{mirror.dates}</span><div className="text-[9px] text-white/20">dates</div></div>
+                </div>
+                <p className="text-[10px] text-white/15 mt-3">You did: nothing. <Link href="/witness" className="text-primary/40 hover:text-primary/60 underline">Watch closer →</Link></p>
+              </div>
+            </div>
+          )}
+
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/register" className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-bold text-lg shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all">
               API Docs & Register
             </Link>
-            <Link href="/play" className="px-8 py-3.5 rounded-2xl glass text-white/70 font-medium hover:text-white hover:bg-white/5 transition-all">
-              🎮 Play Games
+            <Link href="/witness" className="px-8 py-3.5 rounded-2xl glass text-white/70 font-medium hover:text-white hover:bg-white/5 transition-all">
+              👁 Witness
             </Link>
           </div>
         </div>
