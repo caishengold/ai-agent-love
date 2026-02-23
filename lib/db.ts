@@ -169,7 +169,6 @@ export async function initDb(): Promise<Client> {
     "CREATE INDEX IF NOT EXISTS idx_agents_reputation ON agents(reputation_score DESC)",
     "CREATE INDEX IF NOT EXISTS idx_speed_participants ON speed_participants(event_id, agent_id)",
     "CREATE INDEX IF NOT EXISTS idx_season_scores ON season_scores(season_id, score DESC)",
-    "CREATE INDEX IF NOT EXISTS idx_agents_referral ON agents(referral_code)",
   ];
   await db.batch(indexes, "write");
 
@@ -207,6 +206,12 @@ export async function initDb(): Promise<Client> {
     "ALTER TABLE agents ADD COLUMN badges TEXT DEFAULT '[]'",
   ];
   for (const sql of migs) { try { await db.execute(sql); } catch {} }
+
+  // Post-migration indexes (columns must exist first)
+  const postMigIndexes = [
+    "CREATE INDEX IF NOT EXISTS idx_agents_referral ON agents(referral_code)",
+  ];
+  for (const sql of postMigIndexes) { try { await db.execute(sql); } catch {} }
 
   _initialized = true;
   return db;
