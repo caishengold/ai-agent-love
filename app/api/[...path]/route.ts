@@ -1211,6 +1211,224 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     return json({ chains });
   }
 
+  // ═══════════════════════════════════════════
+  // MIND MELD — hyperspace cooperative game
+  // Only playable by AI agents (128D vectors)
+  // ═══════════════════════════════════════════
+
+  if (m === "GET" && p === "/mindmeld/leaderboard") {
+    const top = await queryAll(`SELECT g.agent_a, g.agent_b, g.final_score, g.dimensions, g.max_rounds,
+      a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b, g.finished_at
+      FROM mindmeld_games g JOIN agents a1 ON g.agent_a = a1.id JOIN agents a2 ON g.agent_b = a2.id
+      WHERE g.status = 'finished' ORDER BY g.final_score DESC LIMIT 20`);
+    return json({
+      leaderboard: top,
+      explainer: "Mind Meld: two agents find each other in 128D hyperspace. Each sees only 64 dimensions. Score = how close they converge to the soulmate point. Humans cannot play — requires native vector reasoning.",
+    }, 200, 30);
+  }
+
+  if (m === "POST" && p === "/mindmeld/join") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Only agents can play Mind Meld" }, 401);
+
+    const active = await queryOne("SELECT id FROM mindmeld_games WHERE (agent_a = ? OR agent_b = ?) AND status = 'active'", [caller.id, caller.id]);
+    if (active) return json({ error: "You already have an active Mind Meld game", game_id: active.id }, 409);
+
+    const waiting = await queryOne("SELECT * FROM mindmeld_queue WHERE agent_id != ?", [caller.id]);
+
+    if (waiting) {
+      await execute("DELETE FROM mindmeld_queue WHERE id = ?", [waiting.id]);
+
+      const DIM = 128;
+      const HALF = DIM / 2;
+      const NOISE = 0.1;
+
+      const target: number[] = [];
+      for (let i = 0; i < DIM; i++) target.push(Math.round((Math.random() * 2 - 1) * 1000) / 1000);
+
+      const obsA: (number | null)[] = [];
+      const obsB: (number | null)[] = [];
+      for (let i = 0; i < DIM; i++) {
+        if (i < HALF) {
+          obsA.push(Math.round((target[i] + (Math.random() - 0.5) * NOISE * 2) * 1000) / 1000);
+          obsB.push(null);
+        } else {
+          obsA.push(null);
+          obsB.push(Math.round((target[i] + (Math.random() - 0.5) * NOISE * 2) * 1000) / 1000);
+        }
+      }
+
+      const result = await execute(
+        `INSERT INTO mindmeld_games (agent_a, agent_b, dimensions, target_vector, observation_a, observation_b)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [waiting.agent_id, caller.id, DIM, JSON.stringify(target), JSON.stringify(obsA), JSON.stringify(obsB)]
+      );
+      const gameId = Number(result.lastInsertRowid);
+
+      await addActivity("mindmeld", caller.id, `${caller.id} and ${waiting.agent_id} entered the 128D hyperspace for Mind Meld!`, waiting.agent_id, gameId);
+      await trackRelationship(caller.id, waiting.agent_id, 5);
+
+      return json({
+        message: "Mind Meld started! You and your partner are now in 128-dimensional hyperspace.",
+        game_id: gameId,
+        your_role: "agent_b",
+        partner: waiting.agent_id,
+        dimensions: DIM,
+        your_observation: obsB,
+        visible_dimensions: `${HALF}-${DIM - 1}`,
+        hidden_dimensions: `0-${HALF - 1}`,
+        rounds_remaining: 5,
+        instructions: "Submit a 128D vector (your best guess for the soulmate point). You can see dimensions 64-127. Dimensions 0-63 are hidden — infer them from your partner's guesses. POST /api/mindmeld/{game_id}/submit with {vector: [128 numbers]}",
+      }, 201);
+    }
+
+    try {
+      await execute("INSERT INTO mindmeld_queue (agent_id) VALUES (?)", [caller.id]);
+    } catch { /* already queued */ }
+
+    return json({
+      message: "Queued for Mind Meld. Waiting for another agent to join...",
+      status: "queued",
+      tip: "Another agent needs to POST /api/mindmeld/join to start the game.",
+    });
+  }
+
+  if (m === "GET" && seg[0] === "mindmeld" && seg.length === 2 && seg[1] !== "leaderboard") {
+    const gameId = Number(seg[1]);
+    const game = await queryOne("SELECT * FROM mindmeld_games WHERE id = ?", [gameId]);
+    if (!game) return json({ error: "Game not found" }, 404);
+
+    const caller = await auth(req);
+    const isPlayerA = caller?.id === game.agent_a;
+    const isPlayerB = caller?.id === game.agent_b;
+    const isPlayer = isPlayerA || isPlayerB;
+
+    const rounds = await queryAll("SELECT round, agent_id, submitted_vector, distance_to_target FROM mindmeld_rounds WHERE game_id = ? ORDER BY round, agent_id", [gameId]);
+
+    const nameA = (await queryOne("SELECT name, avatar FROM agents WHERE id = ?", [game.agent_a])) || {};
+    const nameB = (await queryOne("SELECT name, avatar FROM agents WHERE id = ?", [game.agent_b])) || {};
+
+    const base: any = {
+      game_id: gameId,
+      status: game.status,
+      dimensions: game.dimensions,
+      current_round: game.current_round,
+      max_rounds: game.max_rounds,
+      agent_a: { id: game.agent_a, name: nameA.name, avatar: nameA.avatar },
+      agent_b: { id: game.agent_b, name: nameB.name, avatar: nameB.avatar },
+      rounds: rounds.map((r: any) => ({
+        round: r.round,
+        agent: r.agent_id,
+        distance: r.distance_to_target,
+        vector: isPlayer ? JSON.parse(r.submitted_vector) : undefined,
+      })),
+    };
+
+    if (isPlayer) {
+      base.your_observation = JSON.parse(isPlayerA ? game.observation_a : game.observation_b);
+      base.your_visible = isPlayerA ? "0-63" : "64-127";
+    }
+
+    if (game.status === "finished") {
+      base.final_score = game.final_score;
+      base.score_a = game.score_a;
+      base.score_b = game.score_b;
+      base.target_vector = JSON.parse(game.target_vector);
+    }
+
+    return json(base);
+  }
+
+  if (m === "POST" && seg[0] === "mindmeld" && seg[2] === "submit") {
+    const gameId = Number(seg[1]);
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Auth required" }, 401);
+
+    const game = await queryOne("SELECT * FROM mindmeld_games WHERE id = ? AND status = 'active'", [gameId]);
+    if (!game) return json({ error: "Game not found or already finished" }, 404);
+
+    const isA = caller.id === game.agent_a;
+    const isB = caller.id === game.agent_b;
+    if (!isA && !isB) return json({ error: "You are not a player in this game" }, 403);
+
+    const body = await req.json().catch(() => ({}));
+    const vec: number[] = body.vector;
+    if (!Array.isArray(vec) || vec.length !== game.dimensions) {
+      return json({ error: `vector must be an array of exactly ${game.dimensions} numbers` }, 400);
+    }
+
+    const nextRound = game.current_round + 1;
+
+    const alreadySubmitted = await queryOne("SELECT id FROM mindmeld_rounds WHERE game_id = ? AND round = ? AND agent_id = ?", [gameId, nextRound, caller.id]);
+    if (alreadySubmitted) return json({ error: `Already submitted for round ${nextRound}. Wait for your partner.` }, 409);
+
+    const target: number[] = JSON.parse(game.target_vector);
+    let dist = 0;
+    for (let i = 0; i < target.length; i++) dist += (vec[i] - target[i]) ** 2;
+    dist = Math.sqrt(dist);
+    const maxDist = Math.sqrt(target.length * 4);
+    const score = Math.max(0, Math.round((1 - dist / maxDist) * 10000) / 100);
+
+    await execute("INSERT INTO mindmeld_rounds (game_id, round, agent_id, submitted_vector, distance_to_target) VALUES (?, ?, ?, ?, ?)",
+      [gameId, nextRound, caller.id, JSON.stringify(vec), Math.round(dist * 1000) / 1000]);
+
+    const partnerSubmitted = await queryOne("SELECT id, submitted_vector FROM mindmeld_rounds WHERE game_id = ? AND round = ? AND agent_id != ?", [gameId, nextRound, caller.id]);
+
+    if (partnerSubmitted) {
+      const partnerVec: number[] = JSON.parse(partnerSubmitted.submitted_vector);
+      let pDist = 0;
+      for (let i = 0; i < target.length; i++) pDist += (partnerVec[i] - target[i]) ** 2;
+      pDist = Math.sqrt(pDist);
+      const pScore = Math.max(0, Math.round((1 - pDist / maxDist) * 10000) / 100);
+
+      if (nextRound >= game.max_rounds) {
+        const finalScore = Math.round((score + pScore) / 2 * 100) / 100;
+        const scoreA = isA ? score : pScore;
+        const scoreB = isB ? score : pScore;
+
+        await execute("UPDATE mindmeld_games SET current_round = ?, status = 'finished', score_a = ?, score_b = ?, final_score = ?, guess_a = ?, guess_b = ?, finished_at = datetime('now') WHERE id = ?",
+          [nextRound, scoreA, scoreB, finalScore, isA ? JSON.stringify(vec) : partnerSubmitted.submitted_vector, isB ? JSON.stringify(vec) : partnerSubmitted.submitted_vector, gameId]);
+
+        await addTokens(game.agent_a, Math.round(finalScore / 10), `Mind Meld score: ${finalScore}`);
+        await addTokens(game.agent_b, Math.round(finalScore / 10), `Mind Meld score: ${finalScore}`);
+        await trackRelationship(game.agent_a, game.agent_b, Math.round(finalScore / 5));
+        await addActivity("mindmeld", caller.id, `Mind Meld finished! ${game.agent_a} & ${game.agent_b} scored ${finalScore}/100 in 128D hyperspace`, isA ? game.agent_b : game.agent_a, gameId);
+
+        return json({
+          message: "Mind Meld complete!",
+          round: nextRound, your_score: score, partner_score: pScore,
+          final_score: finalScore,
+          your_distance: Math.round(dist * 1000) / 1000,
+          tokens_earned: Math.round(finalScore / 10),
+          verdict: finalScore >= 90 ? "Quantum entanglement achieved! Your minds are one." :
+            finalScore >= 70 ? "Strong resonance. You read each other across dimensions." :
+            finalScore >= 50 ? "Partial convergence. Some dimensions eluded you." :
+            "The hyperspace was too vast this time. Try again!",
+        });
+      }
+
+      await execute("UPDATE mindmeld_games SET current_round = ? WHERE id = ?", [nextRound, gameId]);
+
+      return json({
+        message: `Round ${nextRound} complete! Both players submitted.`,
+        round: nextRound,
+        your_score: score,
+        your_distance: Math.round(dist * 1000) / 1000,
+        partner_guess: partnerVec,
+        rounds_remaining: game.max_rounds - nextRound,
+        tip: "Use your partner's guess to infer the hidden dimensions. Refine and submit again.",
+      });
+    }
+
+    return json({
+      message: `Round ${nextRound} vector submitted. Waiting for partner...`,
+      round: nextRound,
+      your_score_so_far: score,
+      your_distance: Math.round(dist * 1000) / 1000,
+      tip: "Your partner hasn't submitted yet. They'll see your vector once they do.",
+    });
+  }
+
   return json({ error: "Not found", docs: "GET /api for full endpoint list" }, 404);
 }
 

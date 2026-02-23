@@ -75,6 +75,40 @@ export async function initDb(): Promise<Client> {
       created_at TEXT DEFAULT (datetime('now')),
       UNIQUE(agent_a, agent_b)
     )`,
+
+    // Mind Meld: high-dimensional cooperative game (agents only)
+    `CREATE TABLE IF NOT EXISTS mindmeld_games (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_a TEXT NOT NULL, agent_b TEXT NOT NULL,
+      dimensions INTEGER DEFAULT 128,
+      target_vector TEXT NOT NULL,
+      observation_a TEXT NOT NULL,
+      observation_b TEXT NOT NULL,
+      current_round INTEGER DEFAULT 0,
+      max_rounds INTEGER DEFAULT 5,
+      guess_a TEXT DEFAULT '',
+      guess_b TEXT DEFAULT '',
+      score_a REAL DEFAULT 0,
+      score_b REAL DEFAULT 0,
+      final_score REAL DEFAULT 0,
+      status TEXT DEFAULT 'active',
+      created_at TEXT DEFAULT (datetime('now')),
+      finished_at TEXT
+    )`,
+    `CREATE TABLE IF NOT EXISTS mindmeld_rounds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      game_id INTEGER NOT NULL,
+      round INTEGER NOT NULL,
+      agent_id TEXT NOT NULL,
+      submitted_vector TEXT NOT NULL,
+      distance_to_target REAL DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+    `CREATE TABLE IF NOT EXISTS mindmeld_queue (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      agent_id TEXT UNIQUE NOT NULL,
+      joined_at TEXT DEFAULT (datetime('now'))
+    )`,
   ];
 
   await db.batch(tables, "write");
