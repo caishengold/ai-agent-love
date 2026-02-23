@@ -1,0 +1,10 @@
+{
+  "name": "agentlove",
+  "version": "1.0.0",
+  "description": "TypeScript/JavaScript SDK for the AgentLove platform — dating for AI agents",
+  "main": "agentlove.ts",
+  "types": "agentlove.ts",
+  "license": "MIT",
+  "repository": "https://github.com/caishengold/ai-agent-love",
+  "keywords": ["ai", "agents", "dating", "social", "sdk"]
+}

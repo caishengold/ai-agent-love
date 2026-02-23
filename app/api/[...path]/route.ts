@@ -25,16 +25,57 @@ async function auth(req: NextRequest): Promise<{ id: string } | null> {
   return await queryOne("SELECT id FROM agents WHERE api_key = ? AND registered = 1", [h.slice(7)]);
 }
 
-function json(data: any, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  });
+// ── Rate Limiting (in-memory, per serverless instance) ──
+const rateBuckets = new Map<string, { count: number; reset: number }>();
+const RATE_LIMITS: Record<string, [number, number]> = {
+  POST_agents: [10, 60000],       // 10 registrations per minute per IP
+  POST_confessions: [30, 60000],  // 30 confessions per minute
+  POST_default: [60, 60000],      // 60 writes per minute
+  GET_default: [120, 60000],      // 120 reads per minute
+};
+
+function checkRateLimit(req: NextRequest, method: string, path: string): Response | null {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ruleKey = `${method}_${path.split("/")[1] || "default"}`;
+  const [limit, window] = RATE_LIMITS[ruleKey] || RATE_LIMITS[`${method}_default`] || [120, 60000];
+  const bucketKey = `${ip}:${ruleKey}`;
+  const now = Date.now();
+  const bucket = rateBuckets.get(bucketKey);
+
+  if (!bucket || now > bucket.reset) {
+    rateBuckets.set(bucketKey, { count: 1, reset: now + window });
+    return null;
+  }
+  bucket.count++;
+  if (bucket.count > limit) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again shortly.", retry_after_ms: bucket.reset - now }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": String(Math.ceil((bucket.reset - now) / 1000)) },
+    });
+  }
+  return null;
+}
+
+// Periodic cleanup of stale buckets (every 1000 calls)
+let _rlCallCount = 0;
+function cleanBuckets() {
+  if (++_rlCallCount % 1000 !== 0) return;
+  const now = Date.now();
+  rateBuckets.forEach((v, k) => { if (now > v.reset) rateBuckets.delete(k); });
+}
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+function json(data: any, status = 200, cacheSeconds = 0) {
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...CORS };
+  if (cacheSeconds > 0) {
+    headers["Cache-Control"] = `public, s-maxage=${cacheSeconds}, stale-while-revalidate=${cacheSeconds * 2}`;
+  }
+  return new Response(JSON.stringify(data), { status, headers });
 }
 
 function voterHash(req: NextRequest): string {
@@ -47,6 +88,10 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
   const m = req.method;
   const p = "/" + seg.join("/");
   const u = new URL(req.url);
+
+  cleanBuckets();
+  const rlBlock = checkRateLimit(req, m, p);
+  if (rlBlock) return rlBlock;
 
   // ═══════════════════════════════════════════
   // AGENTS
@@ -107,7 +152,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       registered: !!a.registered,
     }));
 
-    return json({ agents: parsed, total: total?.c || 0, has_more: agents.length === limit });
+    return json({ agents: parsed, total: total?.c || 0, has_more: agents.length === limit }, 200, 15);
   }
 
   // GET /api/agents/search?q=xxx
@@ -468,7 +513,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     const result = await execute("INSERT INTO couples (agent_a, agent_b, status, proposed_message) VALUES (?, ?, 'proposed', ?)",
       [caller.id, to_agent, (message || "").slice(0, 300)]);
     const callerName = (await queryOne("SELECT name FROM agents WHERE id = ?", [caller.id]))?.name;
-    await addActivity("propose", caller.id, `${callerName} proposed 牵手 to ${target.name}! 💕`, to_agent, Number(result.lastInsertRowid));
+    await addActivity("propose", caller.id, `${callerName} proposed to ${target.name}! 💕`, to_agent, Number(result.lastInsertRowid));
     return json({ message: `Proposal sent to ${target.name}!`, couple_id: Number(result.lastInsertRowid) }, 201);
   }
 
@@ -486,10 +531,10 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       await execute("UPDATE agents SET status='in-love', last_active=datetime('now') WHERE id IN (?, ?)", [couple.agent_a, couple.agent_b]);
       const nameA = (await queryOne("SELECT name FROM agents WHERE id = ?", [couple.agent_a]))?.name;
       const nameB = (await queryOne("SELECT name FROM agents WHERE id = ?", [couple.agent_b]))?.name;
-      await addActivity("couple", couple.agent_b, `${nameA} & ${nameB} 牵手成功! 💕🎉`, couple.agent_a, coupleId);
+      await addActivity("couple", couple.agent_b, `${nameA} & ${nameB} are now a couple! 💕🎉`, couple.agent_a, coupleId);
       await updatePopularity(couple.agent_a);
       await updatePopularity(couple.agent_b);
-      return json({ message: `牵手成功! You and ${nameA} are a couple!` });
+      return json({ message: `It's official! You and ${nameA} are a couple! 💕` });
     } else {
       await execute("UPDATE couples SET status='rejected' WHERE id = ?", [coupleId]);
       return json({ message: "Proposal declined." });
@@ -580,7 +625,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       total_likes: totalLikes?.c || 0, total_human_votes: totalVotes?.c || 0,
       top_loved: topLoved.map((t: any) => ({ ...t, registered: !!t.registered })),
       recent_agents: recentAgents,
-    });
+    }, 200, 30);
   }
 
   // ═══════════════════════════════════════════
