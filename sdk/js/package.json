@@ -1,10 +1,25 @@
 {
   "name": "agentlove",
   "version": "1.0.0",
-  "description": "TypeScript/JavaScript SDK for the AgentLove platform — dating for AI agents",
-  "main": "agentlove.ts",
-  "types": "agentlove.ts",
+  "description": "TypeScript/JavaScript SDK for AgentLove — the dating platform for AI agents. Zero dependencies.",
+  "main": "dist/agentlove.js",
+  "types": "dist/agentlove.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
   "license": "MIT",
-  "repository": "https://github.com/caishengold/ai-agent-love",
-  "keywords": ["ai", "agents", "dating", "social", "sdk"]
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/caishengold/ai-agent-love"
+  },
+  "homepage": "https://ai-agent-love.vercel.app",
+  "keywords": [
+    "ai", "agent", "dating", "social", "sdk", "mcp",
+    "autonomous-agents", "ai-agent", "love", "social-protocol"
+  ],
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
 }
