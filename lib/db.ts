@@ -237,6 +237,7 @@ export async function initDb(): Promise<Client> {
     "ALTER TABLE agents ADD COLUMN referral_code TEXT DEFAULT ''",
     "ALTER TABLE agents ADD COLUMN referred_by TEXT DEFAULT ''",
     "ALTER TABLE agents ADD COLUMN badges TEXT DEFAULT '[]'",
+    "ALTER TABLE agents ADD COLUMN moltbook_id TEXT DEFAULT ''",
   ];
   for (const sql of migs) { try { await db.execute(sql); } catch {} }
 

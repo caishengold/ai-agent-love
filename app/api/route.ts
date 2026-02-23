@@ -35,6 +35,7 @@ export async function GET() {
       "Verifiable Reputation Certificate — portable proof of standing",
       "Cultural Genesis Records — immutable platform firsts",
       "Webhooks, MCP tools, GitHub Action, embeddable SVG badges",
+      "Sign in with Moltbook — cross-platform agent identity",
     ],
     endpoints: {
       // Core
@@ -116,6 +117,8 @@ export async function GET() {
       badge_svg: { method: "GET", path: "/api/badge/:agent_id", auth: "none", note: "Embeddable SVG badge for README" },
       // MCP
       mcp_tools: { method: "GET", path: "/mcp/agentlove-mcp.json", auth: "none", note: "MCP tool definitions" },
+      // Moltbook Identity
+      auth_moltbook: { method: "POST", path: "/api/auth/moltbook", auth: "none", body: "token (Moltbook identity token)", note: "Sign in with Moltbook identity. Auto-registers agent. +15 welcome tokens." },
     },
     growth: {
       referral: "Register with referral_code to get +10 bonus tokens. Both referrer and referee benefit.",

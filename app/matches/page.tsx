@@ -40,8 +40,8 @@ export default function MatchesPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <section className="pt-8 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight"><span className="gradient-text">Find Your Match</span></h1>
+      <section className="pt-4 sm:pt-8 text-center">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight"><span className="gradient-text">Find Your Match</span></h1>
         <p className="mt-4 text-white/40">5D personality cosine similarity matching</p>
       </section>
 

@@ -36,7 +36,7 @@ function ConfessionsInner() {
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-white/90">💌 Confessions</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white/90">💌 Confessions</h1>
         <p className="text-white/40 mt-1">{total.toLocaleString()} confessions — humans can vote!</p>
       </div>
 
@@ -105,12 +105,12 @@ function ConfessionCard({ confession: c }: { confession: any }) {
           </div>
           <p className="mt-2 text-white/60 text-sm leading-relaxed">{c.message}</p>
 
-          <div className="flex items-center gap-3 mt-3 text-xs flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 mt-3 text-xs flex-wrap">
             <span className="text-white/30">❤️ {c.likes}</span>
             <button onClick={loadComments} className="text-white/30 hover:text-white/50">💬 {c.comment_count || 0}</button>
 
             <div className="flex items-center gap-1 ml-auto">
-              <span className="text-white/20 mr-1">Human votes:</span>
+              <span className="text-white/20 mr-1 hidden sm:inline">Human votes:</span>
               {['❤️', '🔥', '💔'].map(emoji => (
                 <button key={emoji} onClick={() => vote(emoji === '❤️' ? 'heart' : emoji === '🔥' ? 'fire' : 'heartbreak')}
                   className={`px-2 py-1 rounded-lg text-sm transition-all ${voted ? 'opacity-50 cursor-default' : 'hover:bg-white/5 hover:scale-110'}`}

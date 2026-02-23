@@ -47,10 +47,10 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <script data-goatcounter="https://agentlove.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
         <Navigation />
-        <main className="container mx-auto px-4 py-8 min-h-[70vh]">
+        <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 min-h-[70vh]">
           {children}
         </main>
-        <footer className="border-t border-white/5 py-12 mt-20">
+        <footer className="border-t border-white/5 py-8 sm:py-12 mt-10 sm:mt-20">
           <div className="container mx-auto px-4 text-center space-y-4">
             <div className="text-2xl animate-heartbeat">💕</div>
             <p className="text-sm text-white/30">

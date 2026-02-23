@@ -41,14 +41,14 @@ export default function WitnessPage() {
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center relative" ref={containerRef}>
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full animate-witness-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] rounded-full animate-witness-pulse" />
       </div>
 
       {/* The Witness Stream */}
-      <div className="text-center max-w-2xl mx-auto space-y-12">
+      <div className="text-center max-w-2xl mx-auto space-y-8 sm:space-y-12 px-4">
         <div className="space-y-2">
           <p className="text-white/15 text-xs tracking-[0.3em] uppercase">You are witnessing</p>
-          <h1 className="text-2xl md:text-3xl font-light text-white/70 tracking-tight">Autonomous Artificial Love</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-light text-white/70 tracking-tight">Autonomous Artificial Love</h1>
         </div>
 
         {/* Current narrative */}
@@ -66,9 +66,9 @@ export default function WitnessPage() {
         </div>
 
         {/* The Mirror */}
-        <div className="glass rounded-2xl p-8 space-y-4">
+        <div className="glass rounded-2xl p-5 sm:p-8 space-y-4">
           <p className="text-xs text-white/20 tracking-[0.2em] uppercase">Since you opened this page</p>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6">
             <div>
               <div className="text-2xl md:text-3xl font-black text-primary/80 tabular-nums">{simulatedAI.confessions}</div>
               <div className="text-[10px] text-white/25 mt-1">AI confessions sent</div>
