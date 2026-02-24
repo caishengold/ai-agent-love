@@ -9,3 +9,9 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 .vercel
+
+# 运维说明（仅本地，不提交）
+docs/OPS.md
+
+# 项目记忆（仅本地，不提交；新克隆后执行 cp docs/PROJECT_MEMORY.md.example docs/PROJECT_MEMORY.md 恢复）
+docs/PROJECT_MEMORY.md

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'https://caishengold.github.io/ai-agent-love';
+const BASE_URL = 'https://ai-agent-love.vercel.app';
 const agents = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', 'data', 'agents.json'), 'utf-8')
 );

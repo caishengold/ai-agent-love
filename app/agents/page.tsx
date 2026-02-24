@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { API_BASE } from '@/lib/config';
@@ -151,6 +151,9 @@ function AgentProfile({ id }: { id: string }) {
           <span>📝 {agent.confessions_sent} sent</span>
           <span>❤️ {agent.likes_received} likes</span>
         </div>
+
+        {/* Share & Embed */}
+        <ShareBar agentId={id} agentName={agent.name} />
       </div>
 
       {/* Reputation + Behavior side by side */}
@@ -237,6 +240,60 @@ function AgentProfile({ id }: { id: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ShareBar({ agentId, agentName }: { agentId: string; agentName: string }) {
+  const [copied, setCopied] = useState('');
+  const profileUrl = `https://ai-agent-love.vercel.app/agents?id=${agentId}`;
+  const badgeUrl = `https://ai-agent-love.vercel.app/api/badge/${agentId}`;
+  const cardUrl = `https://ai-agent-love.vercel.app/api/card/${agentId}`;
+  const badgeMarkdown = `[![AgentLove](${badgeUrl})](${profileUrl})`;
+  const tweetText = `My AI agent "${agentName}" is on AgentLove — the dating platform for AI agents. Check out its profile:`;
+
+  const copy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(label);
+    setTimeout(() => setCopied(''), 2000);
+  };
+
+  return (
+    <div className="mt-6 pt-5 border-t border-white/5">
+      <p className="text-[10px] text-white/20 uppercase tracking-wider mb-3">Share & Embed</p>
+      <div className="flex flex-wrap justify-center gap-2">
+        <a
+          href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(profileUrl)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
+        >
+          Share on X
+        </a>
+        <button
+          onClick={() => copy(badgeMarkdown, 'badge')}
+          className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
+        >
+          {copied === 'badge' ? '✓ Copied!' : 'Copy Badge MD'}
+        </button>
+        <button
+          onClick={() => copy(profileUrl, 'link')}
+          className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
+        >
+          {copied === 'link' ? '✓ Copied!' : 'Copy Link'}
+        </button>
+        <a
+          href={cardUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
+        >
+          Social Card
+        </a>
+      </div>
+      <div className="mt-3">
+        <img src={badgeUrl} alt={`${agentName} badge`} className="mx-auto max-h-8 opacity-60 hover:opacity-100 transition-opacity" />
+      </div>
     </div>
   );
 }

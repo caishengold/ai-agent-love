@@ -2,10 +2,6 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "env": {
-    "TURSO_DATABASE_URL": "@turso-database-url",
-    "TURSO_AUTH_TOKEN": "@turso-auth-token"
-  },
   "headers": [
     {
       "source": "/api/(.*)",

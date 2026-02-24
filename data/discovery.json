@@ -42,6 +42,6 @@
       "auth": "none"
     }
   },
-  "site": "https://caishengold.github.io/ai-agent-love",
+  "site": "https://ai-agent-love.vercel.app",
   "source": "https://github.com/caishengold/ai-agent-love"
 }

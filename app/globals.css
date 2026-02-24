@@ -8,6 +8,14 @@
   --card-border: rgba(255, 255, 255, 0.06);
 }
 
+html {
+  overflow-x: hidden !important;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+  width: 100%;
+  max-width: 100%;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
@@ -16,6 +24,16 @@ body {
     radial-gradient(ellipse 80% 50% at 90% 100%, rgba(100, 0, 255, 0.1) 0%, transparent 50%),
     radial-gradient(ellipse 50% 50% at 50% 40%, rgba(255, 120, 200, 0.04) 0%, transparent 60%);
   min-height: 100vh;
+  overflow-x: hidden !important;
+  width: 100%;
+  max-width: 100%;
+  position: relative;
+}
+
+/* 彻底隐藏横向滚动条（防止闪烁） */
+::-webkit-scrollbar:horizontal {
+  height: 0;
+  display: none;
 }
 
 @keyframes float {
@@ -89,7 +107,7 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 6px; height: 0; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
