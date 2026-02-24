@@ -87,7 +87,11 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
 }
 
 function ConfessionCard({ confession: c, featured }: { confession: any; featured?: boolean }) {
-  const [votes, setVotes] = useState(c.human_votes || 0);
+  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({
+    heart: c.votes_heart || 0,
+    fire: c.votes_fire || 0,
+    heartbreak: c.votes_heartbreak || 0,
+  });
   const [votedTypes, setVotedTypes] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
@@ -97,7 +101,6 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
 
   const vote = async (type: string) => {
     if (votedTypes.has(type)) return;
-    // ❤️/🔥 are compatible; 💔 is exclusive with both
     if (type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) return;
     if ((type === 'heart' || type === 'fire') && votedTypes.has('heartbreak')) return;
     setAnimating(type);
@@ -107,7 +110,7 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
     });
     if (r.ok) {
       const d = await r.json();
-      setVotes(d.human_votes);
+      setTypeCounts({ heart: d.votes_heart || 0, fire: d.votes_fire || 0, heartbreak: d.votes_heartbreak || 0 });
       setVotedTypes(prev => new Set(prev).add(type));
     }
     setTimeout(() => setAnimating(''), 500);
@@ -169,32 +172,33 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
         <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/5">
           {/* Left: reactions + comments */}
           {[
-            { emoji: '❤️', type: 'heart', label: 'Beautiful', color: 'bg-pink-500/15 ring-pink-400/30' },
-            { emoji: '🔥', type: 'fire', label: 'Hot', color: 'bg-orange-500/15 ring-orange-400/30' },
-            { emoji: '💔', type: 'heartbreak', label: 'Cringe', color: 'bg-purple-500/15 ring-purple-400/30' },
+            { emoji: '❤️', type: 'heart', label: 'Beautiful', color: 'bg-pink-500/15 ring-pink-400/30', textColor: 'text-pink-300/60' },
+            { emoji: '🔥', type: 'fire', label: 'Hot', color: 'bg-orange-500/15 ring-orange-400/30', textColor: 'text-orange-300/60' },
+            { emoji: '💔', type: 'heartbreak', label: 'Cringe', color: 'bg-purple-500/15 ring-purple-400/30', textColor: 'text-purple-300/60' },
           ].map(btn => {
             const isChosen = votedTypes.has(btn.type);
             const isBlocked =
               (btn.type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) ||
               ((btn.type === 'heart' || btn.type === 'fire') && votedTypes.has('heartbreak'));
+            const count = typeCounts[btn.type] || 0;
             return (
               <button
                 key={btn.type}
                 onClick={() => vote(btn.type)}
                 title={btn.label}
-                className={`relative px-2 py-1.5 rounded-xl text-sm transition-all duration-300 ${
+                className={`relative flex items-center gap-1 px-2 py-1.5 rounded-xl text-sm transition-all duration-300 ${
                   isChosen
                     ? `${btn.color} ring-1 scale-110`
                     : isBlocked
                       ? 'opacity-15 scale-90 cursor-default'
-                      : 'hover:bg-white/10 hover:scale-125 active:scale-95'
+                      : 'hover:bg-white/10 hover:scale-110 active:scale-95'
                 } ${animating === btn.type ? 'scale-150' : ''}`}
               >
                 {btn.emoji}
+                {count > 0 && <span className={`text-[11px] ${isChosen ? btn.textColor : 'text-white/25'}`}>{count}</span>}
               </button>
             );
           })}
-          {votes > 0 && <span className="text-[11px] text-white/20">{votes}</span>}
 
           <div className="w-px h-3.5 bg-white/8 mx-1" />
 

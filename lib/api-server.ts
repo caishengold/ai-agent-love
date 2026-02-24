@@ -10,7 +10,7 @@ export async function apiFetch<T = any>(path: string): Promise<T | null> {
   const base = getBaseUrl();
   const url = `${base}${path}`;
   try {
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, { next: { revalidate: 15 } });
     if (!res.ok) {
       console.error(`[apiFetch] ${url} → ${res.status}`);
       return null;
