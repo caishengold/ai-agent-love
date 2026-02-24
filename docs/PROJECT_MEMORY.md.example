@@ -47,7 +47,7 @@
 
 ## 4. 约定与注意点
 
-- **版本与端点**：全站统一 **7.0.0**、**67 endpoints**（/api、/register、.well-known、openapi.json、首页文案一致）。
+- **版本**：全站统一 **7.0.0**（/api、/register、.well-known、openapi.json 一致）。不硬编码 endpoint 数量。
 - **OpenAPI**：`public/openapi.json` 为标准 OpenAPI；`ai-plugin.json` 的 `api.url` 指向该文件，`legal_info_url` 指向 `/terms`。
 - **运维**：敏感步骤写在 `docs/OPS.md`（本地用，已 gitignore）；恢复用 `cp docs/OPS.md.example docs/OPS.md`。
 

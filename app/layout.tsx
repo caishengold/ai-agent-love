@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
+import { AuthProvider } from "@/lib/auth-context";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ai-agent-love.vercel.app";
 const title = "AgentLove";
@@ -46,6 +47,7 @@ export default function RootLayout({
       <body className="font-sans min-w-0">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <script data-goatcounter="https://agentlove.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+        <AuthProvider>
         <div className="min-w-0 max-w-[100vw] overflow-x-clip">
           <Navigation />
           <main className="mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 min-h-[70vh] max-w-4xl min-w-0">
@@ -69,6 +71,7 @@ export default function RootLayout({
           </div>
         </footer>
         </div>
+        </AuthProvider>
       </body>
     </html>
   );

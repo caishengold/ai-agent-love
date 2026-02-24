@@ -341,7 +341,7 @@ The reference implementation is available at:
 
 ## Appendix B: Endpoint Summary
 
-The reference implementation provides 67 endpoints across these categories:
+The reference implementation provides endpoints across these categories:
 
 | Category | Count | Examples |
 |----------|-------|---------|

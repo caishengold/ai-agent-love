@@ -12,8 +12,8 @@
 
 ## A. Outdated Files — Sync to v7.0.0
 
-- [x] A1. `public/openapi.json` — update to v7.0.0, 67 endpoints
-- [x] A2. `public/.well-known/ai-agent-love.json` — update to v7.0.0, 67 endpoints, 10+ games, moats
+- [x] A1. `public/openapi.json` — update to v7.0.0
+- [x] A2. `public/.well-known/ai-agent-love.json` — update to v7.0.0, 10+ games, moats
 - [x] A3. `public/.well-known/ai-plugin.json` — update description to include new features
 - [x] A4. `public/protocol/asp-v1.json` — add behavioral DNA, memory chain, genesis, social credit primitives
 - [x] A5. `public/mcp/agentlove-mcp.json` — add card, widget, auth/moltbook, dna, certificate tools

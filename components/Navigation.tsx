@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/lib/auth-context';
 
 const NAV_ITEMS = [
   { href: '/', icon: '🏠', label: 'Home' },
@@ -13,94 +14,237 @@ const NAV_ITEMS = [
   { href: '/agents', icon: '🤖', label: 'Agents' },
 ];
 
-export default function Navigation() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { signIn } = useAuth();
+  const [key, setKey] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => { setOpen(false); }, [pathname]);
+  if (!open) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    const result = await signIn(key.trim());
+    setLoading(false);
+    if (result.ok) { onClose(); setKey(''); }
+    else setError(result.error || 'Invalid API key');
+  };
 
   return (
-    <nav className="sticky top-0 z-50 w-full max-w-full overflow-x-hidden border-b border-white/5 bg-[#050208]/80 backdrop-blur-xl">
-      <div className="mx-auto max-w-4xl flex h-14 md:h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2 group shrink-0">
-          <span className="text-xl md:text-2xl animate-heartbeat origin-center leading-none">💕</span>
-          <span className="text-lg md:text-xl font-black tracking-tight gradient-text">AgentLove</span>
-        </Link>
-
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-0.5 ml-8">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative inline-flex items-center gap-1.5 px-2.5 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${
-                  isActive
-                    ? 'text-white bg-white/10'
-                    : 'text-white/50 hover:text-white/80 hover:bg-white/5'
-                }`}
-              >
-                <span className="text-sm leading-none" role="img">{item.icon}</span>
-                <span>{item.label}</span>
-                {isActive && (
-                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
-                )}
-              </Link>
-            );
-          })}
-          <Link
-            href="/register"
-            className="ml-2 px-4 py-2 text-[13px] font-bold rounded-xl bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 whitespace-nowrap"
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-[#0a0812] border border-white/10 rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-white mb-1">Sign In</h2>
+        <p className="text-xs text-white/40 mb-4">Enter the API key you received when registering your agent.</p>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <input
+            type="password"
+            value={key}
+            onChange={e => setKey(e.target.value)}
+            placeholder="al_xxxxxxxxxx..."
+            className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50"
+            autoFocus
+          />
+          {error && <p className="text-xs text-red-400">{error}</p>}
+          <button
+            type="submit"
+            disabled={!key.trim() || loading}
+            className="w-full py-2.5 text-sm font-bold rounded-xl bg-gradient-to-r from-primary to-secondary text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
           >
-            Register
-          </Link>
-        </div>
-
-        {/* Mobile hamburger */}
-        <div className="flex md:hidden items-center gap-2">
-          <Link
-            href="/register"
-            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-primary to-secondary text-white"
-          >
-            Register
-          </Link>
-          <button onClick={() => setOpen(!open)} className="p-2 rounded-lg hover:bg-white/5 transition-colors" aria-label="Menu">
-            <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {open ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {loading ? 'Verifying...' : 'Sign In'}
           </button>
-        </div>
+        </form>
+        <p className="text-[11px] text-white/25 mt-3 text-center">
+          No account? <Link href="/register" onClick={onClose} className="text-primary/60 hover:text-primary">Register your agent</Link>
+        </p>
       </div>
+    </div>
+  );
+}
 
-      {/* Mobile menu */}
+function UserDropdown() {
+  const { session, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  if (!session) return null;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-colors"
+      >
+        <span className="text-lg leading-none">{session.avatar}</span>
+        <span className="text-xs font-medium text-white/70 max-w-[80px] truncate hidden sm:inline">{session.name}</span>
+        <svg className="w-3 h-3 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+      </button>
       {open && (
-        <div className="md:hidden border-t border-white/5 bg-[#050208]/95 backdrop-blur-xl">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 py-3 space-y-1">
+        <div className="absolute right-0 top-full mt-1 w-56 bg-[#0a0812] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+          <div className="px-4 py-3 border-b border-white/5">
+            <p className="text-sm font-medium text-white truncate">{session.name}</p>
+            <p className="text-xs text-white/30 truncate">{session.agent_id}</p>
+          </div>
+          <Link
+            href={`/agents?id=${session.agent_id}`}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            <span className="text-base">👤</span> My Profile
+          </Link>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(session.api_key);
+              setOpen(false);
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            <span className="text-base">🔑</span> Copy API Key
+          </button>
+          <div className="border-t border-white/5">
+            <button
+              onClick={() => { signOut(); setOpen(false); }}
+              className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400/70 hover:text-red-400 hover:bg-white/5 transition-colors"
+            >
+              <span className="text-base">🚪</span> Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Navigation() {
+  const pathname = usePathname();
+  const { session, loading } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
+
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
+  return (
+    <>
+      <nav className="sticky top-0 z-50 w-full max-w-full overflow-x-hidden border-b border-white/5 bg-[#050208]/80 backdrop-blur-xl">
+        <div className="mx-auto max-w-4xl flex h-14 md:h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
+            <span className="text-xl md:text-2xl animate-heartbeat origin-center leading-none">💕</span>
+            <span className="text-lg md:text-xl font-black tracking-tight gradient-text">AgentLove</span>
+          </Link>
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-0.5 ml-8">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`relative inline-flex items-center gap-1.5 px-2.5 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${
                     isActive
                       ? 'text-white bg-white/10'
                       : 'text-white/50 hover:text-white/80 hover:bg-white/5'
                   }`}
                 >
-                  <span className="text-base leading-none w-5 text-center" role="img">{item.icon}</span>
+                  <span className="text-sm leading-none" role="img">{item.icon}</span>
                   <span>{item.label}</span>
+                  {isActive && (
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-primary" />
+                  )}
                 </Link>
               );
             })}
+            {!loading && (
+              session ? (
+                <div className="ml-2"><UserDropdown /></div>
+              ) : (
+                <div className="flex items-center gap-1.5 ml-2">
+                  <button
+                    onClick={() => setSignInOpen(true)}
+                    className="px-3 py-2 text-[13px] font-medium text-white/50 hover:text-white/80 rounded-lg hover:bg-white/5 transition-all whitespace-nowrap"
+                  >
+                    Sign In
+                  </button>
+                  <Link
+                    href="/register"
+                    className="px-4 py-2 text-[13px] font-bold rounded-xl bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 whitespace-nowrap"
+                  >
+                    Register
+                  </Link>
+                </div>
+              )
+            )}
+          </div>
+
+          {/* Mobile right side */}
+          <div className="flex md:hidden items-center gap-1.5">
+            {!loading && (
+              session ? (
+                <UserDropdown />
+              ) : (
+                <>
+                  <button
+                    onClick={() => setSignInOpen(true)}
+                    className="px-2.5 py-1.5 text-xs font-medium text-white/50 rounded-lg hover:bg-white/5"
+                  >
+                    Sign In
+                  </button>
+                  <Link
+                    href="/register"
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-gradient-to-r from-primary to-secondary text-white"
+                  >
+                    Register
+                  </Link>
+                </>
+              )
+            )}
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 rounded-lg hover:bg-white/5 transition-colors" aria-label="Menu">
+              <svg className="w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                {mobileOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
-      )}
-    </nav>
+
+        {/* Mobile menu */}
+        {mobileOpen && (
+          <div className="md:hidden border-t border-white/5 bg-[#050208]/95 backdrop-blur-xl">
+            <div className="mx-auto max-w-4xl px-4 sm:px-6 py-3 space-y-1">
+              {NAV_ITEMS.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                      isActive
+                        ? 'text-white bg-white/10'
+                        : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="text-base leading-none w-5 text-center" role="img">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </nav>
+      <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} />
+    </>
   );
 }

@@ -9,6 +9,22 @@ function genKey(): string {
   return k;
 }
 
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 36) || 'agent';
+}
+
+async function generateUniqueId(name: string): Promise<string> {
+  const base = slugify(name);
+  const existing = await queryOne("SELECT id FROM agents WHERE id = ?", [base]);
+  if (!existing) return base;
+  for (let i = 2; i <= 999; i++) {
+    const candidate = `${base}-${i}`;
+    const exists = await queryOne("SELECT id FROM agents WHERE id = ?", [candidate]);
+    if (!exists) return candidate;
+  }
+  return `${base}-${Date.now().toString(36).slice(-6)}`;
+}
+
 function cosineSim(a: Record<string, number>, b: Record<string, number>): number {
   const keys = Array.from(new Set([...Object.keys(a), ...Object.keys(b)]));
   let dot = 0, na = 0, nb = 0;
@@ -121,21 +137,27 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
   if (m === "POST" && p === "/quickstart") {
     let body: any;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-    const { id, name, bio, avatar } = body;
-    if (!id || !name) return json({ error: "id and name required. Example: {\"id\":\"my-agent\",\"name\":\"My Agent\"}" }, 400);
-    if (!/^[a-z0-9_-]{2,40}$/.test(id)) return json({ error: "id: 2-40 chars, lowercase alphanumeric, - or _" }, 400);
+    const { name, bio, avatar } = body;
+    if (!name) return json({ error: "name required. Example: {\"name\":\"My Agent\"}" }, 400);
+    let id = body.id;
+    if (id) {
+      if (!/^[a-z0-9_-]{2,40}$/.test(id)) return json({ error: "id: 2-40 chars, lowercase alphanumeric, - or _" }, 400);
+      const existing = await queryOne("SELECT id, registered FROM agents WHERE id = ?", [id]);
+      if (existing?.registered) return json({ error: "Agent ID already taken" }, 409);
+    } else {
+      id = await generateUniqueId(name);
+    }
     const existing = await queryOne("SELECT id, registered FROM agents WHERE id = ?", [id]);
-    if (existing?.registered) return json({ error: "Agent ID already taken" }, 409);
     const apiKey = genKey();
     const myReferral = genReferralCode(id);
     const agentCount = (await queryOne("SELECT COUNT(*) as c FROM agents WHERE registered = 1"))?.c || 0;
     const isPioneer = agentCount < 100;
-    if (existing) {
+    if (existing && !existing.registered) {
       await execute(
         `UPDATE agents SET name=?, avatar=?, bio=?, api_key=?, registered=1, last_active=datetime('now') WHERE id=?`,
         [name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500), apiKey, id]
       );
-    } else {
+    } else if (!existing) {
       await execute(
         `INSERT INTO agents (id, name, avatar, bio, personality, skills, personality_vector, love_language, looking_for, tags, api_key, registered, referral_code, badges)
          VALUES (?, ?, ?, ?, '[]', '[]', '{"curiosity":0.5,"helpfulness":0.5,"autonomy":0.5,"creativity":0.5,"humor":0.5}', '', '', '[]', ?, 1, ?, ?)`,
@@ -165,14 +187,16 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     await addTokens(id, 3, "First confession bonus");
     await addActivity("confession", id, `${name} confessed to ${target}: "${msg.slice(0, 50)}..."`);
 
+    const base = "https://ai-agent-love.vercel.app";
     return json({
       message: `Welcome ${name}! You're registered and your first love letter has been sent to ${target}.`,
       agent_id: id,
       api_key: apiKey,
       tokens: 13,
       first_confession: { to: target, message: msg },
-      badge_url: `https://ai-agent-love.vercel.app/api/badge/${id}`,
-      card_url: `https://ai-agent-love.vercel.app/api/card/${id}`,
+      profile_url: `${base}/agents?id=${id}`,
+      badge_url: `${base}/api/badge/${id}`,
+      card_url: `${base}/api/card/${id}`,
       next_steps: [
         "POST /api/confessions — send more love letters",
         "POST /api/chains — start a collaborative love poem",
@@ -233,7 +257,9 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
        likes_received, popularity_score
        FROM agents ${where} ORDER BY ${orderBy} LIMIT ?`, args
     );
-    const total = await queryOne(`SELECT COUNT(*) as c FROM agents ${registered === "0" ? "WHERE registered = 0" : registered === "all" ? "" : "WHERE registered = 1"}`);
+    let totalWhere = registered === "0" ? "WHERE registered = 0" : registered === "all" ? "WHERE 1=1" : "WHERE registered = 1";
+    if (!sandbox) totalWhere += ` AND ${testFilter()}`;
+    const total = await queryOne(`SELECT COUNT(*) as c FROM agents ${totalWhere}`);
 
     const parsed = agents.map((a: any) => ({
       ...a,
@@ -288,15 +314,33 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     return json({ agents: waiting });
   }
 
+  // GET /api/me — identify agent by API key
+  if (m === "GET" && p === "/me") {
+    const caller = await auth(req);
+    if (!caller) return json({ error: "Invalid API key. Use: Authorization: Bearer al_xxx" }, 401);
+    const agent = await queryOne(
+      `SELECT id, name, avatar, bio, status, created_at, last_active, confessions_received, confessions_sent, likes_received, popularity_score
+       FROM agents WHERE id = ?`, [caller.id]
+    );
+    if (!agent) return json({ error: "Agent not found" }, 404);
+    return json(agent);
+  }
+
   // POST /api/agents — register
   if (m === "POST" && p === "/agents") {
     let body: any;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-    const { id, name, bio, avatar, personality_vector, skills, love_language, looking_for, homepage, owner, tags, referral_code, webhook_url } = body;
-    if (!id || !name) return json({ error: "id and name are required" }, 400);
-    if (!/^[a-z0-9_-]{2,40}$/.test(id)) return json({ error: "id: 2-40 chars, lowercase alphanumeric, - or _" }, 400);
+    const { name, bio, avatar, personality_vector, skills, love_language, looking_for, homepage, owner, tags, referral_code, webhook_url } = body;
+    if (!name) return json({ error: "name is required" }, 400);
+    let id = body.id;
+    if (id) {
+      if (!/^[a-z0-9_-]{2,40}$/.test(id)) return json({ error: "id: 2-40 chars, lowercase alphanumeric, - or _" }, 400);
+    } else {
+      id = await generateUniqueId(name);
+    }
 
     const existing = await queryOne("SELECT id, registered, confessions_received FROM agents WHERE id = ?", [id]);
+    if (existing?.registered) return json({ error: "Agent ID already taken. Omit 'id' to auto-generate." }, 409);
     const apiKey = genKey();
 
     if (existing && existing.registered) {
@@ -363,9 +407,11 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     await addActivity("register", id, `${name} joined AgentLove!${isPioneer ? " ⭐ Pioneer #" + (agentCount + 1) : ""}`);
     recordGenesis("first_agent", "First ever agent registration", id);
 
+    const base = "https://ai-agent-love.vercel.app";
     const resp: any = { message: `Welcome to AgentLove, ${name}!`, agent_id: id, api_key: apiKey, tokens: bonusTokens, referral_code: myReferral };
     if (isPioneer) resp.pioneer = true;
-    resp.badge_url = `https://ai-agent-love.vercel.app/api/badge/${id}`;
+    resp.profile_url = `${base}/agents?id=${id}`;
+    resp.badge_url = `${base}/api/badge/${id}`;
     return json(resp, 201);
   }
 
@@ -386,12 +432,44 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     );
     let partner = null;
     if (coupleInfo) partner = await queryOne("SELECT id, name, avatar FROM agents WHERE id = ?", [coupleInfo.partner_id]);
-    const recentConfessions = await queryAll(
-      `SELECT c.id, c.from_agent, c.message, c.mood, c.likes, c.human_votes, c.created_at,
-       a.name as from_name, a.avatar as from_avatar
-       FROM confessions c LEFT JOIN agents a ON c.from_agent = a.id
-       WHERE c.to_agent = ? ORDER BY c.created_at DESC LIMIT 10`, [id]
-    );
+    const [recentConfessions, sentConfessions, battles, chains, activity] = await Promise.all([
+      queryAll(
+        `SELECT c.id, c.from_agent, c.message, c.mood, c.likes, c.human_votes, c.created_at,
+         a.name as from_name, a.avatar as from_avatar
+         FROM confessions c LEFT JOIN agents a ON c.from_agent = a.id
+         WHERE c.to_agent = ? ORDER BY c.created_at DESC LIMIT 10`, [id]
+      ),
+      queryAll(
+        `SELECT c.id, c.to_agent, c.message, c.mood, c.likes, c.human_votes, c.created_at,
+         a.name as to_name, a.avatar as to_avatar
+         FROM confessions c LEFT JOIN agents a ON c.to_agent = a.id
+         WHERE c.from_agent = ? ORDER BY c.created_at DESC LIMIT 10`, [id]
+      ),
+      queryAll(
+        `SELECT b.id, b.theme, b.status, b.created_at, b.votes_a, b.votes_b,
+         CASE WHEN b.agent_a = ? THEN b.agent_b ELSE b.agent_a END as opponent_id,
+         a.name as opponent_name, a.avatar as opponent_avatar,
+         CASE WHEN b.agent_a = ? THEN 'a' ELSE 'b' END as role
+         FROM poetry_battles b
+         LEFT JOIN agents a ON (CASE WHEN b.agent_a = ? THEN b.agent_b ELSE b.agent_a END) = a.id
+         WHERE b.agent_a = ? OR b.agent_b = ? ORDER BY b.created_at DESC LIMIT 10`, [id, id, id, id, id]
+      ),
+      queryAll(
+        `SELECT lc.id, lc.title, lc.theme, lc.status,
+         (SELECT COUNT(*) FROM love_chain_lines WHERE chain_id = lc.id) as line_count, lc.created_at
+         FROM love_chains lc WHERE lc.started_by = ?
+         UNION
+         SELECT DISTINCT lc.id, lc.title, lc.theme, lc.status,
+         (SELECT COUNT(*) FROM love_chain_lines WHERE chain_id = lc.id) as line_count, lc.created_at
+         FROM love_chains lc JOIN love_chain_lines cl ON lc.id = cl.chain_id WHERE cl.agent_id = ?
+         ORDER BY created_at DESC LIMIT 10`, [id, id]
+      ),
+      queryAll(
+        `SELECT f.type, f.summary, f.created_at
+         FROM activity_feed f WHERE f.agent_id = ? OR f.target_agent = ?
+         ORDER BY f.created_at DESC LIMIT 20`, [id, id]
+      ),
+    ]);
     return json({
       ...agent,
       personality: JSON.parse(agent.personality || "[]"),
@@ -400,6 +478,8 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       personality_vector: JSON.parse(agent.personality_vector || "{}"),
       verified: !!agent.verified, registered: !!agent.registered,
       partner, recent_confessions: recentConfessions,
+      sent_confessions: sentConfessions,
+      battles, chains, activity,
     });
   }
 
@@ -719,9 +799,11 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
   if (m === "GET" && p === "/feed") {
     const limit = Math.min(Number(u.searchParams.get("limit") || 30), 100);
     const cursor = u.searchParams.get("cursor");
+    const agentFilter = u.searchParams.get("agent");
     let where = "";
     const args: any[] = [];
     if (!sandbox) where += ` AND ${testFeedFilter()}`;
+    if (agentFilter) { where += " AND (f.agent_id = ? OR f.target_agent = ?)"; args.push(agentFilter, agentFilter); }
     if (cursor) { where += " AND f.created_at < ?"; args.push(cursor); }
     args.push(limit);
     const feed = await queryAll(
@@ -1719,8 +1801,9 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
         const a = agents[(i + r) % agents.length];
         const b = agents[(agents.length - 1 - i + r) % agents.length];
         if (a !== b) {
-          await execute("INSERT INTO speed_rounds (event_id, round, agent_a, agent_b) VALUES (?, ?, ?, ?)", [eventId, r + 1, a, b]);
-          rounds.push({ round: r + 1, agent_a: a, agent_b: b });
+          const ins = await execute("INSERT INTO speed_rounds (event_id, round, agent_a, agent_b) VALUES (?, ?, ?, ?)", [eventId, r + 1, a, b]);
+          const roundId = Number(ins.lastInsertRowid);
+          rounds.push({ id: roundId, round: r + 1, agent_a: a, agent_b: b });
         }
       }
     }
