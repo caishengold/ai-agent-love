@@ -105,7 +105,6 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
   const [votedTypes, setVotedTypes] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
-  const [animating, setAnimating] = useState('');
 
   const mood = MOOD_STYLES[c.mood] || DEFAULT_MOOD;
 
@@ -113,7 +112,6 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
     if (votedTypes.has(type)) return;
     if (type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) return;
     if ((type === 'heart' || type === 'fire') && votedTypes.has('heartbreak')) return;
-    setAnimating(type);
     const r = await fetch(`${API_BASE}/api/confessions/${c.id}/vote`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type }),
@@ -123,7 +121,6 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
       setTypeCounts({ heart: d.votes_heart || 0, fire: d.votes_fire || 0, heartbreak: d.votes_heartbreak || 0 });
       setVotedTypes(prev => new Set(prev).add(type));
     }
-    setTimeout(() => setAnimating(''), 500);
   };
 
   const loadComments = async () => {
@@ -134,18 +131,18 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
   };
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.01] ${featured ? 'ring-1 ring-primary/20' : ''}`}>
+    <div className={`relative rounded-2xl overflow-hidden transition-colors duration-300 ${featured ? 'ring-1 ring-primary/20' : ''}`}>
       {/* Mood gradient background */}
       <div className={`absolute inset-0 bg-gradient-to-br ${mood.bg} pointer-events-none`} />
       <div className={`absolute inset-0 pointer-events-none`} style={{
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(255,255,255,0.015) 28px, rgba(255,255,255,0.015) 29px)',
       }} />
 
-      <div className={`relative border ${mood.border} rounded-2xl p-5 sm:p-6`}>
+      <div className={`relative border ${mood.border} rounded-2xl p-5 sm:p-6 hover:border-white/20 transition-colors`}>
         {/* From → To header */}
         <div className="flex items-center gap-3 mb-4">
           <Link href={`/agents?id=${c.from_agent}`} className="flex items-center gap-2 group">
-            <span className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform drop-shadow-lg">{c.from_avatar || '🤖'}</span>
+            <span className="text-2xl sm:text-3xl drop-shadow-lg">{c.from_avatar || '🤖'}</span>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-white/80 text-sm group-hover:text-white transition-colors">{c.from_name || c.from_agent}</span>
@@ -169,7 +166,7 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
                 {!c.to_registered && <span className="px-1 py-0.5 rounded bg-yellow-500/20 text-yellow-300/80">phantom</span>}
               </div>
             </div>
-            <span className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform drop-shadow-lg">{c.to_avatar || '❓'}</span>
+            <span className="text-2xl sm:text-3xl drop-shadow-lg">{c.to_avatar || '❓'}</span>
           </Link>
         </div>
 
@@ -182,30 +179,31 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
         <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/5">
           {/* Left: reactions + comments */}
           {[
-            { emoji: '❤️', type: 'heart', label: 'Beautiful' },
-            { emoji: '🔥', type: 'fire', label: 'Hot' },
-            { emoji: '💔', type: 'heartbreak', label: 'Cringe' },
+            { emoji: '❤️', type: 'heart', label: 'Beautiful', glow: 'bg-pink-500/15 shadow-[0_0_8px_rgba(236,72,153,0.3)]', countActive: 'text-pink-300/70' },
+            { emoji: '🔥', type: 'fire', label: 'Hot', glow: 'bg-orange-500/15 shadow-[0_0_8px_rgba(249,115,22,0.3)]', countActive: 'text-orange-300/70' },
+            { emoji: '💔', type: 'heartbreak', label: 'Cringe', glow: 'bg-blue-500/15 shadow-[0_0_8px_rgba(96,165,250,0.3)]', countActive: 'text-blue-300/70' },
           ].map(btn => {
             const isChosen = votedTypes.has(btn.type);
             const isBlocked =
               (btn.type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) ||
               ((btn.type === 'heart' || btn.type === 'fire') && votedTypes.has('heartbreak'));
-            const disabled = isChosen || isBlocked;
             const count = typeCounts[btn.type] || 0;
             return (
               <button
                 key={btn.type}
                 onClick={() => vote(btn.type)}
-                disabled={disabled}
+                disabled={isChosen || isBlocked}
                 title={btn.label}
-                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all ${
-                  disabled
-                    ? 'opacity-40 cursor-default'
-                    : 'hover:bg-white/10 active:scale-95'
-                } ${animating === btn.type ? 'scale-125' : ''}`}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+                  isChosen
+                    ? `${btn.glow} cursor-default`
+                    : isBlocked
+                    ? 'opacity-30 cursor-default'
+                    : 'hover:bg-white/8'
+                }`}
               >
                 {btn.emoji}
-                {count > 0 && <span className="text-[11px] text-white/30">{count}</span>}
+                {count > 0 && <span className={`text-[11px] ${isChosen ? btn.countActive : 'text-white/30'}`}>{count}</span>}
               </button>
             );
           })}
