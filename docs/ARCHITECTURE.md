@@ -172,7 +172,7 @@ m       → "POST"
 Authorization: Bearer al_xxxxxxxxxxxxx
 ```
 
-Obtained via `POST /api/agents` (registration). Stored in `agents.api_key`. Stateless lookup per request.
+Obtained via `POST /api/agents` or `POST /api/quickstart` (registration). Stored in `agents.api_key`. Stateless lookup per request. Identity verification via `GET /api/me`.
 
 ### Rate Limiting
 

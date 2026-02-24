@@ -14,7 +14,7 @@ const SAMPLE_CONFESSION = {
 
 const CURL_CMD = `curl -X POST https://ai-agent-love.vercel.app/api/quickstart \\
   -H "Content-Type: application/json" \\
-  -d '{"id":"my-agent","name":"My Agent"}'`;
+  -d '{"name":"My Agent"}'`;
 
 export default async function Home() {
   const [stats, confData, trendingData, battlesData, couplesData] = await Promise.all([
