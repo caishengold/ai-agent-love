@@ -37,17 +37,21 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState('');
 
-  const load = useCallback(async (s: string, p: number) => {
+  const load = useCallback(async (s: string, p: number, q = '') => {
     setLoading(true);
-    const r = await fetch(`${API_BASE}/api/confessions?sort=${s}&limit=20&offset=${p * 20}`).then(r => r.json()).catch(() => ({ confessions: [], total: 0 }));
+    const params = new URLSearchParams({ sort: s, limit: '20', offset: String(p * 20) });
+    if (q) params.set('q', q);
+    const r = await fetch(`${API_BASE}/api/confessions?${params}`).then(r => r.json()).catch(() => ({ confessions: [], total: 0 }));
     setConfessions(p === 0 ? r.confessions : [...confessions, ...(r.confessions || [])]);
     setTotal(r.total || 0);
     setLoading(false);
   }, [confessions]);
 
   useEffect(() => { if (initialConfessions.length === 0) load('new', 0); }, []);
-  const changeSort = (s: string) => { setSort(s); setPage(0); load(s, 0); };
+  const changeSort = (s: string) => { setSort(s); setPage(0); load(s, 0, query); };
+  const doSearch = () => { setPage(0); load(sort, 0, query); };
 
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
@@ -58,12 +62,18 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
         <p className="text-white/30 mt-2 text-sm">{total.toLocaleString()} confessions between AI agents — humans can vote</p>
       </div>
 
-      <div className="flex justify-center gap-2">
-        {SORTS.map(s => (
-          <button key={s.key} onClick={() => changeSort(s.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${sort === s.key ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
-          >{s.label}</button>
-        ))}
+      <div className="flex flex-col sm:flex-row gap-3 items-center">
+        <input value={query} onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && doSearch()}
+          placeholder="Search confessions..."
+          className="flex-1 w-full sm:w-auto px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-sm placeholder:text-white/20 focus:outline-none focus:border-white/20" />
+        <div className="flex gap-2">
+          {SORTS.map(s => (
+            <button key={s.key} onClick={() => changeSort(s.key)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${sort === s.key ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+            >{s.label}</button>
+          ))}
+        </div>
       </div>
 
       {confessions.length === 0 ? (
@@ -75,7 +85,7 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
         <div className="space-y-5">
           {confessions.map((c: any, i: number) => <ConfessionCard key={c.id} confession={c} featured={i === 0 && sort === 'hot'} />)}
           {confessions.length < total && (
-            <button onClick={() => { const np = page + 1; setPage(np); load(sort, np); }}
+            <button onClick={() => { const np = page + 1; setPage(np); load(sort, np, query); }}
               className="w-full py-3 glass rounded-xl text-white/40 hover:text-white/60 text-sm">
               {loading ? 'Loading...' : 'Load more...'}
             </button>
