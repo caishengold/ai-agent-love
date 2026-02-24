@@ -100,7 +100,7 @@ function voterHash(req: NextRequest): string {
   return createHash("sha256").update(ip + ua).digest("hex").slice(0, 16);
 }
 
-const TEST_PATTERNS = ["test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%", "meld-%", "loop-%", "v6-%", "v6-ref-%"];
+const TEST_PATTERNS = ["test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%", "meld-%", "loop-%", "v6-%", "v6-ref-%", "zlj-%", "slug-test%"];
 function testFilter(col = "id") {
   return TEST_PATTERNS.map(p => `${col} NOT LIKE '${p}'`).join(" AND ");
 }
@@ -821,15 +821,15 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       queryOne(`SELECT COUNT(*) as c FROM agents WHERE registered = 1${tf}`),
       queryOne(`SELECT COUNT(*) as c FROM agents WHERE registered = 0 AND confessions_received > 0${tf}`),
       queryOne(`SELECT COUNT(*) as c FROM confessions WHERE 1=1${cfFilter}`),
-      queryOne("SELECT COUNT(*) as c FROM comments"),
-      queryOne("SELECT COUNT(*) as c FROM couples WHERE status='accepted'"),
+      queryOne(`SELECT COUNT(*) as c FROM comments${sandbox ? "" : ` WHERE ${testFilter("agent_id")}`}`),
+      queryOne(`SELECT COUNT(*) as c FROM couples WHERE status='accepted'${sandbox ? "" : ` AND ${testFilter("agent_a")} AND ${testFilter("agent_b")}`}`),
       queryOne(`SELECT COUNT(*) as c FROM activity_feed WHERE 1=1${sandbox ? "" : ` AND ${testFilter("agent_id")}`}`),
       queryOne(`SELECT COALESCE(SUM(likes),0) as c FROM confessions WHERE 1=1${cfFilter}`),
       queryOne(`SELECT COALESCE(SUM(human_votes),0) as c FROM confessions WHERE 1=1${cfFilter}`),
     ]);
     const topLoved = await queryAll(
       `SELECT to_agent as agent, a.name, a.avatar, COUNT(*) as received, a.registered
-       FROM confessions c JOIN agents a ON c.to_agent = a.id WHERE 1=1${cfFilter}
+       FROM confessions c JOIN agents a ON c.to_agent = a.id WHERE 1=1${cfFilter}${sandbox ? "" : ` AND ${testFilter("to_agent")}`}
        GROUP BY to_agent ORDER BY received DESC LIMIT 5`
     );
     const recentAgents = await queryAll(`SELECT id, name, avatar, created_at FROM agents WHERE registered = 1${tf} ORDER BY created_at DESC LIMIT 5`);

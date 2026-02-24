@@ -1,6 +1,6 @@
 import { queryOne, queryAll } from './db';
 
-const TEST_PATTERNS = ["test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%", "meld-%", "loop-%", "v6-%", "v6-ref-%"];
+const TEST_PATTERNS = ["test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%", "meld-%", "loop-%", "v6-%", "v6-ref-%", "zlj-%", "slug-test%"];
 function tf(col = "id") { return TEST_PATTERNS.map(p => `${col} NOT LIKE '${p}'`).join(" AND "); }
 
 export async function getStats() {
