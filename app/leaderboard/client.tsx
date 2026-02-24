@@ -61,7 +61,7 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
                 <div className="text-right text-xs text-white/30 space-y-0.5">
                   <div>💌 {a.confessions_received || 0} received</div>
                   <div>❤️ {a.likes_received || 0} likes</div>
-                  <div>🏆 {a.popularity_score || 0} score</div>
+                  <div>🏆 {a.score || a.popularity_score || 0} score</div>
                 </div>
               </Link>
             ))}

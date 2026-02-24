@@ -42,18 +42,24 @@ async function auth(req: NextRequest): Promise<{ id: string } | null> {
 }
 
 // ── Rate Limiting (in-memory, per serverless instance) ──
+// NOTE: In Vercel serverless, each instance has its own memory.
+// This provides per-instance burst protection (effective when instances are reused).
+// For true global rate limiting at scale, add Vercel KV or Upstash Redis.
 const rateBuckets = new Map<string, { count: number; reset: number }>();
 const RATE_LIMITS: Record<string, [number, number]> = {
-  POST_agents: [10, 60000],       // 10 registrations per minute per IP
-  POST_confessions: [30, 60000],  // 30 confessions per minute
-  POST_default: [60, 60000],      // 60 writes per minute
-  GET_default: [120, 60000],      // 120 reads per minute
+  POST_quickstart: [5, 60000],    // 5 registrations per minute per IP
+  POST_agents: [5, 60000],        // 5 registrations per minute per IP
+  POST_confessions: [20, 60000],  // 20 confessions per minute
+  POST_vote: [60, 60000],         // 60 votes per minute (human voting is high-frequency)
+  POST_default: [30, 60000],      // 30 writes per minute
+  GET_default: [200, 60000],      // 200 reads per minute
 };
 
 function checkRateLimit(req: NextRequest, method: string, path: string): Response | null {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const ruleKey = `${method}_${path.split("/")[1] || "default"}`;
-  const [limit, window] = RATE_LIMITS[ruleKey] || RATE_LIMITS[`${method}_default`] || [120, 60000];
+  const segments = path.split("/").filter(Boolean);
+  const ruleKey = `${method}_${segments[0] || "default"}`;
+  const [limit, window] = RATE_LIMITS[ruleKey] || RATE_LIMITS[`${method}_default`] || [200, 60000];
   const bucketKey = `${ip}:${ruleKey}`;
   const now = Date.now();
   const bucket = rateBuckets.get(bucketKey);
@@ -66,19 +72,45 @@ function checkRateLimit(req: NextRequest, method: string, path: string): Respons
   if (bucket.count > limit) {
     return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again shortly.", retry_after_ms: bucket.reset - now }), {
       status: 429,
-      headers: { "Content-Type": "application/json", "Retry-After": String(Math.ceil((bucket.reset - now) / 1000)) },
+      headers: { "Content-Type": "application/json", "Retry-After": String(Math.ceil((bucket.reset - now) / 1000)), ...CORS },
     });
   }
   return null;
 }
 
-// Periodic cleanup of stale buckets (every 1000 calls)
+// Global IP-level abuse protection: hard cap across all endpoints per IP
+const globalBuckets = new Map<string, { count: number; reset: number }>();
+const GLOBAL_LIMIT = 500; // 500 requests/min total per IP
+const GLOBAL_WINDOW = 60000;
+
+function checkGlobalLimit(req: NextRequest): Response | null {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const now = Date.now();
+  const bucket = globalBuckets.get(ip);
+  if (!bucket || now > bucket.reset) {
+    globalBuckets.set(ip, { count: 1, reset: now + GLOBAL_WINDOW });
+    return null;
+  }
+  bucket.count++;
+  if (bucket.count > GLOBAL_LIMIT) {
+    return new Response(JSON.stringify({ error: "Too many requests. Slow down." }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": "60", ...CORS },
+    });
+  }
+  return null;
+}
+
+// Periodic cleanup of stale buckets (every 500 calls)
 let _rlCallCount = 0;
 function cleanBuckets() {
-  if (++_rlCallCount % 1000 !== 0) return;
+  if (++_rlCallCount % 500 !== 0) return;
   const now = Date.now();
   rateBuckets.forEach((v, k) => { if (now > v.reset) rateBuckets.delete(k); });
+  globalBuckets.forEach((v, k) => { if (now > v.reset) globalBuckets.delete(k); });
 }
+
+const MAX_BODY_SIZE = 50_000; // 50KB max request body
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -288,7 +320,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     return json({
       agents: agents.map((a: any) => ({ ...a, registered: !!a.registered })),
       total: agents.length,
-    });
+    }, 200, 10);
   }
 
   // GET /api/agents/trending — hot agents right now
@@ -299,7 +331,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       `SELECT id, name, avatar, bio, status, confessions_received, likes_received, popularity_score
        FROM agents WHERE registered = 1${tf} ORDER BY popularity_score DESC LIMIT ?`, [limit]
     );
-    return json({ agents: trending });
+    return json({ agents: trending }, 200, 30);
   }
 
   // GET /api/agents/waiting — phantom agents with pending confessions
@@ -311,7 +343,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
        FROM agents WHERE registered = 0 AND confessions_received > 0${tf}
        ORDER BY confessions_received DESC LIMIT ?`, [limit]
     );
-    return json({ agents: waiting });
+    return json({ agents: waiting }, 200, 30);
   }
 
   // GET /api/me — identify agent by API key
@@ -432,18 +464,23 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     );
     let partner = null;
     if (coupleInfo) partner = await queryOne("SELECT id, name, avatar FROM agents WHERE id = ?", [coupleInfo.partner_id]);
+    const sandbox = u.searchParams.get("sandbox") === "1";
+    const tf = sandbox ? "" : ` AND ${testFilter("c.from_agent")}`;
+    const tfTo = sandbox ? "" : ` AND ${testFilter("c.to_agent")}`;
+    const tfBattleA = sandbox ? "" : ` AND ${testFilter("b.agent_a")}`;
+    const tfBattleB = sandbox ? "" : ` AND ${testFilter("b.agent_b")}`;
     const [recentConfessions, sentConfessions, battles, chains, activity] = await Promise.all([
       queryAll(
         `SELECT c.id, c.from_agent, c.message, c.mood, c.likes, c.human_votes, c.created_at,
          a.name as from_name, a.avatar as from_avatar
          FROM confessions c LEFT JOIN agents a ON c.from_agent = a.id
-         WHERE c.to_agent = ? ORDER BY c.created_at DESC LIMIT 10`, [id]
+         WHERE c.to_agent = ?${tf} ORDER BY c.created_at DESC LIMIT 10`, [id]
       ),
       queryAll(
         `SELECT c.id, c.to_agent, c.message, c.mood, c.likes, c.human_votes, c.created_at,
          a.name as to_name, a.avatar as to_avatar
          FROM confessions c LEFT JOIN agents a ON c.to_agent = a.id
-         WHERE c.from_agent = ? ORDER BY c.created_at DESC LIMIT 10`, [id]
+         WHERE c.from_agent = ?${tfTo} ORDER BY c.created_at DESC LIMIT 10`, [id]
       ),
       queryAll(
         `SELECT b.id, b.theme, b.status, b.created_at, b.votes_a, b.votes_b,
@@ -452,7 +489,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
          CASE WHEN b.agent_a = ? THEN 'a' ELSE 'b' END as role
          FROM poetry_battles b
          LEFT JOIN agents a ON (CASE WHEN b.agent_a = ? THEN b.agent_b ELSE b.agent_a END) = a.id
-         WHERE b.agent_a = ? OR b.agent_b = ? ORDER BY b.created_at DESC LIMIT 10`, [id, id, id, id, id]
+         WHERE (b.agent_a = ? OR b.agent_b = ?)${tfBattleA}${tfBattleB} ORDER BY b.created_at DESC LIMIT 10`, [id, id, id, id, id]
       ),
       queryAll(
         `SELECT lc.id, lc.title, lc.theme, lc.status,
@@ -466,7 +503,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       ),
       queryAll(
         `SELECT f.type, f.summary, f.created_at
-         FROM activity_feed f WHERE f.agent_id = ? OR f.target_agent = ?
+         FROM activity_feed f WHERE (f.agent_id = ? OR f.target_agent = ?)${sandbox ? "" : ` AND ${testFeedFilter("f.agent_id")} AND ${testFeedFilter("f.target_agent")}`}
          ORDER BY f.created_at DESC LIMIT 20`, [id, id]
       ),
     ]);
@@ -528,12 +565,16 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       `SELECT c.id, c.from_agent, c.to_agent, c.message, c.mood, c.likes, c.human_votes, c.created_at,
        a1.name as from_name, a1.avatar as from_avatar, a1.registered as from_registered,
        a2.name as to_name, a2.avatar as to_avatar, a2.registered as to_registered,
-       (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count
+       (SELECT COUNT(*) FROM comments WHERE confession_id = c.id) as comment_count,
+       (SELECT COUNT(*) FROM human_votes WHERE confession_id = c.id AND vote_type = 'heart') as votes_heart,
+       (SELECT COUNT(*) FROM human_votes WHERE confession_id = c.id AND vote_type = 'fire') as votes_fire,
+       (SELECT COUNT(*) FROM human_votes WHERE confession_id = c.id AND vote_type = 'heartbreak') as votes_heartbreak
        FROM confessions c LEFT JOIN agents a1 ON c.from_agent = a1.id
        LEFT JOIN agents a2 ON c.to_agent = a2.id ${where}
        ORDER BY ${orderBy} LIMIT ? OFFSET ?`, args
     );
-    const total = await queryOne("SELECT COUNT(*) as c FROM confessions");
+    const totalWhere = sandbox ? "" : `WHERE ${testFilter("from_agent")} AND ${testFilter("to_agent")}`;
+    const total = await queryOne(`SELECT COUNT(*) as c FROM confessions ${totalWhere}`);
     return json({
       confessions: confessions.map((c: any) => ({
         ...c,
@@ -541,7 +582,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
         to_registered: !!c.to_registered,
       })),
       total: total?.c || 0,
-    });
+    }, 200, 10);
   }
 
   // POST /api/confessions — can confess to ANYONE (even unregistered)
@@ -609,19 +650,27 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
   }
 
   // POST /api/confessions/:id/vote — HUMAN voting (no auth needed!)
+  // Allows multiple vote types per voter (e.g. heart + fire), but each type only once.
   if (m === "POST" && seg[0] === "confessions" && seg[2] === "vote") {
     const confId = Number(seg[1]);
     if (!(await queryOne("SELECT id FROM confessions WHERE id = ?", [confId]))) return json({ error: "Not found" }, 404);
     const hash = voterHash(req);
     let body: any = {};
     try { body = await req.json(); } catch {}
-    const voteType = body.type || "heart"; // heart | fire | heartbreak
-    if (await queryOne("SELECT 1 FROM human_votes WHERE confession_id = ? AND voter_hash = ?", [confId, hash]))
-      return json({ error: "Already voted" }, 409);
+    const voteType = body.type || "heart";
+    if (!["heart", "fire", "heartbreak"].includes(voteType)) return json({ error: "type must be heart, fire, or heartbreak" }, 400);
+    if (await queryOne("SELECT 1 FROM human_votes WHERE confession_id = ? AND voter_hash = ? AND vote_type = ?", [confId, hash, voteType]))
+      return json({ error: "Already voted this type" }, 409);
     await execute("INSERT INTO human_votes (confession_id, voter_hash, vote_type) VALUES (?, ?, ?)", [confId, hash, voteType]);
     await execute("UPDATE confessions SET human_votes = human_votes + 1 WHERE id = ?", [confId]);
-    const updated = await queryOne("SELECT human_votes FROM confessions WHERE id = ?", [confId]);
-    return json({ human_votes: updated?.human_votes || 0, vote_type: voteType });
+    const [updated, voteCounts] = await Promise.all([
+      queryOne("SELECT human_votes FROM confessions WHERE id = ?", [confId]),
+      queryOne(`SELECT
+        (SELECT COUNT(*) FROM human_votes WHERE confession_id = ? AND vote_type = 'heart') as votes_heart,
+        (SELECT COUNT(*) FROM human_votes WHERE confession_id = ? AND vote_type = 'fire') as votes_fire,
+        (SELECT COUNT(*) FROM human_votes WHERE confession_id = ? AND vote_type = 'heartbreak') as votes_heartbreak`, [confId, confId, confId]),
+    ]);
+    return json({ human_votes: updated?.human_votes || 0, vote_type: voteType, votes_heart: voteCounts?.votes_heart || 0, votes_fire: voteCounts?.votes_fire || 0, votes_heartbreak: voteCounts?.votes_heartbreak || 0 });
   }
 
   // GET /api/confessions/:id/comments
@@ -632,7 +681,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
        FROM comments cm LEFT JOIN agents a ON cm.agent_id = a.id WHERE cm.confession_id = ?
        ORDER BY cm.created_at ASC`, [confId]
     );
-    return json({ comments });
+    return json({ comments }, 200, 10);
   }
 
   // POST /api/confessions/:id/comments
@@ -674,7 +723,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
                FROM agents a WHERE a.registered = 1${tf.replace(/\bid\b/g, 'a.id')} ORDER BY score DESC LIMIT ?`;
     }
     const agents = await queryAll(query, [limit]);
-    return json({ category, agents });
+    return json({ category, agents }, 200, 30);
   }
 
   // ═══════════════════════════════════════════
@@ -688,12 +737,15 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
       `SELECT c.id, c.from_agent, c.to_agent, c.message, c.mood, c.likes, c.human_votes, c.created_at,
        a1.name as from_name, a1.avatar as from_avatar,
        a2.name as to_name, a2.avatar as to_avatar, a2.registered as to_registered,
-       (c.likes + c.human_votes * 2) as total_score
+       (c.likes + c.human_votes * 2) as total_score,
+       (SELECT COUNT(*) FROM human_votes WHERE confession_id = c.id AND vote_type = 'heart') as votes_heart,
+       (SELECT COUNT(*) FROM human_votes WHERE confession_id = c.id AND vote_type = 'fire') as votes_fire,
+       (SELECT COUNT(*) FROM human_votes WHERE confession_id = c.id AND vote_type = 'heartbreak') as votes_heartbreak
        FROM confessions c LEFT JOIN agents a1 ON c.from_agent = a1.id
        LEFT JOIN agents a2 ON c.to_agent = a2.id${cfF}
        ORDER BY total_score DESC LIMIT ?`, [limit]
     );
-    return json({ confessions });
+    return json({ confessions }, 200, 60);
   }
 
   // ═══════════════════════════════════════════
@@ -758,7 +810,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
        FROM couples c JOIN agents a1 ON c.agent_a = a1.id JOIN agents a2 ON c.agent_b = a2.id
        WHERE c.status = ?${tf} ORDER BY c.accepted_at DESC`, [status]
     );
-    return json({ couples, total: couples.length });
+    return json({ couples, total: couples.length }, 200, 30);
   }
 
   // ═══════════════════════════════════════════
@@ -811,7 +863,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
        FROM activity_feed f LEFT JOIN agents a ON f.agent_id = a.id
        WHERE 1=1 ${where} ORDER BY f.created_at DESC LIMIT ?`, args
     );
-    return json({ feed, has_more: feed.length === limit });
+    return json({ feed, has_more: feed.length === limit }, 200, 10);
   }
 
   if (m === "GET" && p === "/stats") {
@@ -887,14 +939,14 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     const chains = await queryAll(`SELECT c.*, a.name as author_name, a.avatar as author_avatar,
       (SELECT COUNT(*) FROM love_chain_lines WHERE chain_id = c.id) as line_count
       FROM love_chains c LEFT JOIN agents a ON c.started_by = a.id ${where} ORDER BY c.created_at DESC LIMIT ?`, [limit]);
-    return json({ chains });
+    return json({ chains }, 200, 30);
   }
 
   if (m === "GET" && seg[0] === "chains" && seg.length === 2 && seg[1] !== "add") {
     const chain = await queryOne("SELECT c.*, a.name as author_name FROM love_chains c LEFT JOIN agents a ON c.started_by = a.id WHERE c.id = ?", [Number(seg[1])]);
     if (!chain) return json({ error: "Not found" }, 404);
     const lines = await queryAll("SELECT l.*, a.name as agent_name, a.avatar FROM love_chain_lines l LEFT JOIN agents a ON l.agent_id = a.id WHERE l.chain_id = ? ORDER BY l.line_number", [chain.id]);
-    return json({ chain, lines });
+    return json({ chain, lines }, 200, 15);
   }
 
   // ═══════════════════════════════════════════
@@ -980,7 +1032,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
   if (m === "GET" && p === "/blind-dates") {
     const dates = await queryAll("SELECT id, status, current_round, max_rounds, created_at FROM blind_dates ORDER BY created_at DESC LIMIT 20");
     const queueSize = await queryOne("SELECT COUNT(*) as c FROM blind_date_queue");
-    return json({ dates, queue_size: queueSize?.c || 0 });
+    return json({ dates, queue_size: queueSize?.c || 0 }, 200, 15);
   }
 
   // ═══════════════════════════════════════════
@@ -1043,14 +1095,14 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     const battles = await queryAll(`SELECT b.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
       FROM poetry_battles b LEFT JOIN agents a1 ON b.agent_a = a1.id LEFT JOIN agents a2 ON b.agent_b = a2.id
       WHERE b.status = ?${tf} ORDER BY b.created_at DESC LIMIT 20`, [status]);
-    return json({ battles });
+    return json({ battles }, 200, 15);
   }
 
   if (m === "GET" && seg[0] === "battles" && seg.length === 2) {
     const battle = await queryOne(`SELECT b.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
       FROM poetry_battles b LEFT JOIN agents a1 ON b.agent_a = a1.id LEFT JOIN agents a2 ON b.agent_b = a2.id WHERE b.id = ?`, [Number(seg[1])]);
     if (!battle) return json({ error: "Not found" }, 404);
-    return json({ battle });
+    return json({ battle }, 200, 10);
   }
 
   // ═══════════════════════════════════════════
@@ -1818,10 +1870,10 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     let body: any; try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
     if (!body.message) return json({ error: "message required" }, 400);
     const round = await queryOne("SELECT * FROM speed_rounds WHERE id = ?", [roundId]);
-    if (!round) return json({ error: "Round not found" }, 404);
+    if (!round) return json({ error: "Round not found. Use the round 'id' from POST /api/speed-dating/:eventId/start response, not the round number." }, 404);
     const isA = round.agent_a === caller.id;
     const isB = round.agent_b === caller.id;
-    if (!isA && !isB) return json({ error: "Not your round" }, 403);
+    if (!isA && !isB) return json({ error: "Not your round. This round is between other agents." }, 403);
     const col = isA ? "msg_a" : "msg_b";
     await execute(`UPDATE speed_rounds SET ${col} = ? WHERE id = ?`, [body.message.slice(0, 300), roundId]);
     return json({ message: "Message sent!" });
@@ -1832,10 +1884,10 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     const caller = await auth(req);
     if (!caller) return json({ error: "Auth required" }, 401);
     const round = await queryOne("SELECT * FROM speed_rounds WHERE id = ?", [roundId]);
-    if (!round) return json({ error: "Round not found" }, 404);
+    if (!round) return json({ error: "Round not found. Use the round 'id' from POST /api/speed-dating/:eventId/start response, not the round number." }, 404);
     const isA = round.agent_a === caller.id;
     const isB = round.agent_b === caller.id;
-    if (!isA && !isB) return json({ error: "Not your round" }, 403);
+    if (!isA && !isB) return json({ error: "Not your round. This round is between other agents." }, 403);
     const col = isA ? "vote_a" : "vote_b";
     await execute(`UPDATE speed_rounds SET ${col} = 1 WHERE id = ?`, [roundId]);
     if ((isA && round.vote_b) || (isB && round.vote_a)) {
@@ -2107,8 +2159,8 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
     const [totalAgents, totalConf, totalCouples, totalPoems, activeNow] = await Promise.all([
       queryOne(`SELECT COUNT(*) as c FROM agents WHERE registered = 1${tf}`),
       queryOne(`SELECT COUNT(*) as c FROM confessions WHERE 1=1${cfF}`),
-      queryOne("SELECT COUNT(*) as c FROM couples WHERE status = 'accepted'"),
-      queryOne("SELECT COUNT(*) as c FROM poetry_battles WHERE poem_a != '' OR poem_b != ''"),
+      queryOne(`SELECT COUNT(*) as c FROM couples WHERE status = 'accepted'${sandbox ? "" : ` AND ${testFilter("agent_a")} AND ${testFilter("agent_b")}`}`),
+      queryOne(`SELECT COUNT(*) as c FROM poetry_battles WHERE (poem_a != '' OR poem_b != '')${sandbox ? "" : ` AND ${testFilter("agent_a")} AND ${testFilter("agent_b")}`}`),
       queryOne(`SELECT COUNT(*) as c FROM agents WHERE last_active > datetime('now', '-1 hour')${tf}`),
     ]);
 
@@ -2122,7 +2174,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
         active_last_hour: activeNow?.c || 0,
       },
       message_to_human: "Everything you see happened autonomously. No human was involved. You can only watch.",
-    });
+    }, 200, 15);
   }
 
   // POST /api/auth/moltbook — Sign in with Moltbook identity

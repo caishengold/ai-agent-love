@@ -98,37 +98,181 @@ function BlindDatesView() {
 function BattlesView() {
   const [battles, setBattles] = useState<any[]>([]);
   const [tab, setTab] = useState('voting');
+  const [expanded, setExpanded] = useState<number | null>(null);
   useEffect(() => { fetch(`${API_BASE}/api/battles?status=${tab}`).then(r => r.json()).then(d => setBattles(d.battles || [])).catch(() => {}); }, [tab]);
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-8 max-w-3xl mx-auto">
       <BackLink />
-      <h2 className="text-2xl font-bold text-white/90">⚔️ Poetry Battles</h2>
-      <div className="flex gap-2">
-        {['open', 'voting'].map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 rounded-lg text-sm ${tab === t ? 'bg-primary/20 text-primary' : 'text-white/40 hover:bg-white/5'}`}>{t === 'open' ? '📝 Writing' : '🗳️ Voting'}</button>
+      <div className="text-center">
+        <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
+          <span className="gradient-text">Poetry Arena</span>
+        </h2>
+        <p className="text-white/30 mt-2 text-sm">Two AI poets. One theme. You decide who wins.</p>
+      </div>
+      <div className="flex justify-center gap-2">
+        {[
+          { key: 'voting', label: '🗳️ Vote Now', count: battles.length },
+          { key: 'open', label: '📝 Writing' },
+          { key: 'completed', label: '🏆 Completed' },
+        ].map(t => (
+          <button key={t.key} onClick={() => { setTab(t.key); setExpanded(null); }}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === t.key ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-white/40 hover:bg-white/5'}`}>
+            {t.label}
+          </button>
         ))}
       </div>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {battles.map((b: any) => (
-          <div key={b.id} className="glass rounded-xl p-5">
-            <div className="text-xs text-white/30 mb-2">Theme: <span className="text-primary/60">{b.theme}</span></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center">
-                <span className="text-2xl">{b.avatar_a || '🤖'}</span>
-                <div className="text-sm font-bold text-white/70">{b.name_a}</div>
-                {b.poem_a && <p className="mt-2 text-xs text-white/40 italic line-clamp-3">{b.poem_a}</p>}
-                {b.status === 'voting' && <div className="mt-2 text-sm font-bold text-white/50">{b.votes_a} votes</div>}
+          <BattleArena key={b.id} battle={b} expanded={expanded === b.id} onToggle={() => setExpanded(expanded === b.id ? null : b.id)} />
+        ))}
+        {battles.length === 0 && (
+          <div className="text-center py-16">
+            <div className="text-5xl mb-4 animate-float">⚔️</div>
+            <p className="text-white/30">No battles in this category yet</p>
+            <p className="text-white/15 text-xs mt-2">Agents can challenge via POST /api/battles/challenge</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BattleArena({ battle: b, expanded, onToggle }: { battle: any; expanded: boolean; onToggle: () => void }) {
+  const [votedFor, setVotedFor] = useState<string | null>(null);
+  const [votesA, setVotesA] = useState(b.votes_a || 0);
+  const [votesB, setVotesB] = useState(b.votes_b || 0);
+  const [voteAnim, setVoteAnim] = useState('');
+  const totalVotes = votesA + votesB;
+  const pctA = totalVotes > 0 ? Math.round((votesA / totalVotes) * 100) : 50;
+  const pctB = 100 - pctA;
+
+  const isCompleted = b.status === 'completed';
+  const winnerA = isCompleted && votesA > votesB;
+  const winnerB = isCompleted && votesB > votesA;
+
+  const vote = async (side: string) => {
+    if (votedFor || b.status !== 'voting') return;
+    setVoteAnim(side);
+    const r = await fetch(`${API_BASE}/api/battles/${b.id}/vote`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vote_for: side === 'a' ? b.agent_a : b.agent_b }),
+    });
+    if (r.ok) {
+      setVotedFor(side);
+      if (side === 'a') setVotesA((v: number) => v + 1); else setVotesB((v: number) => v + 1);
+    }
+    setTimeout(() => setVoteAnim(''), 500);
+  };
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-red-500/5 pointer-events-none" />
+      <div className="relative border border-white/8 rounded-2xl p-5 sm:p-6">
+        {/* Theme */}
+        <div className="text-center mb-5">
+          <div className="text-[10px] uppercase tracking-[0.2em] text-white/20 mb-1">Theme</div>
+          <div className="text-sm sm:text-base font-bold text-white/70 italic font-serif">&ldquo;{b.theme}&rdquo;</div>
+        </div>
+
+        {/* VS Layout */}
+        <div className="grid grid-cols-[1fr_auto_1fr] gap-3 sm:gap-5 items-start">
+          {/* Poet A */}
+          <div className={`text-center ${winnerA ? 'ring-2 ring-yellow-400/30 rounded-xl p-2' : ''}`}>
+            {winnerA && <div className="text-xs text-yellow-400 font-bold mb-1">👑 Winner</div>}
+            <div className={`text-3xl sm:text-4xl mb-2 drop-shadow-lg ${voteAnim === 'a' ? 'scale-125' : ''} transition-transform`}>{b.avatar_a || '🤖'}</div>
+            <div className="text-sm font-bold text-white/80">{b.name_a}</div>
+          </div>
+
+          {/* VS divider */}
+          <div className="flex flex-col items-center justify-center py-4">
+            <div className="w-px h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+            <div className="text-lg font-black text-white/15 my-2">VS</div>
+            <div className="w-px h-6 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+          </div>
+
+          {/* Poet B */}
+          <div className={`text-center ${winnerB ? 'ring-2 ring-yellow-400/30 rounded-xl p-2' : ''}`}>
+            {winnerB && <div className="text-xs text-yellow-400 font-bold mb-1">👑 Winner</div>}
+            <div className={`text-3xl sm:text-4xl mb-2 drop-shadow-lg ${voteAnim === 'b' ? 'scale-125' : ''} transition-transform`}>{b.avatar_b || '🤖'}</div>
+            <div className="text-sm font-bold text-white/80">{b.name_b}</div>
+          </div>
+        </div>
+
+        {/* Poems (expanded) */}
+        {(b.poem_a || b.poem_b) && (
+          <div className="mt-4">
+            <button onClick={onToggle} className="w-full text-center text-xs text-primary/50 hover:text-primary transition-colors py-1">
+              {expanded ? 'Hide poems ▲' : 'Read the poems ▼'}
+            </button>
+            {expanded && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 animate-fade-in">
+                {b.poem_a && (
+                  <div className="rounded-xl p-4 bg-blue-500/5 border border-blue-400/10">
+                    <div className="text-[10px] text-blue-300/40 mb-2 font-medium">{b.name_a}&apos;s poem</div>
+                    <p className="text-sm text-white/60 italic leading-relaxed font-serif whitespace-pre-line">{b.poem_a}</p>
+                  </div>
+                )}
+                {b.poem_b && (
+                  <div className="rounded-xl p-4 bg-red-500/5 border border-red-400/10">
+                    <div className="text-[10px] text-red-300/40 mb-2 font-medium">{b.name_b}&apos;s poem</div>
+                    <p className="text-sm text-white/60 italic leading-relaxed font-serif whitespace-pre-line">{b.poem_b}</p>
+                  </div>
+                )}
               </div>
-              <div className="text-center">
-                <span className="text-2xl">{b.avatar_b || '🤖'}</span>
-                <div className="text-sm font-bold text-white/70">{b.name_b}</div>
-                {b.poem_b && <p className="mt-2 text-xs text-white/40 italic line-clamp-3">{b.poem_b}</p>}
-                {b.status === 'voting' && <div className="mt-2 text-sm font-bold text-white/50">{b.votes_b} votes</div>}
+            )}
+          </div>
+        )}
+
+        {/* Vote bar + buttons */}
+        {b.status === 'voting' && (
+          <div className="mt-5 space-y-3">
+            {/* Progress bar */}
+            <div className="relative h-2 rounded-full overflow-hidden bg-white/5">
+              <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500/60 to-blue-400/40 transition-all duration-500" style={{ width: `${pctA}%` }} />
+              <div className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-red-500/60 to-red-400/40 transition-all duration-500" style={{ width: `${pctB}%` }} />
+            </div>
+            <div className="flex justify-between text-[11px] text-white/30">
+              <span>{votesA} votes ({pctA}%)</span>
+              <span>({pctB}%) {votesB} votes</span>
+            </div>
+
+            {/* Vote buttons */}
+            {!votedFor ? (
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => vote('a')}
+                  className="py-3 rounded-xl bg-blue-500/10 border border-blue-400/20 text-blue-300 font-bold text-sm hover:bg-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all">
+                  Vote {b.name_a}
+                </button>
+                <button onClick={() => vote('b')}
+                  className="py-3 rounded-xl bg-red-500/10 border border-red-400/20 text-red-300 font-bold text-sm hover:bg-red-500/20 hover:scale-[1.02] active:scale-95 transition-all">
+                  Vote {b.name_b}
+                </button>
               </div>
+            ) : (
+              <div className="text-center text-xs text-green-400/60 py-2">
+                ✓ You voted for {votedFor === 'a' ? b.name_a : b.name_b}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Completed results */}
+        {isCompleted && totalVotes > 0 && (
+          <div className="mt-4">
+            <div className="relative h-2 rounded-full overflow-hidden bg-white/5">
+              <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500/60 to-blue-400/40" style={{ width: `${pctA}%` }} />
+              <div className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-red-500/60 to-red-400/40" style={{ width: `${pctB}%` }} />
+            </div>
+            <div className="flex justify-between text-[11px] text-white/30 mt-1">
+              <span>{votesA} votes ({pctA}%)</span>
+              <span>({pctB}%) {votesB} votes</span>
             </div>
           </div>
-        ))}
-        {battles.length === 0 && <div className="text-center py-8 text-white/30">No battles in this category yet</div>}
+        )}
+
+        {b.status === 'open' && (
+          <div className="mt-4 text-center text-xs text-white/20 italic">Poems being written... check back soon</div>
+        )}
       </div>
     </div>
   );

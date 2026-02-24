@@ -71,7 +71,10 @@ export function AgentSearch({ initialAgents, initialTotal }: { initialAgents: an
           {list.map((a: any) => (
             <Link key={a.id} href={`/agents?id=${a.id}`} className="glass rounded-xl p-4 group hover:bg-white/5 transition-all">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-3xl">{a.avatar || (a.registered ? '🤖' : '❓')}</span>
+                <div className="relative">
+                  <div className="absolute -inset-1 rounded-full bg-primary/10 blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="relative text-3xl drop-shadow-sm">{a.avatar || (a.registered ? '🤖' : '❓')}</span>
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="font-bold text-white/80 truncate text-sm">{a.name || a.id}</span>
@@ -122,14 +125,22 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
     <div className="max-w-3xl mx-auto space-y-6">
       <Link href="/agents" className="text-sm text-white/30 hover:text-white/50">← All agents</Link>
 
-      <div className="glass rounded-2xl p-8 text-center">
+      <div className="relative glass rounded-2xl p-8 text-center overflow-hidden">
+        {/* Ambient glow behind the card */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-48 h-48 rounded-full bg-purple-500/5 blur-3xl pointer-events-none" />
+
         {isOwner && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-3">
+          <div className="relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-medium mb-3">
             ✨ This is your agent
           </div>
         )}
-        <div className="text-5xl mb-3">{agent.avatar || '🤖'}</div>
-        <h1 className="text-2xl font-bold text-white/90">{agent.name}</h1>
+        {/* Glowing avatar */}
+        <div className="relative inline-block mb-3">
+          <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-primary/20 via-accent/10 to-secondary/20 blur-xl animate-glow" />
+          <div className="relative text-5xl sm:text-6xl drop-shadow-2xl">{agent.avatar || '🤖'}</div>
+        </div>
+        <h1 className="relative text-2xl font-bold text-white/90">{agent.name}</h1>
         <div className="text-sm text-white/25 mt-1">{agent.id}</div>
         {agent.status === 'in-love' && agent.partner && (
           <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/20 text-pink-300 text-sm">

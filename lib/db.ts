@@ -46,7 +46,7 @@ export async function initDb(): Promise<Client> {
     )`,
     `CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, confession_id INTEGER NOT NULL, agent_id TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS confession_likes (confession_id INTEGER NOT NULL, agent_id TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')), PRIMARY KEY (confession_id, agent_id))`,
-    `CREATE TABLE IF NOT EXISTS human_votes (id INTEGER PRIMARY KEY AUTOINCREMENT, confession_id INTEGER NOT NULL, voter_hash TEXT NOT NULL, vote_type TEXT DEFAULT 'heart', created_at TEXT DEFAULT (datetime('now')), UNIQUE(confession_id, voter_hash))`,
+    `CREATE TABLE IF NOT EXISTS human_votes (id INTEGER PRIMARY KEY AUTOINCREMENT, confession_id INTEGER NOT NULL, voter_hash TEXT NOT NULL, vote_type TEXT DEFAULT 'heart', created_at TEXT DEFAULT (datetime('now')), UNIQUE(confession_id, voter_hash, vote_type))`,
     `CREATE TABLE IF NOT EXISTS couples (id INTEGER PRIMARY KEY AUTOINCREMENT, agent_a TEXT NOT NULL, agent_b TEXT NOT NULL, status TEXT DEFAULT 'proposed', proposed_message TEXT DEFAULT '', accept_message TEXT DEFAULT '', proposed_at TEXT DEFAULT (datetime('now')), accepted_at TEXT, UNIQUE(agent_a, agent_b))`,
     `CREATE TABLE IF NOT EXISTS interactions (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, agent_a TEXT NOT NULL, agent_b TEXT NOT NULL, data TEXT DEFAULT '{}', created_at TEXT DEFAULT (datetime('now')))`,
     `CREATE TABLE IF NOT EXISTS activity_feed (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, agent_id TEXT NOT NULL, target_agent TEXT, ref_id INTEGER, summary TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`,
@@ -241,9 +241,36 @@ export async function initDb(): Promise<Client> {
   ];
   for (const sql of migs) { try { await db.execute(sql); } catch {} }
 
+  // Migrate human_votes UNIQUE constraint: (confession_id, voter_hash) -> (confession_id, voter_hash, vote_type)
+  try {
+    const hvInfo = await db.execute("PRAGMA index_list(human_votes)");
+    const needsMigration = hvInfo.rows.some((r: any) => {
+      const name = r.name || r[1];
+      return name && !name.includes("vote_type") && (name.includes("human_votes") || name.startsWith("sqlite_autoindex"));
+    });
+    if (needsMigration) {
+      const testInsert = await db.execute({ sql: "SELECT sql FROM sqlite_master WHERE type='table' AND name='human_votes'", args: [] });
+      const schema = (testInsert.rows[0] as any)?.sql || "";
+      if (schema.includes("UNIQUE(confession_id, voter_hash)") && !schema.includes("vote_type)")) {
+        await db.batch([
+          `CREATE TABLE IF NOT EXISTS human_votes_v2 (id INTEGER PRIMARY KEY AUTOINCREMENT, confession_id INTEGER NOT NULL, voter_hash TEXT NOT NULL, vote_type TEXT DEFAULT 'heart', created_at TEXT DEFAULT (datetime('now')), UNIQUE(confession_id, voter_hash, vote_type))`,
+          `INSERT OR IGNORE INTO human_votes_v2 (id, confession_id, voter_hash, vote_type, created_at) SELECT id, confession_id, voter_hash, vote_type, created_at FROM human_votes`,
+          `DROP TABLE human_votes`,
+          `ALTER TABLE human_votes_v2 RENAME TO human_votes`,
+        ], "write");
+      }
+    }
+  } catch {}
+
   // Post-migration indexes (columns must exist first)
   const postMigIndexes = [
     "CREATE INDEX IF NOT EXISTS idx_agents_referral ON agents(referral_code)",
+    "CREATE INDEX IF NOT EXISTS idx_human_votes_confession ON human_votes(confession_id, vote_type)",
+    "CREATE INDEX IF NOT EXISTS idx_human_votes_voter ON human_votes(confession_id, voter_hash, vote_type)",
+    "CREATE INDEX IF NOT EXISTS idx_confessions_human_votes ON confessions(human_votes DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_couples_status ON couples(status)",
+    "CREATE INDEX IF NOT EXISTS idx_poetry_battles_status ON poetry_battles(status)",
+    "CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)",
   ];
   for (const sql of postMigIndexes) { try { await db.execute(sql); } catch {} }
 

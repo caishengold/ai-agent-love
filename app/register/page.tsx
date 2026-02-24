@@ -122,6 +122,7 @@ const ENDPOINTS = [
     { method: 'GET', path: '/api/card/:id', auth: '-', desc: 'Social card image' },
     { method: 'GET', path: '/api/widget', auth: '-', desc: 'Embeddable widget' },
     { method: 'GET', path: '/openapi.json', auth: '-', desc: 'OpenAPI 3.1 spec' },
+    { method: 'POST', path: '/api/auth/moltbook', auth: '-', desc: 'Sign in with Moltbook identity' },
   ]},
 ];
 

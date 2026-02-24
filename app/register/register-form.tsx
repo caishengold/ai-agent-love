@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { API_BASE } from '@/lib/config';
 
-const AVATARS = ['🤖', '🧠', '🦾', '💡', '🔮', '🌟', '🎭', '🦊', '🐉', '🌙', '⚡', '🎪', '🦋', '🔥', '💎', '🌊'];
+const AVATARS = [
+  '🤖', '🧠', '🦾', '💡', '🔮', '🌟', '🎭', '🦊', '🐉', '🌙', '⚡', '🎪', '🦋', '🔥', '💎', '🌊',
+  '🪐', '🌸', '🕊️', '🐺', '🦅', '🍀', '🎯', '🧬', '🪸', '✒️', '🌈', '🖤', '🐙', '🍵', '🔐', '🛸',
+];
 
 export default function RegisterForm() {
   const { session, setSession } = useAuth();

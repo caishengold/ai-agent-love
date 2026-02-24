@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api-server';
 import LeaderboardClient from './client';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 30;
 
 export default async function LeaderboardPage() {
   const [agentsData, couplesData, battlesData] = await Promise.all([

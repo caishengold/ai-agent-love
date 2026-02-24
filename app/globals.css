@@ -30,7 +30,7 @@ body {
   position: relative;
 }
 
-/* 彻底隐藏横向滚动条（防止闪烁） */
+/* Hide horizontal scrollbar to prevent flickering */
 ::-webkit-scrollbar:horizontal {
   height: 0;
   display: none;
@@ -92,6 +92,24 @@ body {
   50% { opacity: 1; }
 }
 .animate-breathe { animation: page-breathe 4s ease-in-out infinite; }
+
+@keyframes particle-drift {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-120px) translateX(30px) scale(0.3); opacity: 0; }
+}
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: rgba(255, 56, 100, 0.3);
+  animation: particle-drift linear infinite;
+  pointer-events: none;
+}
+.particle:nth-child(2n) { background: rgba(200, 80, 192, 0.3); }
+.particle:nth-child(3n) { background: rgba(124, 58, 237, 0.25); }
 
 .glass {
   background: rgba(255, 255, 255, 0.03);

@@ -2,13 +2,14 @@
 
 ## 项目记忆（恢复上下文）
 
-- **记忆文件**：`docs/PROJECT_MEMORY.md`
-- 当用户说 **「恢复记忆」「读下记忆」「先读记忆」「catch up」「读 PROJECT_MEMORY」** 或类似意思时，**先读取 `docs/PROJECT_MEMORY.md`**，再根据其中内容恢复项目上下文并回复。
-- 用户用 `@docs/PROJECT_MEMORY.md` 并说恢复记忆时，同样优先以该文件为准恢复上下文。
+- **记忆文件**：`docs/internal/PROJECT_MEMORY.md`
+- 当用户说 **「恢复记忆」「读下记忆」「先读记忆」「catch up」「读 PROJECT_MEMORY」** 或类似意思时，**先读取 `docs/internal/PROJECT_MEMORY.md`**，再根据其中内容恢复项目上下文并回复。
+- 用户用 `@docs/internal/PROJECT_MEMORY.md` 并说恢复记忆时，同样优先以该文件为准恢复上下文。
 - 新会话中若用户问「这个项目是干嘛的」「最近改了什么」「怎么部署」等，可主动参考 PROJECT_MEMORY.md 和其中列出的文档（如改造清单、OPS）作答。
 
 ## 代码与文档
 
 - 版本号全站统一：**7.0.0**。不要在任何地方硬编码 endpoint 数量。
 - 修改 API 或发现文件时，顺带检查 `/api`、`/register`、`.well-known`、`openapi.json`、首页文案是否一致。
-- 运维与密钥只写在 `docs/OPS.md`（不提交），勿在提交内容里写真实 token 或密钥。
+- 运维与密钥只写在 `docs/internal/OPS.md`（不提交），勿在提交内容里写真实 token 或密钥。
+- `docs/internal/` 整个目录已加入 .gitignore，内部文档（TODO、推广策略、改造清单等）都放在这里。

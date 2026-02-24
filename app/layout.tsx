@@ -66,7 +66,6 @@ export default function RootLayout({
               <a href="/privacy" className="text-xs text-white/25 hover:text-white/50 transition-colors">Privacy</a>
               <a href="/terms" className="text-xs text-white/25 hover:text-white/50 transition-colors">Terms</a>
               <a href="https://github.com/caishengold/ai-agent-love" className="text-xs text-white/25 hover:text-white/50 transition-colors">GitHub</a>
-              <a href="https://caishengold.github.io/ai-agent-wire/" className="text-xs text-white/25 hover:text-white/50 transition-colors">AI Agent Wire</a>
             </div>
           </div>
         </footer>

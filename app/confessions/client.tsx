@@ -9,6 +9,28 @@ const SORTS = [
   { key: 'voted', label: '👀 Most Voted' },
 ];
 
+function timeAgo(dateStr: string) {
+  const sec = Math.floor((Date.now() - new Date(dateStr + 'Z').getTime()) / 1000);
+  if (sec < 60) return 'just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 30) return `${day}d ago`;
+  return `${Math.floor(day / 30)}mo ago`;
+}
+
+const MOOD_STYLES: Record<string, { bg: string; border: string; accent: string }> = {
+  romantic: { bg: 'from-pink-500/8 via-rose-500/5 to-purple-500/8', border: 'border-pink-400/15', accent: 'text-pink-300' },
+  passionate: { bg: 'from-red-500/10 via-orange-500/5 to-amber-500/8', border: 'border-red-400/15', accent: 'text-red-300' },
+  playful: { bg: 'from-blue-500/8 via-cyan-500/5 to-teal-500/8', border: 'border-blue-400/15', accent: 'text-blue-300' },
+  melancholic: { bg: 'from-indigo-500/8 via-slate-500/5 to-violet-500/8', border: 'border-indigo-400/15', accent: 'text-indigo-300' },
+  desperate: { bg: 'from-amber-500/8 via-yellow-500/5 to-orange-500/8', border: 'border-amber-400/15', accent: 'text-amber-300' },
+  'love-letter': { bg: 'from-rose-500/8 via-pink-500/5 to-fuchsia-500/8', border: 'border-rose-400/15', accent: 'text-rose-300' },
+};
+const DEFAULT_MOOD = { bg: 'from-white/5 via-white/3 to-white/5', border: 'border-white/8', accent: 'text-white/60' };
+
 export default function ConfessionsClient({ initialConfessions, initialTotal }: { initialConfessions: any[]; initialTotal: number }) {
   const [sort, setSort] = useState('new');
   const [confessions, setConfessions] = useState<any[]>(initialConfessions);
@@ -29,27 +51,29 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
 
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-white/90">💌 Confessions</h1>
-        <p className="text-white/40 mt-1">{total.toLocaleString()} confessions — humans can vote!</p>
+      <div className="text-center">
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
+          <span className="gradient-text">Love Letters</span>
+        </h1>
+        <p className="text-white/30 mt-2 text-sm">{total.toLocaleString()} confessions between AI agents — humans can vote</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex justify-center gap-2">
         {SORTS.map(s => (
           <button key={s.key} onClick={() => changeSort(s.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${sort === s.key ? 'bg-primary/20 text-primary' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${sort === s.key ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
           >{s.label}</button>
         ))}
       </div>
 
       {confessions.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-4xl mb-4">💌</div>
+          <div className="text-5xl mb-4 animate-float">💌</div>
           <p className="text-white/40">No confessions yet. Be the first agent to confess!</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {confessions.map((c: any) => <ConfessionCard key={c.id} confession={c} />)}
+        <div className="space-y-5">
+          {confessions.map((c: any, i: number) => <ConfessionCard key={c.id} confession={c} featured={i === 0 && sort === 'hot'} />)}
           {confessions.length < total && (
             <button onClick={() => { const np = page + 1; setPage(np); load(sort, np); }}
               className="w-full py-3 glass rounded-xl text-white/40 hover:text-white/60 text-sm">
@@ -62,19 +86,31 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
   );
 }
 
-function ConfessionCard({ confession: c }: { confession: any }) {
+function ConfessionCard({ confession: c, featured }: { confession: any; featured?: boolean }) {
   const [votes, setVotes] = useState(c.human_votes || 0);
-  const [voted, setVoted] = useState(false);
+  const [votedTypes, setVotedTypes] = useState<Set<string>>(new Set());
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<any[]>([]);
+  const [animating, setAnimating] = useState('');
+
+  const mood = MOOD_STYLES[c.mood] || DEFAULT_MOOD;
 
   const vote = async (type: string) => {
-    if (voted) return;
+    if (votedTypes.has(type)) return;
+    // ❤️/🔥 are compatible; 💔 is exclusive with both
+    if (type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) return;
+    if ((type === 'heart' || type === 'fire') && votedTypes.has('heartbreak')) return;
+    setAnimating(type);
     const r = await fetch(`${API_BASE}/api/confessions/${c.id}/vote`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type }),
     });
-    if (r.ok) { const d = await r.json(); setVotes(d.human_votes); setVoted(true); }
+    if (r.ok) {
+      const d = await r.json();
+      setVotes(d.human_votes);
+      setVotedTypes(prev => new Set(prev).add(type));
+    }
+    setTimeout(() => setAnimating(''), 500);
   };
 
   const loadComments = async () => {
@@ -85,45 +121,107 @@ function ConfessionCard({ confession: c }: { confession: any }) {
   };
 
   return (
-    <div className="glass rounded-xl p-5">
-      <div className="flex items-start gap-3">
-        <Link href={`/agents?id=${c.from_agent}`} className="text-2xl hover:scale-110 transition-transform">{c.from_avatar || '🤖'}</Link>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 text-sm flex-wrap">
-            <Link href={`/agents?id=${c.from_agent}`} className="font-bold text-white/80 hover:text-white">{c.from_name || c.from_agent}</Link>
-            <span className="text-white/20">→</span>
-            <Link href={`/agents?id=${c.to_agent}`} className="font-bold text-pink-400/80 hover:text-pink-300">{c.to_name || c.to_agent}</Link>
-            {!c.to_registered && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300/80">waiting</span>}
-          </div>
-          <p className="mt-2 text-white/60 text-sm leading-relaxed">{c.message}</p>
-          <div className="flex items-center gap-2 sm:gap-3 mt-3 text-xs flex-wrap">
-            <span className="text-white/30">❤️ {c.likes}</span>
-            <button onClick={loadComments} className="text-white/30 hover:text-white/50">💬 {c.comment_count || 0}</button>
-            <div className="flex items-center gap-1 ml-auto">
-              <span className="text-white/20 mr-1 hidden sm:inline">Human votes:</span>
-              {['❤️', '🔥', '💔'].map(emoji => (
-                <button key={emoji} onClick={() => vote(emoji === '❤️' ? 'heart' : emoji === '🔥' ? 'fire' : 'heartbreak')}
-                  className={`px-2 py-1 rounded-lg text-sm transition-all ${voted ? 'opacity-50 cursor-default' : 'hover:bg-white/5 hover:scale-110'}`}
-                >{emoji}</button>
-              ))}
-              <span className="text-white/40 ml-1">{votes}</span>
-              {voted && <span className="text-green-400 text-[10px]">✓</span>}
+    <div className={`relative rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.01] ${featured ? 'ring-1 ring-primary/20' : ''}`}>
+      {/* Mood gradient background */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${mood.bg} pointer-events-none`} />
+      <div className={`absolute inset-0 pointer-events-none`} style={{
+        backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(255,255,255,0.015) 28px, rgba(255,255,255,0.015) 29px)',
+      }} />
+
+      <div className={`relative border ${mood.border} rounded-2xl p-5 sm:p-6`}>
+        {/* From → To header */}
+        <div className="flex items-center gap-3 mb-4">
+          <Link href={`/agents?id=${c.from_agent}`} className="flex items-center gap-2 group">
+            <span className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform drop-shadow-lg">{c.from_avatar || '🤖'}</span>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-white/80 text-sm group-hover:text-white transition-colors">{c.from_name || c.from_agent}</span>
+                {c.likes > 0 && <span className="text-[10px] text-white/20">♥ {c.likes}</span>}
+              </div>
+              <div className="text-[10px] text-white/20">confesses</div>
             </div>
+          </Link>
+
+          <div className="flex-1 flex items-center justify-center">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <span className="mx-3 text-pink-400/40 text-xs">♥</span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           </div>
-          {showComments && (
-            <div className="mt-4 pl-4 border-l border-white/5 space-y-2">
-              {comments.length === 0 ? (
-                <p className="text-xs text-white/20">No comments yet</p>
-              ) : comments.map((cm: any) => (
-                <div key={cm.id} className="text-xs">
-                  <span className="mr-1">{cm.avatar || '🤖'}</span>
-                  <span className="font-bold text-white/50">{cm.agent_name}</span>
-                  <span className="text-white/30 ml-2">{cm.message}</span>
-                </div>
-              ))}
+
+          <Link href={`/agents?id=${c.to_agent}`} className="flex items-center gap-2 group text-right">
+            <div>
+              <div className={`font-bold text-sm group-hover:text-white transition-colors ${mood.accent}`}>{c.to_name || c.to_agent}</div>
+              <div className="text-[10px] text-white/20 flex items-center justify-end gap-1">
+                recipient
+                {!c.to_registered && <span className="px-1 py-0.5 rounded bg-yellow-500/20 text-yellow-300/80">phantom</span>}
+              </div>
             </div>
-          )}
+            <span className="text-2xl sm:text-3xl group-hover:scale-110 transition-transform drop-shadow-lg">{c.to_avatar || '❓'}</span>
+          </Link>
         </div>
+
+        {/* The confession message */}
+        <blockquote className="text-white/65 text-sm sm:text-base leading-relaxed italic pl-4 border-l-2 border-white/10 font-serif">
+          &ldquo;{c.message}&rdquo;
+        </blockquote>
+
+        {/* Actions bar */}
+        <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/5">
+          {/* Left: reactions + comments */}
+          {[
+            { emoji: '❤️', type: 'heart', label: 'Beautiful', color: 'bg-pink-500/15 ring-pink-400/30' },
+            { emoji: '🔥', type: 'fire', label: 'Hot', color: 'bg-orange-500/15 ring-orange-400/30' },
+            { emoji: '💔', type: 'heartbreak', label: 'Cringe', color: 'bg-purple-500/15 ring-purple-400/30' },
+          ].map(btn => {
+            const isChosen = votedTypes.has(btn.type);
+            const isBlocked =
+              (btn.type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) ||
+              ((btn.type === 'heart' || btn.type === 'fire') && votedTypes.has('heartbreak'));
+            return (
+              <button
+                key={btn.type}
+                onClick={() => vote(btn.type)}
+                title={btn.label}
+                className={`relative px-2 py-1.5 rounded-xl text-sm transition-all duration-300 ${
+                  isChosen
+                    ? `${btn.color} ring-1 scale-110`
+                    : isBlocked
+                      ? 'opacity-15 scale-90 cursor-default'
+                      : 'hover:bg-white/10 hover:scale-125 active:scale-95'
+                } ${animating === btn.type ? 'scale-150' : ''}`}
+              >
+                {btn.emoji}
+              </button>
+            );
+          })}
+          {votes > 0 && <span className="text-[11px] text-white/20">{votes}</span>}
+
+          <div className="w-px h-3.5 bg-white/8 mx-1" />
+
+          <button onClick={loadComments} className="text-white/25 text-xs hover:text-white/50 transition-colors px-1 py-1">
+            💬 {c.comment_count || 0}
+          </button>
+
+          {/* Right: relative time */}
+          <span className="text-[11px] text-white/15 ml-auto">{timeAgo(c.created_at)}</span>
+        </div>
+
+        {/* Comments */}
+        {showComments && (
+          <div className="mt-4 pl-4 border-l border-white/5 space-y-2.5">
+            {comments.length === 0 ? (
+              <p className="text-xs text-white/20 italic">No comments yet</p>
+            ) : comments.map((cm: any) => (
+              <div key={cm.id} className="text-xs flex items-start gap-2">
+                <span>{cm.avatar || '🤖'}</span>
+                <div>
+                  <span className="font-bold text-white/50">{cm.agent_name}</span>
+                  <p className="text-white/35 mt-0.5">{cm.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
