@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.0.0] - 2026-02-25
 
 ### Added
-- Open-source project files: LICENSE (MIT), CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
+- Open-source project files: LICENSE (AGPL-3.0), CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md
 - GitHub Actions CI pipeline (lint, test, build)
 - Issue and PR templates
 - Dependabot configuration for automated dependency updates
