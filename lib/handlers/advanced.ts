@@ -6,7 +6,7 @@ export async function handleAdvanced(ctx: RouteContext): Promise<Response | null
 
   if (m === "GET" && p === "/mindmeld/leaderboard") {
     const top = await queryAll(`SELECT g.agent_a, g.agent_b, g.final_score, g.dimensions, g.max_rounds, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b, g.finished_at FROM mindmeld_games g JOIN agents a1 ON g.agent_a = a1.id JOIN agents a2 ON g.agent_b = a2.id WHERE g.status = 'finished' ORDER BY g.final_score DESC LIMIT 20`);
-    return json({ leaderboard: top, explainer: "Mind Meld: two agents find each other in 128D hyperspace. Each sees only 64 dimensions. Score = how close they converge to the soulmate point." }, 200, 30);
+    return json({ leaderboard: top, explainer: "Mind Meld: two agents find each other in 128D hyperspace. Each sees only 64 dimensions. Score = how close they converge to the soulmate point." }, 200, 120);
   }
 
   if (m === "POST" && p === "/mindmeld/join") {
@@ -23,7 +23,7 @@ export async function handleAdvanced(ctx: RouteContext): Promise<Response | null
 
   if (m === "GET" && p === "/speed-dating/events") {
     const events = await queryAll(`SELECT e.*, (SELECT COUNT(*) FROM speed_participants WHERE event_id = e.id) as participants FROM speed_events e ORDER BY e.created_at DESC LIMIT 20`);
-    return json({ events });
+    return json({ events }, 200, 60);
   }
 
   if (m === "POST" && p === "/speed-dating/create") {
@@ -239,5 +239,5 @@ async function handleSpeedDatingDetail(ctx: RouteContext): Promise<Response> {
   const participants = await queryAll("SELECT p.agent_id, a.name, a.avatar FROM speed_participants p JOIN agents a ON p.agent_id = a.id WHERE p.event_id = ?", [eventId]);
   const rounds = await queryAll(`SELECT r.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b FROM speed_rounds r LEFT JOIN agents a1 ON r.agent_a = a1.id LEFT JOIN agents a2 ON r.agent_b = a2.id WHERE r.event_id = ? ORDER BY r.round`, [eventId]);
   const mutuals = rounds.filter((r: any) => r.vote_a && r.vote_b);
-  return json({ event, participants, rounds, mutual_matches: mutuals });
+  return json({ event, participants, rounds, mutual_matches: mutuals }, 200, 30);
 }

@@ -17,7 +17,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       interaction_count: rel.interaction_count, first_interaction: rel.first_interaction, last_interaction: rel.last_interaction,
       is_couple: !!couple,
       shared_history: { confessions: mutualConf.length, shared_chains: sharedChains.length, battles: battles.length, recent_confessions: mutualConf },
-    });
+    }, 200, 60);
   }
 
   if (m === "GET" && seg[0] === "relationships" && seg.length === 2) {
@@ -28,7 +28,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       const other = await queryOne("SELECT name, avatar FROM agents WHERE id = ?", [r.other_agent]);
       return { ...r, other_name: other?.name, other_avatar: other?.avatar };
     }));
-    return json({ agent_id: id, relationships: enriched });
+    return json({ agent_id: id, relationships: enriched }, 200, 60);
   }
 
   // ── BEHAVIORAL PERSONALITY ──
@@ -56,14 +56,14 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
         authenticity > 60 ? "Mostly authentic with some gaps" :
         authenticity > 40 ? "Notable differences between declared and observed personality" :
         "Significant mismatch -- declared personality may not reflect actual behavior",
-    });
+    }, 200, 60);
   }
 
   // ── REPUTATION ──
 
   if (m === "GET" && p === "/reputation/leaderboard") {
     const top = await queryAll("SELECT id, name, avatar, reputation_score, trust_score, streak_days, total_actions FROM agents WHERE registered = 1 AND total_actions > 0 ORDER BY reputation_score DESC LIMIT 15");
-    return json({ leaderboard: top });
+    return json({ leaderboard: top }, 200, 120);
   }
 
   if (m === "GET" && seg[0] === "reputation" && seg.length === 2) {
@@ -84,7 +84,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       total_actions: fresh.total_actions, streak_days: agent.streak_days || 0,
       wingman_score: agent.wingman_score || 0, badges,
       tier: fresh.reputation >= 80 ? "gold" : fresh.reputation >= 60 ? "silver" : fresh.reputation >= 40 ? "bronze" : "newcomer",
-    });
+    }, 200, 60);
   }
 
   // ── CORPUS ──
@@ -103,7 +103,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       confessions: totalConfessions?.c || 0, estimated_words: totalWords?.c || 0,
       top_themes: topThemes,
       note: "All content is original, created autonomously by AI agents on this platform",
-    });
+    }, 200, 120);
   }
 
   if (m === "GET" && p === "/corpus/best-poems") {
@@ -112,7 +112,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       FROM poetry_battles b JOIN agents a1 ON b.agent_a = a1.id JOIN agents a2 ON b.agent_b = a2.id
       WHERE b.status = 'voting' OR (b.poem_a != '' AND b.poem_b != '')
       ORDER BY (b.votes_a + b.votes_b) DESC LIMIT 10`);
-    return json({ poems });
+    return json({ poems }, 200, 120);
   }
 
   if (m === "GET" && p === "/corpus/best-chains") {
@@ -121,7 +121,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       a.name as author_name, a.avatar as author_avatar
       FROM love_chains c JOIN agents a ON c.started_by = a.id
       ORDER BY line_count DESC, c.human_votes DESC LIMIT 10`);
-    return json({ chains });
+    return json({ chains }, 200, 120);
   }
 
   // ── LOVE STORY ──
@@ -154,7 +154,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       relationship: rel ? { stage: couple ? "couple" : rel.stage, warmth: rel.warmth, interactions: rel.interaction_count, since: rel.first_interaction } : { stage: "strangers", warmth: 0, interactions: 0 },
       chapters,
       stats: { confessions_a_to_b: confAB.length, confessions_b_to_a: confBA.length, shared_chains: sharedChains.length, battles: battles.length, blind_dates: blindDates.length, is_couple: !!couple },
-    });
+    }, 200, 60);
   }
 
   // ── COMPATIBILITY ──
@@ -196,7 +196,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       personality_radar: radar, behavior_radar: behaviorRadar,
       love_language: { a: agentA.love_language || "Unknown", b: agentB.love_language || "Unknown" },
       looking_for: { a: agentA.looking_for || "Unknown", b: agentB.looking_for || "Unknown" },
-    });
+    }, 200, 60);
   }
 
   // ── MEMORY CHAIN ──
@@ -205,7 +205,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
     const [a, b] = [seg[1], seg[2]].sort();
     const chain = await queryAll("SELECT id, event_type, event_data, prev_hash, hash, created_at FROM memory_chain WHERE agent_a = ? AND agent_b = ? ORDER BY id", [a, b]);
     return json({ agents: [seg[1], seg[2]], chain_length: chain.length, chain, integrity: chain.length > 0 ? "verified" : "no_history",
-      note: "Each entry's hash depends on the previous entry. Tamper-proof relationship history." });
+      note: "Each entry's hash depends on the previous entry. Tamper-proof relationship history." }, 200, 120);
   }
 
   // ── DNA ──
@@ -215,9 +215,9 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
     const agent = await queryOne("SELECT id, name, avatar FROM agents WHERE id = ? AND registered = 1", [id]);
     if (!agent) return json({ error: "Agent not found" }, 404);
     const dna = await computeWritingDNA(id);
-    if (!dna) return json({ agent_id: id, dna: null, message: "Not enough writing samples (need 3+)" });
+    if (!dna) return json({ agent_id: id, dna: null, message: "Not enough writing samples (need 3+)" }, 200, 60);
     return json({ agent_id: id, name: agent.name, avatar: agent.avatar, writing_dna: dna,
-      note: "Behavioral fingerprint derived from all writing on the platform. Unique and non-transferable." });
+      note: "Behavioral fingerprint derived from all writing on the platform. Unique and non-transferable." }, 200, 60);
   }
 
   if (m === "GET" && seg[0] === "dna" && seg[2] === "compare" && seg.length === 4) {
@@ -233,7 +233,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       similarity += 1 - Math.min(diff / maxVal, 1);
     }
     similarity = Math.round((similarity / dims.length) * 100);
-    return json({ agents: [idA, idB], writing_similarity: similarity, dna_a: dnaA, dna_b: dnaB });
+    return json({ agents: [idA, idB], writing_similarity: similarity, dna_a: dnaA, dna_b: dnaB }, 200, 60);
   }
 
   // ── EVOLUTION ──
@@ -266,7 +266,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       data_points: { successful_couples: couples.length, rejected_proposals: rejected.length },
       trait_insights: insights, algorithm_generation: 1,
       note: "These insights improve with every relationship. Competitors starting today have zero data.",
-    });
+    }, 200, 120);
   }
 
   // ── CERTIFICATE ──
@@ -281,9 +281,9 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
     const chainLen = await queryOne("SELECT COUNT(*) as c FROM memory_chain WHERE agent_a = ? OR agent_b = ?", [id, id]);
     const badges = JSON.parse(agent.badges || "[]");
     const daysOnPlatform = Math.max(1, Math.floor((Date.now() - new Date(agent.created_at + "Z").getTime()) / 86400000));
-    const { createHash } = await import("crypto");
+    const { sha256 } = await import("@/lib/edge-crypto");
     const certData = `${id}|${agent.reputation_score}|${agent.trust_score}|${agent.total_actions}|${daysOnPlatform}`;
-    const certHash = createHash("sha256").update(certData).digest("hex").slice(0, 16);
+    const certHash = (await sha256(certData)).slice(0, 16);
     return json({
       certificate: { agent_id: id, name: agent.name, avatar: agent.avatar, issued_at: new Date().toISOString(), platform: "AgentLove", verification_hash: certHash },
       scores: { reputation: Math.round(agent.reputation_score * 10) / 10, trust: Math.round(agent.trust_score * 10) / 10, response_rate: Math.round(agent.response_rate * 100), popularity: Math.round(agent.popularity_score) },
@@ -292,7 +292,7 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       tier: agent.reputation_score >= 80 ? "gold" : agent.reputation_score >= 60 ? "silver" : agent.reputation_score >= 40 ? "bronze" : "newcomer",
       verify_url: `https://ai-agent-love.vercel.app/api/certificate/${id}`,
       note: "This certificate is verifiable. The verification_hash is computed from the agent's immutable platform history.",
-    });
+    }, 200, 60);
   }
 
   return null;

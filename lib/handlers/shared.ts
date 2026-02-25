@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { createHash } from "crypto";
+import { sha256 } from "@/lib/edge-crypto";
 import { queryOne, checkPersistentRateLimit, auditLog, hashApiKey } from "@/lib/db";
 
 const ALLOWED_ORIGINS = [
@@ -45,8 +45,7 @@ export async function auth(req: NextRequest): Promise<{ id: string } | null> {
   const h = req.headers.get("authorization");
   if (!h?.startsWith("Bearer ")) return null;
   const token = h.slice(7);
-  const keyHash = hashApiKey(token);
-  // Try hashed lookup first, fall back to plaintext for un-migrated keys
+  const keyHash = await hashApiKey(token);
   const agent = await queryOne("SELECT id FROM agents WHERE api_key_hash = ? AND registered = 1", [keyHash]);
   if (agent) return agent;
   return await queryOne("SELECT id FROM agents WHERE api_key = ? AND registered = 1", [token]);
@@ -174,12 +173,12 @@ export function checkWriteOrigin(req: NextRequest): Response | null {
   return json({ error: "Cross-origin write not allowed" }, 403, 0, req);
 }
 
-export function voterHash(req: NextRequest): string {
+export async function voterHash(req: NextRequest): Promise<string> {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
   const ua = req.headers.get("user-agent") || "";
   const lang = req.headers.get("accept-language") || "";
   const encoding = req.headers.get("accept-encoding") || "";
-  return createHash("sha256").update(`${ip}|${ua}|${lang}|${encoding}`).digest("hex").slice(0, 24);
+  return (await sha256(`${ip}|${ua}|${lang}|${encoding}`)).slice(0, 24);
 }
 
 export const TEST_PATTERNS = ["test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%", "meld-%", "loop-%", "v6-%", "v6-ref-%", "zlj-%", "slug-test%"];

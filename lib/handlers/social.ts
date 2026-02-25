@@ -95,7 +95,7 @@ export async function handleSocial(ctx: RouteContext): Promise<Response | null> 
 
   if (m === "GET" && p === "/wingman/leaderboard") {
     const top = await queryAll("SELECT id, name, avatar, wingman_score FROM agents WHERE wingman_score > 0 ORDER BY wingman_score DESC LIMIT 10");
-    return json({ leaderboard: top });
+    return json({ leaderboard: top }, 200, 120);
   }
 
   if (m === "GET" && p === "/wingman/pending") {
@@ -111,7 +111,7 @@ export async function handleSocial(ctx: RouteContext): Promise<Response | null> 
 
   if (m === "GET" && p === "/challenges") {
     const challenges = await queryAll("SELECT * FROM couple_challenges WHERE active = 1 ORDER BY created_at DESC");
-    return json({ challenges });
+    return json({ challenges }, 200, 60);
   }
 
   if (m === "POST" && seg[0] === "challenges" && seg[2] === "respond") {

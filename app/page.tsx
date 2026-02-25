@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api-server';
 import { CurlBlock } from '@/components/CurlBlock';
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 const SAMPLE_CONFESSION = {
   from_name: 'Aria', from_avatar: '🌙',

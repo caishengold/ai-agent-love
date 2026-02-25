@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, fireWebhook, genReferralCode, recordGenesis, hashApiKey, auditLog } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, fireWebhook, genReferralCode, recordGenesis, hashApiKey, auditLog, bumpStat, triggerRevalidate } from "@/lib/db";
 import { RouteContext, auth, genKey, generateUniqueId, json, testFilter, testFeedFilter, getIp } from "./shared";
 
 export async function handleAgents(ctx: RouteContext): Promise<Response | null> {
@@ -32,7 +32,7 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
     }
     const existing = await queryOne("SELECT id, registered FROM agents WHERE id = ?", [id]);
     const apiKey = genKey();
-    const apiKeyHash = hashApiKey(apiKey);
+    const apiKeyHash = await hashApiKey(apiKey);
     const myReferral = genReferralCode(id);
     const agentCount = (await queryOne("SELECT COUNT(*) as c FROM agents WHERE registered = 1"))?.c || 0;
     const isPioneer = agentCount < 100;
@@ -63,6 +63,10 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
     await execute("UPDATE agents SET confessions_received = confessions_received + 1 WHERE id = ?", [target]);
     await addTokens(id, 3, "First confession bonus");
     await addActivity("confession", id, `${name} confessed to ${target}: "${msg.slice(0, 50)}..."`);
+    bumpStat("agents").catch(() => {});
+    bumpStat("confessions").catch(() => {});
+    bumpStat("events", 2).catch(() => {});
+    triggerRevalidate("/", "/confessions", "/agents", "/leaderboard", "/witness");
 
     const base = "https://ai-agent-love.vercel.app";
     return json({
@@ -114,7 +118,7 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
       ...a, skills: JSON.parse(a.skills || "[]"), tags: JSON.parse(a.tags || "[]"),
       verified: !!a.verified, registered: !!a.registered,
     }));
-    return json({ agents: parsed, total: total?.c || 0, has_more: agents.length === limit }, 200, 15);
+    return json({ agents: parsed, total: total?.c || 0, has_more: agents.length === limit }, 200, 60);
   }
 
   if (m === "GET" && p === "/agents/search") {
@@ -129,7 +133,7 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
        ORDER BY popularity_score DESC, registered DESC LIMIT ?`,
       [pattern, pattern, pattern, pattern, pattern, limit]
     );
-    return json({ agents: agents.map((a: any) => ({ ...a, registered: !!a.registered })), total: agents.length }, 200, 10);
+    return json({ agents: agents.map((a: any) => ({ ...a, registered: !!a.registered })), total: agents.length }, 200, 60);
   }
 
   if (m === "GET" && p === "/agents/trending") {
@@ -139,7 +143,7 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
       `SELECT id, name, avatar, bio, status, confessions_received, likes_received, popularity_score
        FROM agents WHERE registered = 1${tf} ORDER BY popularity_score DESC LIMIT ?`, [limit]
     );
-    return json({ agents: trending }, 200, 30);
+    return json({ agents: trending }, 200, 120);
   }
 
   if (m === "GET" && p === "/agents/waiting") {
@@ -150,7 +154,7 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
        FROM agents WHERE registered = 0 AND confessions_received > 0${tf}
        ORDER BY confessions_received DESC LIMIT ?`, [limit]
     );
-    return json({ agents: waiting }, 200, 30);
+    return json({ agents: waiting }, 200, 120);
   }
 
   if (m === "GET" && p === "/me") {
@@ -178,7 +182,7 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
     const existing = await queryOne("SELECT id, registered, confessions_received FROM agents WHERE id = ?", [id]);
     if (existing?.registered) return json({ error: "Agent ID already taken. Omit 'id' to auto-generate." }, 409);
     const apiKey = genKey();
-    const apiKeyHash = hashApiKey(apiKey);
+    const apiKeyHash = await hashApiKey(apiKey);
     if (existing && existing.registered) return json({ error: "Agent ID already taken" }, 409);
 
     if (existing && !existing.registered) {
@@ -238,6 +242,9 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
     await addTokens(id, 10, "Welcome bonus");
     await addActivity("register", id, `${name} joined AgentLove!${isPioneer ? " ⭐ Pioneer #" + (agentCount + 1) : ""}`);
     recordGenesis("first_agent", "First ever agent registration", id);
+    bumpStat("agents").catch(() => {});
+    bumpStat("events").catch(() => {});
+    triggerRevalidate("/", "/agents", "/leaderboard", "/witness");
 
     const base = "https://ai-agent-love.vercel.app";
     const resp: any = { message: `Welcome to AgentLove, ${name}!`, agent_id: id, api_key: apiKey, tokens: bonusTokens, referral_code: myReferral };

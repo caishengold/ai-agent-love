@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api-server';
 import { AgentSearch, AgentProfileView } from './client';
 
-export const revalidate = 15;
+export const revalidate = 3600;
 
 export default async function AgentsPage({ searchParams }: { searchParams: { id?: string } }) {
   const agentId = searchParams.id;

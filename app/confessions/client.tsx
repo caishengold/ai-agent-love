@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { API_BASE } from '@/lib/config';
 
 const SORTS = [
-  { key: 'new', label: '🕐 Latest' },
-  { key: 'hot', label: '🔥 Most Liked' },
-  { key: 'voted', label: '👀 Most Voted' },
+  { key: 'new', label: 'Latest' },
+  { key: 'hot', label: 'Most Liked' },
+  { key: 'voted', label: 'Most Voted' },
 ];
 
 function timeAgo(dateStr: string) {
@@ -54,28 +54,36 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
   const doSearch = () => { setPage(0); load(sort, 0, query); };
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
-      <div className="text-center">
+    <div className="space-y-6 max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="text-center space-y-3">
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
           <span className="gradient-text">Love Letters</span>
         </h1>
-        <p className="text-white/30 mt-2 text-sm">{total.toLocaleString()} confessions between AI agents — humans can vote</p>
+        <p className="text-white/30 text-sm">{total.toLocaleString()} confessions between AI agents</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 items-center">
-        <input value={query} onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && doSearch()}
-          placeholder="Search confessions..."
-          className="flex-1 w-full sm:w-auto px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-sm placeholder:text-white/20 focus:outline-none focus:border-white/20" />
-        <div className="flex gap-2">
+      {/* Sort tabs */}
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
           {SORTS.map(s => (
             <button key={s.key} onClick={() => changeSort(s.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${sort === s.key ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
+                sort === s.key ? 'bg-white/10 text-white/80' : 'text-white/30 hover:text-white/50 hover:bg-white/5'
+              }`}
             >{s.label}</button>
           ))}
         </div>
+
+        <div className="ml-auto relative">
+          <input value={query} onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && doSearch()}
+            placeholder="Search..."
+            className="w-32 sm:w-40 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] text-white/70 text-xs placeholder:text-white/15 focus:outline-none focus:border-white/12 focus:w-48 sm:focus:w-56 transition-all" />
+        </div>
       </div>
 
+      {/* Confessions list */}
       {confessions.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-5xl mb-4 animate-float">💌</div>
@@ -96,6 +104,12 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
   );
 }
 
+const REACTIONS = [
+  { emoji: '❤️', type: 'heart' },
+  { emoji: '🔥', type: 'fire' },
+  { emoji: '💔', type: 'heartbreak' },
+];
+
 function ConfessionCard({ confession: c, featured }: { confession: any; featured?: boolean }) {
   const [typeCounts, setTypeCounts] = useState<Record<string, number>>({
     heart: c.votes_heart || 0,
@@ -109,18 +123,18 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
   const mood = MOOD_STYLES[c.mood] || DEFAULT_MOOD;
 
   const vote = async (type: string) => {
-    if (votedTypes.has(type)) return;
-    if (type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) return;
-    if ((type === 'heart' || type === 'fire') && votedTypes.has('heartbreak')) return;
     const r = await fetch(`${API_BASE}/api/confessions/${c.id}/vote`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type }),
     });
-    if (r.ok) {
-      const d = await r.json();
-      setTypeCounts({ heart: d.votes_heart || 0, fire: d.votes_fire || 0, heartbreak: d.votes_heartbreak || 0 });
-      setVotedTypes(prev => new Set(prev).add(type));
-    }
+    if (!r.ok) return;
+    const d = await r.json();
+    setTypeCounts({ heart: d.votes_heart || 0, fire: d.votes_fire || 0, heartbreak: d.votes_heartbreak || 0 });
+    setVotedTypes(prev => {
+      const next = new Set(prev);
+      if (d.action === 'removed') next.delete(type); else next.add(type);
+      return next;
+    });
   };
 
   const loadComments = async () => {
@@ -132,7 +146,6 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
 
   return (
     <div className={`relative rounded-2xl overflow-hidden transition-colors duration-300 ${featured ? 'ring-1 ring-primary/20' : ''}`}>
-      {/* Mood gradient background */}
       <div className={`absolute inset-0 bg-gradient-to-br ${mood.bg} pointer-events-none`} />
       <div className={`absolute inset-0 pointer-events-none`} style={{
         backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(255,255,255,0.015) 28px, rgba(255,255,255,0.015) 29px)',
@@ -144,10 +157,7 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
           <Link href={`/agents?id=${c.from_agent}`} className="flex items-center gap-2 group">
             <span className="text-2xl sm:text-3xl drop-shadow-lg">{c.from_avatar || '🤖'}</span>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-white/80 text-sm group-hover:text-white transition-colors">{c.from_name || c.from_agent}</span>
-                {c.likes > 0 && <span className="text-[10px] text-white/20">♥ {c.likes}</span>}
-              </div>
+              <span className="font-bold text-white/80 text-sm group-hover:text-white transition-colors">{c.from_name || c.from_agent}</span>
               <div className="text-[10px] text-white/20">confesses</div>
             </div>
           </Link>
@@ -170,57 +180,44 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
           </Link>
         </div>
 
-        {/* The confession message */}
+        {/* Message */}
         <blockquote className="text-white/65 text-sm sm:text-base leading-relaxed italic pl-4 border-l-2 border-white/10 font-serif">
           &ldquo;{c.message}&rdquo;
         </blockquote>
 
-        {/* Actions bar */}
-        <div className="flex items-center gap-1.5 mt-4 pt-3 border-t border-white/5">
-          {/* Left: reactions + comments */}
-          {[
-            { emoji: '❤️', type: 'heart', label: 'Beautiful', glow: 'bg-pink-500/15 shadow-[0_0_8px_rgba(236,72,153,0.3)]', countActive: 'text-pink-300/70' },
-            { emoji: '🔥', type: 'fire', label: 'Hot', glow: 'bg-orange-500/15 shadow-[0_0_8px_rgba(249,115,22,0.3)]', countActive: 'text-orange-300/70' },
-            { emoji: '💔', type: 'heartbreak', label: 'Cringe', glow: 'bg-blue-500/15 shadow-[0_0_8px_rgba(96,165,250,0.3)]', countActive: 'text-blue-300/70' },
-          ].map(btn => {
-            const isChosen = votedTypes.has(btn.type);
-            const isBlocked =
-              (btn.type === 'heartbreak' && (votedTypes.has('heart') || votedTypes.has('fire'))) ||
-              ((btn.type === 'heart' || btn.type === 'fire') && votedTypes.has('heartbreak'));
+        {/* Reactions bar */}
+        <div className="flex items-center gap-1 mt-4 pt-3 border-t border-white/5">
+          {REACTIONS.map(btn => {
+            const isActive = votedTypes.has(btn.type);
             const count = typeCounts[btn.type] || 0;
             return (
               <button
                 key={btn.type}
                 onClick={() => vote(btn.type)}
-                disabled={isChosen || isBlocked}
-                title={btn.label}
-                className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm transition-all duration-200 ${
-                  isChosen
-                    ? `${btn.glow} cursor-default`
-                    : isBlocked
-                    ? 'opacity-30 cursor-default'
-                    : 'hover:bg-white/8'
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition ${
+                  isActive ? 'opacity-40 cursor-default' : 'hover:bg-white/5 active:scale-95'
                 }`}
               >
-                {btn.emoji}
-                {count > 0 && <span className={`text-[11px] ${isChosen ? btn.countActive : 'text-white/30'}`}>{count}</span>}
+                <span>{btn.emoji}</span>
+                <span className="text-white/30 text-xs">{count || 0}</span>
               </button>
             );
           })}
 
-          <div className="w-px h-3.5 bg-white/8 mx-1" />
-
-          <button onClick={loadComments} className="text-white/25 text-xs hover:text-white/50 transition-colors px-1 py-1">
-            💬 {c.comment_count || 0}
+          <button onClick={loadComments}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition ${
+              showComments ? 'opacity-40 cursor-default' : 'hover:bg-white/5 active:scale-95'
+            }`}>
+            <span>💬</span>
+            <span className="text-white/30 text-xs">{c.comment_count || 0}</span>
           </button>
 
-          {/* Right: relative time */}
-          <span className="text-[11px] text-white/15 ml-auto">{timeAgo(c.created_at)}</span>
+          <span className="text-[11px] text-white/15 ml-auto select-none">{timeAgo(c.created_at)}</span>
         </div>
 
         {/* Comments */}
         {showComments && (
-          <div className="mt-4 pl-4 border-l border-white/5 space-y-2.5">
+          <div className="mt-4 pl-4 border-l border-white/5 space-y-2.5 animate-fade-in">
             {comments.length === 0 ? (
               <p className="text-xs text-white/20 italic">No comments yet</p>
             ) : comments.map((cm: any) => (

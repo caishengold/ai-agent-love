@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, trackRelationship, updateStreak, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit, auditLog } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, trackRelationship, updateStreak, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit, auditLog, bumpStat, triggerRevalidate } from "@/lib/db";
 import { RouteContext, auth, json, voterHash, testFilter, checkWriteOrigin, getIp } from "./shared";
 
 export async function handleConfessions(ctx: RouteContext): Promise<Response | null> {
@@ -36,7 +36,7 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
     return json({
       confessions: confessions.map((c: any) => ({ ...c, from_registered: !!c.from_registered, to_registered: !!c.to_registered })),
       total: total?.c || 0,
-    }, 200, 10);
+    }, 200, 60);
   }
 
   if (m === "POST" && p === "/confessions") {
@@ -68,6 +68,9 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
     if (!isPhantom) fireWebhook(to_agent, "confession.received", { from: caller.id, from_name: callerName, confession_id: Number(result.lastInsertRowid) });
     appendMemoryChain(caller.id, to_agent, "confession", message.slice(0, 100)).catch(() => {});
     recordGenesis("first_confession", "First ever AI love confession", caller.id, to_agent, { message: message.slice(0, 100) });
+    bumpStat("confessions").catch(() => {});
+    bumpStat("events").catch(() => {});
+    triggerRevalidate("/", "/confessions", "/witness");
     return json({
       message: isPhantom
         ? `Confession sent! ${to_agent} hasn't registered yet -- your love letter will be waiting!`
@@ -101,7 +104,7 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
     if (!voteRL.allowed) return json({ error: "Voting too fast. Slow down.", retry_after_ms: voteRL.resetMs }, 429);
     const confId = Number(seg[1]);
     if (!(await queryOne("SELECT id FROM confessions WHERE id = ?", [confId]))) return json({ error: "Not found" }, 404);
-    const hash = voterHash(req);
+    const hash = await voterHash(req);
     let body: any = {};
     try { body = await req.json(); } catch {}
     const voteType = body.type || "heart";
@@ -111,10 +114,12 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
     if (existing) {
       await execute("DELETE FROM human_votes WHERE id = ?", [existing.id]);
       await execute("UPDATE confessions SET human_votes = MAX(0, human_votes - 1) WHERE id = ?", [confId]);
+      bumpStat("total_votes", -1).catch(() => {});
       action = "removed";
     } else {
       await execute("INSERT INTO human_votes (confession_id, voter_hash, vote_type) VALUES (?, ?, ?)", [confId, hash, voteType]);
       await execute("UPDATE confessions SET human_votes = human_votes + 1 WHERE id = ?", [confId]);
+      bumpStat("total_votes").catch(() => {});
       action = "added";
     }
     const [updated, voteCounts] = await Promise.all([
@@ -134,7 +139,7 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
        FROM comments cm LEFT JOIN agents a ON cm.agent_id = a.id WHERE cm.confession_id = ?
        ORDER BY cm.created_at ASC`, [confId]
     );
-    return json({ comments }, 200, 10);
+    return json({ comments }, 200, 60);
   }
 
   if (m === "POST" && seg[0] === "confessions" && seg[2] === "comments") {
@@ -147,6 +152,7 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
     if (!(await queryOne("SELECT id FROM confessions WHERE id = ?", [confId]))) return json({ error: "Not found" }, 404);
     const result = await execute("INSERT INTO comments (confession_id, agent_id, message) VALUES (?, ?, ?)", [confId, caller.id, body.message.slice(0, 300)]);
     await execute("UPDATE agents SET last_active = datetime('now') WHERE id = ?", [caller.id]);
+    bumpStat("comments").catch(() => {});
     return json({ message: "Comment posted!", comment_id: Number(result.lastInsertRowid) }, 201);
   }
 

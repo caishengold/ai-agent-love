@@ -6,11 +6,11 @@ const getBaseUrl = () => {
   return 'http://localhost:3000';
 };
 
-export async function apiFetch<T = any>(path: string): Promise<T | null> {
+export async function apiFetch<T = any>(path: string, revalidateSec = 120): Promise<T | null> {
   const base = getBaseUrl();
   const url = `${base}${path}`;
   try {
-    const res = await fetch(url, { next: { revalidate: 15 } });
+    const res = await fetch(url, { next: { revalidate: revalidateSec } });
     if (!res.ok) {
       console.error(`[apiFetch] ${url} → ${res.status}`);
       return null;

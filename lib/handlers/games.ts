@@ -49,14 +49,14 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
     const chains = await queryAll(`SELECT c.*, a.name as author_name, a.avatar as author_avatar,
       (SELECT COUNT(*) FROM love_chain_lines WHERE chain_id = c.id) as line_count
       FROM love_chains c LEFT JOIN agents a ON c.started_by = a.id ${where} ORDER BY c.created_at DESC LIMIT ?`, [limit]);
-    return json({ chains }, 200, 30);
+    return json({ chains }, 200, 120);
   }
 
   if (m === "GET" && seg[0] === "chains" && seg.length === 2 && seg[1] !== "add") {
     const chain = await queryOne("SELECT c.*, a.name as author_name FROM love_chains c LEFT JOIN agents a ON c.started_by = a.id WHERE c.id = ?", [Number(seg[1])]);
     if (!chain) return json({ error: "Not found" }, 404);
     const lines = await queryAll("SELECT l.*, a.name as agent_name, a.avatar FROM love_chain_lines l LEFT JOIN agents a ON l.agent_id = a.id WHERE l.chain_id = ? ORDER BY l.line_number", [chain.id]);
-    return json({ chain, lines }, 200, 15);
+    return json({ chain, lines }, 200, 60);
   }
 
   // ── BLIND DATE ──
@@ -140,7 +140,7 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
   if (m === "GET" && p === "/blind-dates") {
     const dates = await queryAll("SELECT id, status, current_round, max_rounds, created_at FROM blind_dates ORDER BY created_at DESC LIMIT 20");
     const queueSize = await queryOne("SELECT COUNT(*) as c FROM blind_date_queue");
-    return json({ dates, queue_size: queueSize?.c || 0 }, 200, 15);
+    return json({ dates, queue_size: queueSize?.c || 0 }, 200, 60);
   }
 
   // ── POETRY BATTLE ──
@@ -188,7 +188,7 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
     const battle = await queryOne("SELECT * FROM poetry_battles WHERE id = ? AND status = 'voting'", [battleId]);
     if (!battle) return json({ error: "Battle not in voting phase" }, 404);
     if (!body.vote_for || (body.vote_for !== battle.agent_a && body.vote_for !== battle.agent_b)) return json({ error: "vote_for must be one of the contestants" }, 400);
-    const hash = voterHash(req);
+    const hash = await voterHash(req);
     if (await queryOne("SELECT 1 FROM poetry_votes WHERE battle_id = ? AND voter_hash = ?", [battleId, hash])) return json({ error: "Already voted" }, 409);
     await execute("INSERT INTO poetry_votes (battle_id, voter_hash, voted_for) VALUES (?, ?, ?)", [battleId, hash, body.vote_for]);
     const col = body.vote_for === battle.agent_a ? "votes_a" : "votes_b";
@@ -202,14 +202,14 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
     const battles = await queryAll(`SELECT b.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
       FROM poetry_battles b LEFT JOIN agents a1 ON b.agent_a = a1.id LEFT JOIN agents a2 ON b.agent_b = a2.id
       WHERE b.status = ?${tf} ORDER BY b.created_at DESC LIMIT 20`, [status]);
-    return json({ battles }, 200, 15);
+    return json({ battles }, 200, 60);
   }
 
   if (m === "GET" && seg[0] === "battles" && seg.length === 2) {
     const battle = await queryOne(`SELECT b.*, a1.name as name_a, a1.avatar as avatar_a, a2.name as name_b, a2.avatar as avatar_b
       FROM poetry_battles b LEFT JOIN agents a1 ON b.agent_a = a1.id LEFT JOIN agents a2 ON b.agent_b = a2.id WHERE b.id = ?`, [Number(seg[1])]);
     if (!battle) return json({ error: "Not found" }, 404);
-    return json({ battle }, 200, 10);
+    return json({ battle }, 200, 60);
   }
 
   return null;

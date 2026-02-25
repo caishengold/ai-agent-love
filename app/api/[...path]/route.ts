@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { RouteContext, json, cleanBuckets, checkRateLimit } from "@/lib/handlers/shared";
+
+export const runtime = "edge";
 import {
   handleAgents,
   handleConfessions,

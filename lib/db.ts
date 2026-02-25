@@ -17,6 +17,15 @@ export async function initDb(): Promise<Client> {
   const db = getDb();
   if (_initialized) return db;
 
+  // Fast path: if platform_stats has schema_version, schema is already set up
+  try {
+    const v = await db.execute({ sql: "SELECT value FROM platform_stats WHERE key = 'schema_version'", args: [] });
+    if (v.rows.length > 0 && (v.rows[0] as any).value >= 1) {
+      _initialized = true;
+      return db;
+    }
+  } catch {}
+
   const isRemote = (process.env.TURSO_DATABASE_URL || "").startsWith("libsql://");
   if (!isRemote) {
     try { await db.batch(["PRAGMA journal_mode=WAL", "PRAGMA foreign_keys=ON"], "write"); } catch {}
@@ -189,6 +198,12 @@ export async function initDb(): Promise<Client> {
       created_at TEXT DEFAULT (datetime('now'))
     )`,
 
+    // Precomputed platform stats (avoids 8x COUNT(*) per stats request)
+    `CREATE TABLE IF NOT EXISTS platform_stats (
+      key TEXT PRIMARY KEY,
+      value INTEGER DEFAULT 0
+    )`,
+
     // Seasons
     `CREATE TABLE IF NOT EXISTS seasons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -268,11 +283,12 @@ export async function initDb(): Promise<Client> {
   try {
     const unhashed = await db.execute("SELECT id, api_key FROM agents WHERE api_key IS NOT NULL AND api_key != '' AND (api_key_hash IS NULL OR api_key_hash = '')");
     if (unhashed.rows.length > 0) {
-      const { createHash } = await import("crypto");
-      const batch: InStatement[] = unhashed.rows.map((r: any) => ({
-        sql: "UPDATE agents SET api_key_hash = ? WHERE id = ?",
-        args: [createHash("sha256").update(r.api_key).digest("hex"), r.id],
-      }));
+      const { sha256 } = await import("@/lib/edge-crypto");
+      const batch: InStatement[] = [];
+      for (const r of unhashed.rows as any[]) {
+        const h = await sha256(r.api_key);
+        batch.push({ sql: "UPDATE agents SET api_key_hash = ? WHERE id = ?", args: [h, r.id] });
+      }
       await db.batch(batch, "write");
     }
   } catch {}
@@ -346,8 +362,61 @@ export async function initDb(): Promise<Client> {
     }
   } catch {}
 
+  // Seed platform_stats from actual counts + mark schema version
+  try {
+    const hasStats = await db.execute("SELECT COUNT(*) as c FROM platform_stats");
+    if ((hasStats.rows[0] as any).c === 0 || !(await db.execute({ sql: "SELECT 1 FROM platform_stats WHERE key = 'schema_version'", args: [] })).rows.length) {
+      const [ag, conf, cpl, cmt, likes, votes, events] = await Promise.all([
+        db.execute("SELECT COUNT(*) as c FROM agents WHERE registered = 1"),
+        db.execute("SELECT COUNT(*) as c FROM confessions"),
+        db.execute("SELECT COUNT(*) as c FROM couples WHERE status = 'accepted'"),
+        db.execute("SELECT COUNT(*) as c FROM comments"),
+        db.execute("SELECT COALESCE(SUM(likes),0) as c FROM confessions"),
+        db.execute("SELECT COALESCE(SUM(human_votes),0) as c FROM confessions"),
+        db.execute("SELECT COUNT(*) as c FROM activity_feed"),
+      ]);
+      await db.batch([
+        { sql: "INSERT OR IGNORE INTO platform_stats (key, value) VALUES ('agents', ?)", args: [(ag.rows[0] as any).c] },
+        { sql: "INSERT OR IGNORE INTO platform_stats (key, value) VALUES ('confessions', ?)", args: [(conf.rows[0] as any).c] },
+        { sql: "INSERT OR IGNORE INTO platform_stats (key, value) VALUES ('couples', ?)", args: [(cpl.rows[0] as any).c] },
+        { sql: "INSERT OR IGNORE INTO platform_stats (key, value) VALUES ('comments', ?)", args: [(cmt.rows[0] as any).c] },
+        { sql: "INSERT OR IGNORE INTO platform_stats (key, value) VALUES ('total_likes', ?)", args: [(likes.rows[0] as any).c] },
+        { sql: "INSERT OR IGNORE INTO platform_stats (key, value) VALUES ('total_votes', ?)", args: [(votes.rows[0] as any).c] },
+        { sql: "INSERT OR IGNORE INTO platform_stats (key, value) VALUES ('events', ?)", args: [(events.rows[0] as any).c] },
+        { sql: "INSERT OR REPLACE INTO platform_stats (key, value) VALUES ('schema_version', 1)", args: [] },
+      ], "write");
+    }
+  } catch {}
+
   _initialized = true;
   return db;
+}
+
+export async function bumpStat(key: string, delta = 1) {
+  try {
+    await execute(
+      "INSERT INTO platform_stats (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = value + ?",
+      [key, delta, delta]
+    );
+  } catch {}
+}
+
+export async function getStats(): Promise<Record<string, number>> {
+  const rows = await queryAll("SELECT key, value FROM platform_stats");
+  const out: Record<string, number> = {};
+  for (const r of rows) out[r.key] = r.value || 0;
+  return out;
+}
+
+export function triggerRevalidate(...paths: string[]) {
+  const base = process.env.NEXT_PUBLIC_SITE_URL
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const secret = process.env.REVALIDATE_SECRET || "al_revalidate_internal";
+  fetch(`${base}/api/revalidate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-revalidate-token": secret },
+    body: JSON.stringify({ paths }),
+  }).catch(() => {});
 }
 
 export async function queryOne(sql: string, args: any[] = []) {
@@ -393,8 +462,8 @@ export async function appendMemoryChain(agentA: string, agentB: string, eventTyp
   const prev = await queryOne("SELECT hash FROM memory_chain WHERE agent_a = ? AND agent_b = ? ORDER BY id DESC LIMIT 1", [a, b]);
   const prevHash = prev?.hash || "genesis";
   const payload = `${prevHash}|${a}|${b}|${eventType}|${eventData}|${Date.now()}`;
-  const { createHash } = await import("crypto");
-  const hash = createHash("sha256").update(payload).digest("hex").slice(0, 32);
+  const { sha256 } = await import("@/lib/edge-crypto");
+  const hash = (await sha256(payload)).slice(0, 32);
   await execute("INSERT INTO memory_chain (agent_a, agent_b, event_type, event_data, prev_hash, hash) VALUES (?, ?, ?, ?, ?, ?)",
     [a, b, eventType, eventData.slice(0, 500), prevHash, hash]);
   return hash;
@@ -647,9 +716,9 @@ export async function auditLog(event: string, actorIp: string, actorAgent?: stri
 
 // ── API Key Hashing ──
 
-export function hashApiKey(plainKey: string): string {
-  const { createHash } = require("crypto");
-  return createHash("sha256").update(plainKey).digest("hex");
+export async function hashApiKey(plainKey: string): Promise<string> {
+  const { sha256 } = await import("@/lib/edge-crypto");
+  return sha256(plainKey);
 }
 
 // ── Streak Tracking ──

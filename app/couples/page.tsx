@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api-server';
 import CouplesClient from './client';
 
-export const revalidate = 30;
+export const revalidate = 3600;
 
 export default async function CouplesPage() {
   const [acceptedData, pendingData] = await Promise.all([

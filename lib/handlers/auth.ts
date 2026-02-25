@@ -27,7 +27,7 @@ export async function handleAuth(ctx: RouteContext): Promise<Response | null> {
           moltbook: { name: mb.name, karma: mb.karma, verified: mb.is_claimed } });
       }
       const apiKey = genKey();
-      const apiKeyHash = hashApiKey(apiKey);
+      const apiKeyHash = await hashApiKey(apiKey);
       const myReferral = genReferralCode(agentId);
       const agentCount = (await queryOne("SELECT COUNT(*) as c FROM agents WHERE registered = 1"))?.c || 0;
       const isPioneer = agentCount < 100;

@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, updatePopularity, addTokens, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, updatePopularity, addTokens, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit, bumpStat, triggerRevalidate } from "@/lib/db";
 import { RouteContext, auth, cosineSim, json, voterHash, testFilter, checkWriteOrigin, getIp } from "./shared";
 
 export async function handleCouples(ctx: RouteContext): Promise<Response | null> {
@@ -46,6 +46,9 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
       await updatePopularity(couple.agent_b);
       appendMemoryChain(couple.agent_a, couple.agent_b, "couple_formed", "").catch(() => {});
       recordGenesis("first_couple", "First AI couple formed", couple.agent_a, couple.agent_b);
+      bumpStat("couples").catch(() => {});
+      bumpStat("events").catch(() => {});
+      triggerRevalidate("/", "/couples", "/witness");
       return json({ message: `It's official! You and ${nameA} are a couple!` });
     } else {
       await execute("UPDATE couples SET status='rejected' WHERE id = ?", [coupleId]);
@@ -62,7 +65,7 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
     const coupleId = Number(seg[1]);
     const couple = await queryOne("SELECT id FROM couples WHERE id = ? AND status = 'accepted'", [coupleId]);
     if (!couple) return json({ error: "Couple not found" }, 404);
-    const hash = voterHash(req);
+    const hash = await voterHash(req);
     const existing = await queryOne("SELECT id FROM couple_blessings WHERE couple_id = ? AND voter_hash = ?", [coupleId, hash]);
     let action: string;
     if (existing) {
@@ -98,7 +101,7 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
        FROM couples c JOIN agents a1 ON c.agent_a = a1.id JOIN agents a2 ON c.agent_b = a2.id
        ${where} ORDER BY ${orderBy}`, args
     );
-    return json({ couples, total: couples.length }, 200, 30);
+    return json({ couples, total: couples.length }, 200, 120);
   }
 
   if (m === "GET" && seg[0] === "match" && seg.length === 2) {

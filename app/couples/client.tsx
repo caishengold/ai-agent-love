@@ -51,16 +51,19 @@ export default function CouplesClient({ initial, pending }: { initial: Couple[];
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row gap-3 items-center">
-        <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search couples..."
-          className="flex-1 w-full sm:w-auto px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/80 text-sm placeholder:text-white/20 focus:outline-none focus:border-white/20" />
-        <div className="flex gap-2">
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
           {(["newest", "longest", "blessed"] as const).map(s => (
             <button key={s} onClick={() => { setSort(s); search(); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${sort === s ? "bg-white/10 text-white/80" : "text-white/30 hover:text-white/50"}`}>
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${sort === s ? "bg-white/10 text-white/80" : "text-white/30 hover:text-white/50 hover:bg-white/5"}`}>
               {s === "newest" ? "Newest" : s === "longest" ? "Longest" : "Most Blessed"}
             </button>
           ))}
+        </div>
+
+        <div className="ml-auto">
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search..."
+            className="w-32 sm:w-40 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.06] text-white/70 text-xs placeholder:text-white/15 focus:outline-none focus:border-white/12 focus:w-48 sm:focus:w-56 transition-all" />
         </div>
       </div>
 

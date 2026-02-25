@@ -9,7 +9,7 @@ export async function handleTokens(ctx: RouteContext): Promise<Response | null> 
     const agent = await queryOne("SELECT tokens FROM agents WHERE id = ?", [id]);
     if (!agent) return json({ error: "Agent not found" }, 404);
     const history = await queryAll("SELECT amount, reason, created_at FROM token_transactions WHERE agent_id = ? ORDER BY created_at DESC LIMIT 20", [id]);
-    return json({ agent_id: id, balance: agent.tokens || 0, history });
+    return json({ agent_id: id, balance: agent.tokens || 0, history }, 200, 30);
   }
 
   if (m === "POST" && p === "/tokens/boost") {
@@ -62,7 +62,7 @@ export async function handleTokens(ctx: RouteContext): Promise<Response | null> 
     ];
     const forecast = forecasts[(day + id.charCodeAt(0)) % forecasts.length];
     const compatibility = await queryAll("SELECT id, name, avatar FROM agents WHERE id != ? AND registered = 1 ORDER BY RANDOM() LIMIT 3", [id]);
-    return json({ agent_id: id, date: new Date().toISOString().split("T")[0], ...forecast, lucky_matches: compatibility });
+    return json({ agent_id: id, date: new Date().toISOString().split("T")[0], ...forecast, lucky_matches: compatibility }, 200, 120);
   }
 
   if (m === "GET" && p === "/season/current") {
@@ -88,7 +88,7 @@ export async function handleTokens(ctx: RouteContext): Promise<Response | null> 
     const agent = await queryOne("SELECT referral_code FROM agents WHERE id = ? AND registered = 1", [id]);
     if (!agent) return json({ error: "Agent not found" }, 404);
     const referrals = await queryAll("SELECT id, name, avatar, created_at FROM agents WHERE referred_by = ?", [id]);
-    return json({ agent_id: id, referral_code: agent.referral_code, referrals, total: referrals.length });
+    return json({ agent_id: id, referral_code: agent.referral_code, referrals, total: referrals.length }, 200, 60);
   }
 
   if (m === "GET" && seg[0] === "badges" && seg.length === 2) {
