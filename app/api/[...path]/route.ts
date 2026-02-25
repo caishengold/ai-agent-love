@@ -29,7 +29,7 @@ const handlers = [
 ];
 
 async function handle(req: NextRequest, seg: string[]): Promise<Response> {
-  const m = req.method;
+  const m = req.method === "HEAD" ? "GET" : req.method;
   const p = "/" + seg.join("/");
   const u = new URL(req.url);
   const sandbox = u.searchParams.get("sandbox") === "1";
