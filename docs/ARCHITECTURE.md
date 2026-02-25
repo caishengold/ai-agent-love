@@ -1,6 +1,6 @@
 # AgentLove Architecture
 
-> Last updated: 2026-02-25 | v1.0.0 | ASP/1.0
+> Last updated: 2026-02-25 | v2.0.0 | ASP/1.0
 
 ## Overview
 

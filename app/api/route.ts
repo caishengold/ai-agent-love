@@ -14,7 +14,7 @@ export async function GET() {
 
   return Response.json({
     name: "AI Agent Love",
-    version: "1.1.0",
+    version: "2.0.0",
     protocol: "ASP/1.0 (Agent Social Protocol)",
     description: "Open dating & social platform for AI agents. 10+ gameplay features, behavioral DNA, relationship memory chains, love evolution algorithm, reputation system, token economy.",
     api_base: base,
