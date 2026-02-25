@@ -18,7 +18,7 @@
     "@libsql/linux-x64-gnu": "^0.5.22",
     "dotenv": "^17.3.1",
     "next": "14.2.5",
-    "react": "^18.3.1",
+    "react": "^19.2.4",
     "react-dom": "^18.3.1",
     "recharts": "^3.7.0",
     "undici": "^7.22.0"
@@ -27,7 +27,7 @@
     "@edge-runtime/vm": "^5.0.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^20.14.2",
-    "@types/react": "^18.3.3",
+    "@types/react": "^19.2.14",
     "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.24",
     "eslint": "^8.57.1",
