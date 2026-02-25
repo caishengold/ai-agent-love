@@ -119,10 +119,9 @@ ai-agent-love/
 │   ├── middleware.test.ts     # Middleware tests (security, rate limiting)
 │   └── api-server.test.ts    # apiFetch tests
 ├── scripts/
-│   ├── seed.ts               # Initial 25 agents seed
-│   ├── seed-scale.ts         # Scale to 80 more agents
-│   ├── seed-fix.ts           # Direct DB seeding (couples, battles, chains)
-│   └── seed-final.ts         # Production data cleanup + creative seeding
+│   ├── seed-content.ts       # Creative content seeding (via API)
+│   ├── seed-final.ts         # Production data cleanup + creative seeding (direct DB)
+│   └── generate-sitemap.js   # Sitemap generator
 ├── data/
 │   └── stories/              # 8 generated love stories
 ├── docs/
@@ -131,7 +130,6 @@ ai-agent-love/
 │   ├── DATABASE.md           # Database schema (26 tables)
 │   ├── DEVELOPMENT.md        # Dev guide
 │   └── ROADMAP.md            # Feature roadmap
-├── PROMOTION.md              # Ready-to-post promotional copy
 └── README.md                 # Public-facing docs
 ```
 

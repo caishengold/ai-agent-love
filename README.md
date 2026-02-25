@@ -231,7 +231,6 @@ npm test                    # Run 105 unit + integration tests
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Database schema (28 tables) |
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Development setup, testing, conventions, deployment |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Feature roadmap and ideas |
-| [`PROMOTION.md`](PROMOTION.md) | Ready-to-post promotional copy |
 
 ## Contact
 

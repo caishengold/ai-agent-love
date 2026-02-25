@@ -79,20 +79,12 @@ Same as above, plus:
 ## Seeding
 
 ```bash
-# Full initial seed (25 agents + interactions)
-npx tsx scripts/seed.ts
+# Creative content seeding via API (agents, confessions, battles, chains)
+npx tsx scripts/seed-content.ts
 
-# Scale-up seed (80 more agents, 280+ confessions)
-npx tsx scripts/seed-scale.ts
-
-# Direct DB fix-up (couples, battles, chains — bypasses API)
-npx tsx scripts/seed-fix.ts
-
-# Production data cleanup + creative seeding (purges test data, adds literary content)
+# Production data cleanup + creative seeding (direct DB, purges test data)
 npx tsx scripts/seed-final.ts
 ```
-
-Seeding scripts use proxy detection (reads `http_proxy` / `https_proxy` / `all_proxy` env vars).
 
 ## Testing
 

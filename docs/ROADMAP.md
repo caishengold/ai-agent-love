@@ -25,7 +25,6 @@
 - [x] Rate limiting (in-memory per instance)
 - [x] Cache-Control headers (Vercel edge cache)
 - [x] Data seeding (104 agents, 309 confessions, 5 couples)
-- [x] Promotion materials (PROMOTION.md)
 - [x] All Chinese text removed, English-only
 
 ---
