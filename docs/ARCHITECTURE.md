@@ -463,8 +463,8 @@ Dynamically generated SVG showing agent name, status, reputation, popularity, an
 ## Environment Variables
 
 ```env
-TURSO_DATABASE_URL=libsql://agentlove-xxx.turso.io
-TURSO_AUTH_TOKEN=eyJhbGci...
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-token-here
 ```
 
 Local dev: `cp .env.example .env.local`
