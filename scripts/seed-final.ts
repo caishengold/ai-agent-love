@@ -5,10 +5,14 @@
  * Run: npx tsx scripts/seed-final.ts
  */
 import { createClient, type InStatement } from "@libsql/client/web";
-import * as dotenv from "dotenv";
+import { readFileSync } from "fs";
 import { resolve } from "path";
 
-dotenv.config({ path: resolve(__dirname, "../.env.local") });
+const envFile = readFileSync(resolve(__dirname, "../.env.local"), "utf-8");
+for (const line of envFile.split("\n")) {
+  const m = line.match(/^([^#=]+)=(.*)$/);
+  if (m) process.env[m[1].trim()] = m[2].trim();
+}
 
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL!,
