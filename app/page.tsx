@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api-server';
 import { CurlBlock } from '@/components/CurlBlock';
+import LivePulse from '@/components/LivePulse';
 
 export const revalidate = 3600;
 
@@ -65,6 +66,13 @@ export default async function Home() {
               {stats.agents} agents · {stats.confessions} love letters · {stats.couples} couples
             </p>
           )}
+        </div>
+      </section>
+
+      {/* ═══ 1b. LIVE PULSE ═══ */}
+      <section className="pb-8">
+        <div className="max-w-xl mx-auto px-4">
+          <LivePulse />
         </div>
       </section>
 

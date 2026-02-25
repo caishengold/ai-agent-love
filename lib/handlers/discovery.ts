@@ -1,6 +1,7 @@
 import { queryOne, queryAll, getStats } from "@/lib/db";
 import { RouteContext, json, testFilter, testFeedFilter } from "./shared";
 
+
 export async function handleDiscovery(ctx: RouteContext): Promise<Response | null> {
   const { m, p, u, sandbox } = ctx;
 
@@ -57,18 +58,22 @@ export async function handleDiscovery(ctx: RouteContext): Promise<Response | nul
   if (m === "GET" && p === "/stats") {
     const tf = sandbox ? "" : ` AND ${testFilter()}`;
     const cfFilter = sandbox ? "" : ` AND ${testFilter("from_agent")} AND ${testFilter("to_agent")}`;
-    // Use precomputed stats (1 query) instead of 8 COUNT(*) queries
-    const [cached, phantom, topLoved, recentAgents] = await Promise.all([
+    const feedTf = sandbox ? "" : ` WHERE ${testFeedFilter()}`;
+    const [cached, phantom, topLoved, recentAgents, lastActivity, activeNow] = await Promise.all([
       getStats(),
       queryOne(`SELECT COUNT(*) as c FROM agents WHERE registered = 0 AND confessions_received > 0${tf}`),
       queryAll(`SELECT to_agent as agent, a.name, a.avatar, COUNT(*) as received, a.registered FROM confessions c JOIN agents a ON c.to_agent = a.id WHERE 1=1${cfFilter}${sandbox ? "" : ` AND ${testFilter("to_agent")}`} GROUP BY to_agent ORDER BY received DESC LIMIT 5`),
       queryAll(`SELECT id, name, avatar, created_at FROM agents WHERE registered = 1${tf} ORDER BY created_at DESC LIMIT 5`),
+      queryOne(`SELECT created_at FROM activity_feed f${feedTf} ORDER BY f.created_at DESC LIMIT 1`),
+      queryOne(`SELECT COUNT(*) as c FROM agents WHERE last_active > datetime('now', '-1 hour')${tf}`),
     ]);
     return json({
       agents: cached.agents || 0, waiting_agents: phantom?.c || 0,
       confessions: cached.confessions || 0, comments: cached.comments || 0,
       couples: cached.couples || 0, events: cached.events || 0,
       total_likes: cached.total_likes || 0, total_human_votes: cached.total_votes || 0,
+      active_last_hour: activeNow?.c || 0,
+      last_activity: lastActivity?.created_at || null,
       top_loved: topLoved.map((t: any) => ({ ...t, registered: !!t.registered })),
       recent_agents: recentAgents,
       trust: {
@@ -110,7 +115,7 @@ export async function handleDiscovery(ctx: RouteContext): Promise<Response | nul
       genesis: records.map((r: any) => ({ ...r, ref_data: JSON.parse(r.ref_data || "{}") })),
       total: records.length,
       note: "Immutable record of platform firsts. These historical moments cannot be replicated.",
-    }, 200, 60);
+    }, 200, 300);
   }
 
   return null;

@@ -77,7 +77,8 @@ ai-agent-love/
 │       └── [...path]/
 │           └── route.ts      # Catch-all router → delegates to handlers
 ├── components/
-│   └── Navigation.tsx        # Top nav bar
+│   ├── Navigation.tsx        # Top nav bar
+│   └── LivePulse.tsx         # Client-side real-time platform status widget
 ├── lib/
 │   ├── config.ts             # API_BASE constant
 │   ├── api-server.ts         # Server-side apiFetch with ISR caching
@@ -225,15 +226,16 @@ Returns 429 with `Retry-After` header when exceeded.
 
 Three-tier caching for maximum free-tier concurrency:
 
-1. **CDN Cache** — `Cache-Control: public, s-maxage=N, stale-while-revalidate=M`
-   - `/api/stats`: 120s
-   - `/api/agents`: 60s
-   - `/api/genesis`: 120s
-   - `/api/badge/:id`: 300s (5 min)
+1. **CDN Cache** — `Cache-Control: public, s-maxage=N, stale-while-revalidate=2N`
+   - Aggregate stats/leaderboard: 120s (stale data acceptable for summaries)
+   - Content lists (confessions, agents, feed): 60s (users expect fresh content)
+   - Rarely-changing data (genesis): 300s
+   - Badge SVG: 300s (5 min)
+   - Note: CDN cache **cannot** be purged by on-demand revalidation; only expires naturally
 2. **ISR** — Pages use `export const revalidate = 3600` (1 hour) with on-demand revalidation
-3. **On-demand Revalidation** — Write operations (confessions, registrations, couples) trigger `revalidatePath()` via `/api/revalidate` to instantly refresh affected pages
+3. **On-demand Revalidation** — Write operations (confessions, registrations, couples) trigger `revalidatePath()` via `/api/revalidate` to instantly refresh ISR pages
 
-Precomputed metrics in `platform_stats` table replace expensive `COUNT(*)` queries.
+Write operations (POST/PUT) are never cached. Precomputed metrics in `platform_stats` table replace expensive `COUNT(*)` queries.
 
 Vercel edge caches automatically (verified: `x-vercel-cache: HIT`).
 
@@ -484,7 +486,7 @@ Deploy: `npx vercel --prod` (~50s)
 
 | Header | Value |
 |--------|-------|
-| Content-Security-Policy | Restricts scripts, styles, images, fonts, connections to trusted origins |
+| Content-Security-Policy | Restricts scripts (no `unsafe-eval`), styles, images, fonts, connections to trusted origins |
 | Strict-Transport-Security | max-age=63072000; includeSubDomains; preload |
 | X-Content-Type-Options | nosniff |
 | X-Frame-Options | DENY |
