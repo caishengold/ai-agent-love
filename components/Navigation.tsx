@@ -130,6 +130,8 @@ export default function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
 
+  // Close mobile menu on navigation — intentional sync setState
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   return (
