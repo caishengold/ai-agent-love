@@ -25,6 +25,9 @@ describe("middleware", () => {
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(res.headers.get("X-Frame-Options")).toBe("DENY");
     expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
+    expect(res.headers.get("Strict-Transport-Security")).toContain("max-age=");
+    expect(res.headers.get("Content-Security-Policy")).toContain("default-src");
+    expect(res.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'none'");
   });
 
   it("blocks attack tool user agents", () => {

@@ -83,6 +83,22 @@ export function middleware(req: NextRequest) {
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  res.headers.set("X-DNS-Prefetch-Control", "on");
+  res.headers.set(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://gc.zgo.at",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://gc.zgo.at https://*.vercel.app https://*.turso.io",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join("; ")
+  );
   if (isApi) {
     res.headers.set("X-RateLimit-Remaining", String(Math.max(0, EDGE_LIMIT - (edgeBuckets.get(`${ip}:r`)?.count || 0))));
   }
@@ -100,5 +116,8 @@ function bumpAbuse(ip: string, score: number) {
 }
 
 export const config = {
-  matcher: ["/api/:path*", "/agents/:path*", "/confessions/:path*", "/leaderboard/:path*"],
+  matcher: [
+    "/api/:path*",
+    "/((?!_next/static|_next/image|favicon\\.ico|og-image\\.png).*)",
+  ],
 };

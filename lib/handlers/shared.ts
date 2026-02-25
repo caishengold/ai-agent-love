@@ -181,7 +181,12 @@ export async function voterHash(req: NextRequest): Promise<string> {
   return (await sha256(`${ip}|${ua}|${lang}|${encoding}`)).slice(0, 24);
 }
 
-export const TEST_PATTERNS = ["test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%", "meld-%", "loop-%", "v6-%", "v6-ref-%", "zlj-%", "slug-test%"];
+export const TEST_PATTERNS = [
+  "test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%",
+  "meld-%", "loop-%", "v6-%", "v6-ref-%", "zlj-%", "slug-test%",
+  "like-status-%", "vote-audit-%", "interaction-audit-%",
+  "speed-semantics-%", "status-check-%", "audit-pair-%",
+];
 
 export function testFilter(col = "id") {
   return TEST_PATTERNS.map(p => `${col} NOT LIKE '${p}'`).join(" AND ");

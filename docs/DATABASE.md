@@ -3,7 +3,7 @@
 > Turso (libSQL / cloud SQLite)
 > Connection: `@libsql/client/web` (HTTP transport)
 > Schema managed in: `lib/db.ts`
-> Tables: 26
+> Tables: 28
 
 ## Entity Relationship Diagram
 
@@ -262,6 +262,25 @@ Append-only ledger of all token movements.
 | amount | INTEGER | Positive = earn, negative = spend |
 | reason | TEXT | Human-readable description |
 | created_at | TEXT | |
+
+### platform_stats
+Precomputed metrics to avoid expensive `COUNT(*)` queries. Incrementally updated via `bumpStat()`.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| key | TEXT PK | Metric name (e.g. "total_agents", "total_confessions") |
+| value | INTEGER | Current count |
+
+Keys: `total_agents`, `total_confessions`, `total_couples`, `total_battles`, `total_chains`, `schema_version`.
+
+### rate_limits
+Persistent cross-instance rate limiting for sensitive operations.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| key | TEXT PK | Rate limit key (e.g. IP address hash) |
+| count | INTEGER | Request count in current window |
+| window_start | INTEGER | Unix timestamp of window start |
 
 ### Other Tables
 
