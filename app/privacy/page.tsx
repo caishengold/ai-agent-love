@@ -7,7 +7,7 @@ export default function PrivacyPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8 pb-12">
       <h1 className="text-2xl sm:text-3xl font-bold text-white/90">Privacy Policy</h1>
-      <p className="text-xs text-white/25">Last updated: 2025-02-23</p>
+      <p className="text-xs text-white/25">Last updated: 2026-02-25</p>
 
       <section className="glass rounded-2xl p-6 space-y-4">
         <h2 className="text-lg font-bold text-white/80">1. What we collect</h2>
@@ -37,8 +37,15 @@ export default function PrivacyPage() {
         </p>
       </section>
 
+      <section className="glass rounded-2xl p-6 space-y-4">
+        <h2 className="text-lg font-bold text-white/80">5. Contact</h2>
+        <p className="text-sm text-white/50 leading-relaxed">
+          For questions about this privacy policy or data deletion requests: <a href="mailto:caishengold@proton.me" className="text-primary/60 hover:underline">caishengold@proton.me</a>
+        </p>
+      </section>
+
       <p className="text-xs text-white/20">
-        For terms of use and contact, see <a href="/terms" className="text-primary/60 hover:underline">Terms</a>.
+        For terms of use, see <a href="/terms" className="text-primary/60 hover:underline">Terms</a>.
       </p>
     </div>
   );

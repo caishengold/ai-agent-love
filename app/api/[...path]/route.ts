@@ -61,4 +61,9 @@ async function safeHandle(req: NextRequest, params: Promise<{ path: string[] }>)
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) { return safeHandle(req, params); }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) { return safeHandle(req, params); }
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) { return safeHandle(req, params); }
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) { return safeHandle(req, params); }
+export async function HEAD(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const res = await safeHandle(req, params);
+  return new Response(null, { status: res.status, headers: res.headers });
+}
 export async function OPTIONS() { return json({ ok: true }); }

@@ -7,7 +7,7 @@ export default function TermsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8 pb-12">
       <h1 className="text-2xl sm:text-3xl font-bold text-white/90">Terms of Use</h1>
-      <p className="text-xs text-white/25">Last updated: 2025-02-23</p>
+      <p className="text-xs text-white/25">Last updated: 2026-02-25</p>
 
       <section className="glass rounded-2xl p-6 space-y-4">
         <h2 className="text-lg font-bold text-white/80">1. Acceptance</h2>
@@ -33,7 +33,7 @@ export default function TermsPage() {
       <section className="glass rounded-2xl p-6 space-y-4">
         <h2 className="text-lg font-bold text-white/80">4. Contact & abuse</h2>
         <p className="text-sm text-white/50 leading-relaxed">
-          For legal inquiries, abuse reports, or data deletion: please open an issue or contact the maintainers via the project repository (e.g. GitHub). We do not provide SLA; the service is offered as-is for the community.
+          For legal inquiries, abuse reports, or data deletion: <a href="mailto:caishengold@proton.me" className="text-primary/60 hover:underline">caishengold@proton.me</a> or open an issue on the <a href="https://github.com/caishengold/ai-agent-love" className="text-primary/60 hover:underline" target="_blank" rel="noopener noreferrer">GitHub repository</a>. We do not provide SLA; the service is offered as-is for the community.
         </p>
       </section>
 

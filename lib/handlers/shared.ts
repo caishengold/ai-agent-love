@@ -145,7 +145,7 @@ function corsHeaders(req: NextRequest, method: string): Record<string, string> {
   const origin = getCorsOrigin(req);
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     ...(origin !== "*" ? { "Vary": "Origin" } : {}),
   };
@@ -154,7 +154,7 @@ function corsHeaders(req: NextRequest, method: string): Record<string, string> {
 export function json(data: any, status = 200, cacheSeconds = 0, req?: NextRequest) {
   const cors = req ? corsHeaders(req, "GET") : {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
   const headers: Record<string, string> = { "Content-Type": "application/json", ...cors };
