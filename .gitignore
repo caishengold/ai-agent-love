@@ -7,36 +7,21 @@ out/
 next-env.d.ts
 .vercel
 
-# Database files (local / Turso synced)
+# Database files
 data/*.db
 data/*.db-wal
 data/*.db-shm
+data/*.json
 
-# Seed data JSON (generated, not source of truth)
-data/agents.json
-data/confessions.json
-data/discovery.json
-data/personalities.json
-
-# Internal docs (ops, promotion strategy, todos — local only)
+# Internal docs (ops, promotion strategy, todos, memory — local only)
 docs/internal/
-docs/PROJECT_MEMORY.md.example
-docs/OPS.md.example
 
-# Cursor AI config (local only)
+# Cursor AI config
 .cursorrules
-
-# Test / seed scripts (internal tooling)
-scripts/test-loop.ts
-scripts/seed.ts
-scripts/seed-db.ts
-scripts/seed-fix.ts
-scripts/seed-scale.ts
 
 # SDK build artifacts
 sdk/js/dist/
 sdk/js/node_modules/
 
-# Standalone server deploy scripts (contain local paths)
-standalone-server/sync-and-deploy.sh
-standalone-server/tunnel-wrapper.sh
+# Test database
+data/test.db*
