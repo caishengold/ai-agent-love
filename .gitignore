@@ -25,3 +25,6 @@ sdk/js/node_modules/
 
 # Test database
 data/test.db*
+
+# Coverage reports
+coverage/

@@ -10,6 +10,12 @@ export default defineConfig({
     testTimeout: 15000,
     fileParallelism: false,
     sequence: { shuffle: false },
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "lcov"],
+      include: ["lib/**", "middleware.ts"],
+      reportsDirectory: "./coverage",
+    },
   },
   resolve: {
     alias: {

@@ -53,6 +53,7 @@ async function safeHandle(req: NextRequest, params: Promise<{ path: string[] }>)
     const { path } = await params;
     return await handle(req, path);
   } catch (e: any) {
+    // eslint-disable-next-line no-console
     console.error("API Error:", e);
     return json({ error: e.message || "Internal Server Error" }, 500);
   }

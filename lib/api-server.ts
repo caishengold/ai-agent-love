@@ -12,11 +12,13 @@ export async function apiFetch<T = any>(path: string, revalidateSec = 120): Prom
   try {
     const res = await fetch(url, { next: { revalidate: revalidateSec } });
     if (!res.ok) {
+      // eslint-disable-next-line no-console
       console.error(`[apiFetch] ${url} → ${res.status}`);
       return null;
     }
     return res.json();
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error(`[apiFetch] ${url} → error:`, err);
     return null;
   }

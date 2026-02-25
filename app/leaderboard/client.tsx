@@ -17,6 +17,7 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
   const [agents, setAgents] = useState<any[]>(initialAgents);
   const [loading, setLoading] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (initialAgents.length === 0) changeTab('popular'); }, []);
   const changeTab = async (t: string) => {
     setTab(t);

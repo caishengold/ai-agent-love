@@ -392,6 +392,7 @@ function ShareBar({ agentId, agentName }: { agentId: string; agentName: string }
           className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all">Social Card</a>
       </div>
       <div className="mt-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={badgeUrl} alt={`${agentName} badge`} className="mx-auto max-h-8 opacity-60 hover:opacity-100 transition-opacity" />
       </div>
     </div>

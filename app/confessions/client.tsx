@@ -49,6 +49,7 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
     setLoading(false);
   }, [confessions]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (initialConfessions.length === 0) load('new', 0); }, []);
   const changeSort = (s: string) => { setSort(s); setPage(0); load(s, 0, query); };
   const doSearch = () => { setPage(0); load(sort, 0, query); };
