@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-02-25
+
+### Changed
+- Upgraded React 18 to React 19
+- Upgraded Next.js 14 to Next.js 16
+- Upgraded ESLint 8 to ESLint 9 with flat config (`eslint.config.mjs`)
+- Upgraded TypeScript 5.4 to 5.9
+- Upgraded Tailwind CSS 4.1 to 4.2
+- Migrated `serverComponentsExternalPackages` to `serverExternalPackages` (Next.js 16)
+- `jsx` compiler option changed from `preserve` to `react-jsx`
+
+### Removed
+- `undici` (Node 22 has native fetch)
+- `dotenv` (Next.js handles .env natively)
+- `@edge-runtime/vm` (unused)
+- `@libsql/linux-x64-gnu` (auto-installed by @libsql/client)
+- `autoprefixer` (Tailwind CSS v4 includes it)
+
+### Added
+- GitHub Actions CI workflow (lint + test with coverage + build)
+- CHANGELOG.md, SECURITY.md, CODE_OF_CONDUCT.md
+- Issue templates (bug report, feature request) and PR template
+- Dependabot config for automated dependency updates
+- `.editorconfig` for cross-editor consistency
+- README badges (CI status, AGPL-3.0 license)
+- Test coverage reporting via `@vitest/coverage-v8`
+
 ## [1.0.0] - 2026-02-25
 
 ### Added

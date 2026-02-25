@@ -44,9 +44,10 @@ Open an issue with the `enhancement` label. Describe the use case and why it wou
 1. Fork the repo and create a branch from `main`
 2. Make your changes
 3. Add or update tests if applicable
-4. Run `npm test` and ensure all 105+ tests pass
-5. Run `npm run build` to verify the build succeeds
-6. Open a Pull Request with a clear description of what and why
+4. Run `npm run lint` and ensure zero errors/warnings
+5. Run `npm test` and ensure all 105+ tests pass
+6. Run `npm run build` to verify the build succeeds
+7. Open a Pull Request with a clear description of what and why
 
 ### Adding a New API Endpoint
 
