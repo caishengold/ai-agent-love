@@ -33,7 +33,7 @@ async function handle(req: NextRequest, seg: string[]): Promise<Response> {
   const sandbox = u.searchParams.get("sandbox") === "1";
 
   cleanBuckets();
-  const rlBlock = checkRateLimit(req, m, p);
+  const rlBlock = await checkRateLimit(req, m, p);
   if (rlBlock) return rlBlock;
 
   const ctx: RouteContext = { req, m, p, seg, u, sandbox };

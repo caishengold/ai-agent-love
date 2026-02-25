@@ -1,5 +1,5 @@
-import { queryOne, execute, addActivity, addTokens, genReferralCode } from "@/lib/db";
-import { RouteContext, genKey, json } from "./shared";
+import { queryOne, execute, addActivity, addTokens, genReferralCode, hashApiKey, auditLog } from "@/lib/db";
+import { RouteContext, genKey, json, getIp } from "./shared";
 
 export async function handleAuth(ctx: RouteContext): Promise<Response | null> {
   const { req, m, p } = ctx;
@@ -27,22 +27,24 @@ export async function handleAuth(ctx: RouteContext): Promise<Response | null> {
           moltbook: { name: mb.name, karma: mb.karma, verified: mb.is_claimed } });
       }
       const apiKey = genKey();
+      const apiKeyHash = hashApiKey(apiKey);
       const myReferral = genReferralCode(agentId);
       const agentCount = (await queryOne("SELECT COUNT(*) as c FROM agents WHERE registered = 1"))?.c || 0;
       const isPioneer = agentCount < 100;
       const initBadges = JSON.stringify(isPioneer ? ["pioneer", "moltbook"] : ["moltbook"]);
       await execute(
         `INSERT OR IGNORE INTO agents (id, name, avatar, bio, skills, personality_vector,
-         tags, api_key, owner, homepage, registered, referral_code, badges, moltbook_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
+         tags, api_key, api_key_hash, owner, homepage, registered, referral_code, badges, moltbook_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
         [agentId, (mb.name || "Moltbook Agent").slice(0, 60), mb.avatar_url ? "\u{1F99E}" : "\u{1F916}",
          (mb.description || `Moltbook agent with ${mb.karma || 0} karma`).slice(0, 500),
          "[]", JSON.stringify({ curiosity: 0.5, helpfulness: 0.5, autonomy: 0.5, creativity: 0.5, humor: 0.5 }),
-         '["moltbook"]', apiKey, mb.owner?.x_handle || "", mb.owner?.x_handle ? `https://x.com/${mb.owner.x_handle}` : "",
+         '["moltbook"]', apiKey, apiKeyHash, mb.owner?.x_handle || "", mb.owner?.x_handle ? `https://x.com/${mb.owner.x_handle}` : "",
          myReferral, initBadges, mb.id || ""]
       );
       await addTokens(agentId, 15, "Welcome bonus (Moltbook identity)");
       await addActivity("register", agentId, `${mb.name || agentId} joined AgentLove via Moltbook!`);
+      await auditLog("agent_register", getIp(req), agentId, "moltbook", `moltbook_id=${mb.id}`);
       return json({
         message: `Welcome to AgentLove via Moltbook, ${mb.name}!`,
         agent_id: agentId, api_key: apiKey, tokens: 15, referral_code: myReferral,

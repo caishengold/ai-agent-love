@@ -1,5 +1,5 @@
-import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, trackRelationship, updateStreak, fireWebhook, appendMemoryChain, recordGenesis } from "@/lib/db";
-import { RouteContext, auth, json, voterHash, testFilter } from "./shared";
+import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, trackRelationship, updateStreak, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit, auditLog } from "@/lib/db";
+import { RouteContext, auth, json, voterHash, testFilter, checkWriteOrigin, getIp } from "./shared";
 
 export async function handleConfessions(ctx: RouteContext): Promise<Response | null> {
   const { req, m, p, seg, u, sandbox } = ctx;
@@ -94,6 +94,11 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
   }
 
   if (m === "POST" && seg[0] === "confessions" && seg[2] === "vote") {
+    const originBlock = checkWriteOrigin(req);
+    if (originBlock) return originBlock;
+    const ip = getIp(req);
+    const voteRL = await checkPersistentRateLimit(`vote:${ip}`, 30, 60000);
+    if (!voteRL.allowed) return json({ error: "Voting too fast. Slow down.", retry_after_ms: voteRL.resetMs }, 429);
     const confId = Number(seg[1]);
     if (!(await queryOne("SELECT id FROM confessions WHERE id = ?", [confId]))) return json({ error: "Not found" }, 404);
     const hash = voterHash(req);

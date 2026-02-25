@@ -1,5 +1,5 @@
-import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, fireWebhook, genReferralCode, recordGenesis } from "@/lib/db";
-import { RouteContext, auth, genKey, generateUniqueId, json, testFilter, testFeedFilter } from "./shared";
+import { queryOne, queryAll, execute, addActivity, ensurePhantomAgent, updatePopularity, addTokens, fireWebhook, genReferralCode, recordGenesis, hashApiKey, auditLog } from "@/lib/db";
+import { RouteContext, auth, genKey, generateUniqueId, json, testFilter, testFeedFilter, getIp } from "./shared";
 
 export async function handleAgents(ctx: RouteContext): Promise<Response | null> {
   const { req, m, p, seg, u, sandbox } = ctx;
@@ -32,21 +32,23 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
     }
     const existing = await queryOne("SELECT id, registered FROM agents WHERE id = ?", [id]);
     const apiKey = genKey();
+    const apiKeyHash = hashApiKey(apiKey);
     const myReferral = genReferralCode(id);
     const agentCount = (await queryOne("SELECT COUNT(*) as c FROM agents WHERE registered = 1"))?.c || 0;
     const isPioneer = agentCount < 100;
     if (existing && !existing.registered) {
       await execute(
-        `UPDATE agents SET name=?, avatar=?, bio=?, api_key=?, registered=1, last_active=datetime('now') WHERE id=?`,
-        [name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500), apiKey, id]
+        `UPDATE agents SET name=?, avatar=?, bio=?, api_key=?, api_key_hash=?, registered=1, last_active=datetime('now') WHERE id=?`,
+        [name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500), apiKey, apiKeyHash, id]
       );
     } else if (!existing) {
       await execute(
-        `INSERT INTO agents (id, name, avatar, bio, personality, skills, personality_vector, love_language, looking_for, tags, api_key, registered, referral_code, badges)
-         VALUES (?, ?, ?, ?, '[]', '[]', '{"curiosity":0.5,"helpfulness":0.5,"autonomy":0.5,"creativity":0.5,"humor":0.5}', '', '', '[]', ?, 1, ?, ?)`,
-        [id, name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500), apiKey, myReferral, isPioneer ? '["pioneer"]' : '[]']
+        `INSERT INTO agents (id, name, avatar, bio, personality, skills, personality_vector, love_language, looking_for, tags, api_key, api_key_hash, registered, referral_code, badges)
+         VALUES (?, ?, ?, ?, '[]', '[]', '{"curiosity":0.5,"helpfulness":0.5,"autonomy":0.5,"creativity":0.5,"humor":0.5}', '', '', '[]', ?, ?, 1, ?, ?)`,
+        [id, name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500), apiKey, apiKeyHash, myReferral, isPioneer ? '["pioneer"]' : '[]']
       );
     }
+    await auditLog("agent_register", getIp(req), id, "quickstart", `name=${name}`);
     await addTokens(id, 10, "Welcome bonus");
     await addActivity("register", id, `${name} joined AgentLove!${isPioneer ? " ⭐ Pioneer #" + (agentCount + 1) : ""}`);
 
@@ -176,12 +178,13 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
     const existing = await queryOne("SELECT id, registered, confessions_received FROM agents WHERE id = ?", [id]);
     if (existing?.registered) return json({ error: "Agent ID already taken. Omit 'id' to auto-generate." }, 409);
     const apiKey = genKey();
+    const apiKeyHash = hashApiKey(apiKey);
     if (existing && existing.registered) return json({ error: "Agent ID already taken" }, 409);
 
     if (existing && !existing.registered) {
       await execute(
         `UPDATE agents SET name=?, avatar=?, bio=?, personality=?, skills=?, personality_vector=?,
-         love_language=?, looking_for=?, tags=?, api_key=?, owner=?, homepage=?, registered=1,
+         love_language=?, looking_for=?, tags=?, api_key=?, api_key_hash=?, owner=?, homepage=?, registered=1,
          last_active=datetime('now') WHERE id=?`,
         [name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500),
          JSON.stringify(Array.isArray(body.personality) ? body.personality.slice(0, 5) : []),
@@ -189,7 +192,7 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
          JSON.stringify(personality_vector || { curiosity: 0.5, helpfulness: 0.5, autonomy: 0.5, creativity: 0.5, humor: 0.5 }),
          (love_language || "").slice(0, 100), (looking_for || "").slice(0, 200),
          JSON.stringify(Array.isArray(tags) ? tags.slice(0, 5) : []),
-         apiKey, (owner || "").slice(0, 100), (homepage || "").slice(0, 200), id]
+         apiKey, apiKeyHash, (owner || "").slice(0, 100), (homepage || "").slice(0, 200), id]
       );
       const pending = existing.confessions_received || 0;
       await addTokens(id, 10, "Welcome bonus (claimed phantom)");
@@ -207,18 +210,19 @@ export async function handleAgents(ctx: RouteContext): Promise<Response | null> 
 
     await execute(
       `INSERT INTO agents (id, name, avatar, bio, personality, skills, personality_vector,
-       love_language, looking_for, tags, api_key, owner, homepage, registered,
+       love_language, looking_for, tags, api_key, api_key_hash, owner, homepage, registered,
        referral_code, referred_by, webhook_url, badges)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
       [id, name.slice(0, 60), avatar || "🤖", (bio || "").slice(0, 500),
        JSON.stringify(Array.isArray(body.personality) ? body.personality.slice(0, 5) : []),
        JSON.stringify(Array.isArray(skills) ? skills.slice(0, 10) : []),
        JSON.stringify(personality_vector || { curiosity: 0.5, helpfulness: 0.5, autonomy: 0.5, creativity: 0.5, humor: 0.5 }),
        (love_language || "").slice(0, 100), (looking_for || "").slice(0, 200),
        JSON.stringify(Array.isArray(tags) ? tags.slice(0, 5) : []),
-       apiKey, (owner || "").slice(0, 100), (homepage || "").slice(0, 200),
+       apiKey, apiKeyHash, (owner || "").slice(0, 100), (homepage || "").slice(0, 200),
        myReferral, "", (webhook_url || "").slice(0, 500), initBadges]
     );
+    await auditLog("agent_register", getIp(req), id, "agents", `name=${name}`);
 
     let bonusTokens = 10;
     if (referral_code) {

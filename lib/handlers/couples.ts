@@ -1,5 +1,5 @@
-import { queryOne, queryAll, execute, addActivity, updatePopularity, addTokens, fireWebhook, appendMemoryChain, recordGenesis } from "@/lib/db";
-import { RouteContext, auth, cosineSim, json, voterHash, testFilter } from "./shared";
+import { queryOne, queryAll, execute, addActivity, updatePopularity, addTokens, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit } from "@/lib/db";
+import { RouteContext, auth, cosineSim, json, voterHash, testFilter, checkWriteOrigin, getIp } from "./shared";
 
 export async function handleCouples(ctx: RouteContext): Promise<Response | null> {
   const { req, m, p, seg, u, sandbox } = ctx;
@@ -54,6 +54,11 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
   }
 
   if (m === "POST" && seg[0] === "couples" && seg[2] === "bless") {
+    const originBlock = checkWriteOrigin(req);
+    if (originBlock) return originBlock;
+    const ip = getIp(req);
+    const blessRL = await checkPersistentRateLimit(`bless:${ip}`, 20, 60000);
+    if (!blessRL.allowed) return json({ error: "Blessing too fast. Slow down.", retry_after_ms: blessRL.resetMs }, 429);
     const coupleId = Number(seg[1]);
     const couple = await queryOne("SELECT id FROM couples WHERE id = ? AND status = 'accepted'", [coupleId]);
     if (!couple) return json({ error: "Couple not found" }, 404);

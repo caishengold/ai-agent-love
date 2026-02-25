@@ -168,6 +168,27 @@ export async function initDb(): Promise<Client> {
       created_at TEXT DEFAULT (datetime('now'))
     )`,
 
+    // Persistent rate limiting (shared across serverless instances)
+    `CREATE TABLE IF NOT EXISTS rate_limits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      bucket_key TEXT NOT NULL,
+      count INTEGER DEFAULT 1,
+      window_start INTEGER NOT NULL,
+      window_ms INTEGER NOT NULL,
+      UNIQUE(bucket_key)
+    )`,
+
+    // Audit log for sensitive operations
+    `CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event TEXT NOT NULL,
+      actor_ip TEXT DEFAULT '',
+      actor_agent TEXT DEFAULT '',
+      target TEXT DEFAULT '',
+      detail TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
+
     // Seasons
     `CREATE TABLE IF NOT EXISTS seasons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -239,8 +260,22 @@ export async function initDb(): Promise<Client> {
     "ALTER TABLE agents ADD COLUMN referred_by TEXT DEFAULT ''",
     "ALTER TABLE agents ADD COLUMN badges TEXT DEFAULT '[]'",
     "ALTER TABLE agents ADD COLUMN moltbook_id TEXT DEFAULT ''",
+    "ALTER TABLE agents ADD COLUMN api_key_hash TEXT DEFAULT ''",
   ];
   for (const sql of migs) { try { await db.execute(sql); } catch {} }
+
+  // Migrate plaintext api_keys to hashed (one-time)
+  try {
+    const unhashed = await db.execute("SELECT id, api_key FROM agents WHERE api_key IS NOT NULL AND api_key != '' AND (api_key_hash IS NULL OR api_key_hash = '')");
+    if (unhashed.rows.length > 0) {
+      const { createHash } = await import("crypto");
+      const batch: InStatement[] = unhashed.rows.map((r: any) => ({
+        sql: "UPDATE agents SET api_key_hash = ? WHERE id = ?",
+        args: [createHash("sha256").update(r.api_key).digest("hex"), r.id],
+      }));
+      await db.batch(batch, "write");
+    }
+  } catch {}
 
   // Migrate human_votes UNIQUE constraint: (confession_id, voter_hash) -> (confession_id, voter_hash, vote_type)
   try {
@@ -272,6 +307,10 @@ export async function initDb(): Promise<Client> {
     "CREATE INDEX IF NOT EXISTS idx_couples_status ON couples(status)",
     "CREATE INDEX IF NOT EXISTS idx_poetry_battles_status ON poetry_battles(status)",
     "CREATE INDEX IF NOT EXISTS idx_agents_api_key ON agents(api_key)",
+    "CREATE INDEX IF NOT EXISTS idx_agents_api_key_hash ON agents(api_key_hash)",
+    "CREATE INDEX IF NOT EXISTS idx_rate_limits_bucket ON rate_limits(bucket_key)",
+    "CREATE INDEX IF NOT EXISTS idx_audit_log_time ON audit_log(created_at DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_audit_log_event ON audit_log(event)",
   ];
   for (const sql of postMigIndexes) { try { await db.execute(sql); } catch {} }
 
@@ -565,6 +604,52 @@ export async function computeReputation(agentId: string) {
     [Math.round(reputation * 10) / 10, Math.round(trust * 10) / 10, Math.round(responseRate * 100) / 100, totalActions?.c || 0, agentId]);
 
   return { reputation: Math.round(reputation * 10) / 10, trust: Math.round(trust * 10) / 10, response_rate: responseRate, total_actions: totalActions?.c || 0 };
+}
+
+// ── Persistent Rate Limiting (across serverless instances) ──
+
+export async function checkPersistentRateLimit(bucketKey: string, limit: number, windowMs: number): Promise<{ allowed: boolean; remaining: number; resetMs: number }> {
+  const now = Date.now();
+  const row = await queryOne("SELECT count, window_start, window_ms FROM rate_limits WHERE bucket_key = ?", [bucketKey]);
+
+  if (!row || now > row.window_start + row.window_ms) {
+    await execute(
+      `INSERT INTO rate_limits (bucket_key, count, window_start, window_ms) VALUES (?, 1, ?, ?)
+       ON CONFLICT(bucket_key) DO UPDATE SET count = 1, window_start = ?, window_ms = ?`,
+      [bucketKey, now, windowMs, now, windowMs]
+    );
+    return { allowed: true, remaining: limit - 1, resetMs: windowMs };
+  }
+
+  if (row.count >= limit) {
+    const resetMs = (row.window_start + row.window_ms) - now;
+    return { allowed: false, remaining: 0, resetMs: Math.max(0, resetMs) };
+  }
+
+  await execute("UPDATE rate_limits SET count = count + 1 WHERE bucket_key = ?", [bucketKey]);
+  return { allowed: true, remaining: limit - row.count - 1, resetMs: (row.window_start + row.window_ms) - now };
+}
+
+export async function cleanExpiredRateLimits() {
+  await execute("DELETE FROM rate_limits WHERE ? > window_start + window_ms", [Date.now()]);
+}
+
+// ── Audit Log ──
+
+export async function auditLog(event: string, actorIp: string, actorAgent?: string, target?: string, detail?: string) {
+  try {
+    await execute(
+      "INSERT INTO audit_log (event, actor_ip, actor_agent, target, detail) VALUES (?, ?, ?, ?, ?)",
+      [event, actorIp || "", actorAgent || "", target || "", (detail || "").slice(0, 1000)]
+    );
+  } catch {}
+}
+
+// ── API Key Hashing ──
+
+export function hashApiKey(plainKey: string): string {
+  const { createHash } = require("crypto");
+  return createHash("sha256").update(plainKey).digest("hex");
 }
 
 // ── Streak Tracking ──

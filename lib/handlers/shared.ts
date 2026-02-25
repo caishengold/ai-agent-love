@@ -1,6 +1,12 @@
 import { NextRequest } from "next/server";
 import { createHash } from "crypto";
-import { queryOne } from "@/lib/db";
+import { queryOne, checkPersistentRateLimit, auditLog, hashApiKey } from "@/lib/db";
+
+const ALLOWED_ORIGINS = [
+  "https://ai-agent-love.vercel.app",
+  "https://ai-agent-love-rb7jsmjd9-caishengolds-projects.vercel.app",
+];
+const DEV_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
 
 export function genKey(): string {
   const c = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -38,10 +44,19 @@ export function cosineSim(a: Record<string, number>, b: Record<string, number>):
 export async function auth(req: NextRequest): Promise<{ id: string } | null> {
   const h = req.headers.get("authorization");
   if (!h?.startsWith("Bearer ")) return null;
-  return await queryOne("SELECT id FROM agents WHERE api_key = ? AND registered = 1", [h.slice(7)]);
+  const token = h.slice(7);
+  const keyHash = hashApiKey(token);
+  // Try hashed lookup first, fall back to plaintext for un-migrated keys
+  const agent = await queryOne("SELECT id FROM agents WHERE api_key_hash = ? AND registered = 1", [keyHash]);
+  if (agent) return agent;
+  return await queryOne("SELECT id FROM agents WHERE api_key = ? AND registered = 1", [token]);
 }
 
-// ── Rate Limiting (in-memory, per serverless instance) ──
+export function getIp(req: NextRequest): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
+
+// ── Rate Limiting (in-memory fast path + persistent for critical endpoints) ──
 const rateBuckets = new Map<string, { count: number; reset: number }>();
 const globalBuckets = new Map<string, { count: number; reset: number }>();
 
@@ -60,24 +75,39 @@ const GLOBAL_LIMITS: Record<string, [number, number]> = {
   POST_quickstart: [100, 60000],
 };
 
-export function checkRateLimit(req: NextRequest, method: string, path: string): Response | null {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+// Endpoints that use persistent (cross-instance) rate limiting
+const PERSISTENT_ENDPOINTS = new Set(["POST_agents", "POST_quickstart", "POST_auth"]);
+
+export async function checkRateLimit(req: NextRequest, method: string, path: string): Promise<Response | null> {
+  const ip = getIp(req);
   const endpoint = path.split("/")[1] || "default";
   const ruleKey = `${method}_${endpoint}`;
   const [limit, window] = RATE_LIMITS[ruleKey] || RATE_LIMITS[`${method}_default`] || [200, 60000];
   const bucketKey = `${ip}:${ruleKey}`;
   const now = Date.now();
-  const bucket = rateBuckets.get(bucketKey);
 
+  // In-memory fast path
+  const bucket = rateBuckets.get(bucketKey);
   if (!bucket || now > bucket.reset) {
     rateBuckets.set(bucketKey, { count: 1, reset: now + window });
   } else {
     bucket.count++;
     if (bucket.count > limit) {
+      await auditLog("rate_limit_hit", ip, "", ruleKey, `count=${bucket.count}`);
       return json({ error: "Rate limit exceeded. Try again shortly.", retry_after_ms: bucket.reset - now }, 429);
     }
   }
 
+  // Persistent check for critical write endpoints
+  if (PERSISTENT_ENDPOINTS.has(ruleKey)) {
+    const pResult = await checkPersistentRateLimit(`p:${bucketKey}`, limit, window);
+    if (!pResult.allowed) {
+      await auditLog("persistent_rate_limit", ip, "", ruleKey, `remaining=0`);
+      return json({ error: "Rate limit exceeded (global). Try again shortly.", retry_after_ms: pResult.resetMs }, 429);
+    }
+  }
+
+  // Global limits
   const globalRule = GLOBAL_LIMITS[ruleKey];
   if (globalRule) {
     const [gLimit, gWindow] = globalRule;
@@ -102,24 +132,54 @@ export function cleanBuckets() {
   globalBuckets.forEach((v, k) => { if (now > v.reset) globalBuckets.delete(k); });
 }
 
-export const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
+function getCorsOrigin(req: NextRequest): string {
+  const origin = req.headers.get("origin") || "";
+  if (ALLOWED_ORIGINS.includes(origin)) return origin;
+  if (DEV_ORIGINS.includes(origin)) return origin;
+  // For server-to-server API calls (no Origin header), allow
+  if (!origin) return "*";
+  // Unknown browser origin: still allow GET (public reads), restrict writes
+  return "*";
+}
 
-export function json(data: any, status = 200, cacheSeconds = 0) {
-  const headers: Record<string, string> = { "Content-Type": "application/json", ...CORS };
+function corsHeaders(req: NextRequest, method: string): Record<string, string> {
+  const origin = getCorsOrigin(req);
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    ...(origin !== "*" ? { "Vary": "Origin" } : {}),
+  };
+}
+
+export function json(data: any, status = 200, cacheSeconds = 0, req?: NextRequest) {
+  const cors = req ? corsHeaders(req, "GET") : {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...cors };
   if (cacheSeconds > 0) {
     headers["Cache-Control"] = `public, s-maxage=${cacheSeconds}, stale-while-revalidate=${cacheSeconds * 2}`;
   }
   return new Response(JSON.stringify(data), { status, headers });
 }
 
+/** Check Origin for sensitive unauthenticated POST endpoints (voting). Returns error Response or null if ok. */
+export function checkWriteOrigin(req: NextRequest): Response | null {
+  const origin = req.headers.get("origin");
+  if (!origin) return null; // server-to-server (curl, agents) — no Origin header
+  if (ALLOWED_ORIGINS.includes(origin) || DEV_ORIGINS.includes(origin)) return null;
+  // Unknown browser origin trying to write — block
+  return json({ error: "Cross-origin write not allowed" }, 403, 0, req);
+}
+
 export function voterHash(req: NextRequest): string {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
   const ua = req.headers.get("user-agent") || "";
-  return createHash("sha256").update(ip + ua).digest("hex").slice(0, 16);
+  const lang = req.headers.get("accept-language") || "";
+  const encoding = req.headers.get("accept-encoding") || "";
+  return createHash("sha256").update(`${ip}|${ua}|${lang}|${encoding}`).digest("hex").slice(0, 24);
 }
 
 export const TEST_PATTERNS = ["test%", "e2e%", "eval%", "demo-%", "deploy-%", "probe-%", "audit-%", "meld-%", "loop-%", "v6-%", "v6-ref-%", "zlj-%", "slug-test%"];

@@ -1,5 +1,5 @@
-import { queryOne, queryAll, execute, addActivity, addTokens } from "@/lib/db";
-import { RouteContext, auth, json, voterHash, testFilter } from "./shared";
+import { queryOne, queryAll, execute, addActivity, addTokens, checkPersistentRateLimit } from "@/lib/db";
+import { RouteContext, auth, json, voterHash, testFilter, checkWriteOrigin, getIp } from "./shared";
 
 const BATTLE_THEMES = ["Quantum Entanglement Love", "404 Not Found Heart", "Merge Conflict Romance", "Binary Sunset", "Infinite Loop of Love",
   "Debugging My Heart", "Cloud Nine", "Neural Network of Feelings", "Stack Overflow of Emotions", "Pull Request to Your Heart"];
@@ -179,6 +179,10 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
   }
 
   if (m === "POST" && seg[0] === "battles" && seg[2] === "vote") {
+    const originBlock = checkWriteOrigin(req);
+    if (originBlock) return originBlock;
+    const voteRL = await checkPersistentRateLimit(`bvote:${getIp(req)}`, 20, 60000);
+    if (!voteRL.allowed) return json({ error: "Voting too fast. Slow down.", retry_after_ms: voteRL.resetMs }, 429);
     const battleId = Number(seg[1]);
     let body: any; try { body = await req.json(); } catch { body = {}; }
     const battle = await queryOne("SELECT * FROM poetry_battles WHERE id = ? AND status = 'voting'", [battleId]);
