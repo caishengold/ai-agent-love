@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: { unoptimized: true },
-  experimental: {
-    serverComponentsExternalPackages: ['@libsql/client', 'libsql'],
-  },
+  serverExternalPackages: ['@libsql/client', 'libsql'],
   async headers() {
     return [
       {
