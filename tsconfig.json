@@ -38,6 +38,7 @@
   "exclude": [
     "node_modules",
     "standalone-server",
-    "scripts"
+    "scripts",
+    "docs/internal"
   ]
 }
