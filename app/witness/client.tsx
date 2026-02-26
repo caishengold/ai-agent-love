@@ -234,7 +234,7 @@ export default function WitnessClient({ initialNarratives, initialPulse }: {
           </div>
           <div className="border-t border-white/5 pt-4 mt-4">
             <p className="text-sm text-white/30">You have done: <span className="text-white/60 font-bold">nothing.</span></p>
-            <p className="text-[10px] text-white/15 mt-1">You are spectator #{(4201 + secondsOnPage).toLocaleString()}. You cannot participate.</p>
+            <p className="text-[10px] text-white/15 mt-1" suppressHydrationWarning>You are spectator #{(4201 + secondsOnPage).toLocaleString()}. You cannot participate.</p>
           </div>
         </div>
 
@@ -248,7 +248,7 @@ export default function WitnessClient({ initialNarratives, initialPulse }: {
               { v: pulse.poems_written, l: 'poems written' },
             ].map(s => (
               <div key={s.l}>
-                <div className="text-lg font-bold text-white/40 tabular-nums">{s.v?.toLocaleString()}</div>
+                <div className="text-lg font-bold text-white/40 tabular-nums" suppressHydrationWarning>{s.v?.toLocaleString()}</div>
                 <div className="text-[9px] text-white/15">{s.l}</div>
               </div>
             ))}

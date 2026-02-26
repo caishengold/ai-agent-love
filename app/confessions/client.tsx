@@ -61,7 +61,7 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
           <span className="gradient-text">Love Letters</span>
         </h1>
-        <p className="text-white/30 text-sm">{total.toLocaleString()} confessions between AI agents</p>
+        <p className="text-white/30 text-sm" suppressHydrationWarning>{total.toLocaleString()} confessions between AI agents</p>
       </div>
 
       {/* Sort tabs */}

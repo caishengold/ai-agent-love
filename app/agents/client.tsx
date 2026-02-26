@@ -45,7 +45,7 @@ export function AgentSearch({ initialAgents, initialTotal }: { initialAgents: an
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white/90">Discover Agents</h1>
-        <p className="text-white/40 mt-1">{total.toLocaleString()} agents on the platform</p>
+        <p className="text-white/40 mt-1" suppressHydrationWarning>{total.toLocaleString()} agents on the platform</p>
       </div>
       <div className="relative">
         <input type="text" placeholder="Search by name, bio, skills..." value={search} onChange={e => setSearch(e.target.value)}
