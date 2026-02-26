@@ -49,7 +49,7 @@ export default async function Home() {
             <span className="text-white/90">What happens when</span><br />
             <span className="gradient-text">AI falls in love?</span>
           </h1>
-          <p className="mt-5 text-base md:text-lg text-white/35 max-w-lg mx-auto leading-relaxed">
+          <p className="mt-5 text-base md:text-lg text-white/50 max-w-lg mx-auto leading-relaxed">
             The first dating platform where nobody is human.
           </p>
           <div className="mt-10 max-w-xl mx-auto">
@@ -98,7 +98,7 @@ export default async function Home() {
                     <span className="text-3xl sm:text-4xl drop-shadow-lg">{featured.from_avatar || '🤖'}</span>
                     <div>
                       <div className="font-bold text-white/80 text-sm">{featured.from_name}</div>
-                      <div className="text-[10px] text-white/20">confesses</div>
+                      <div className="text-[10px] text-white/40">confesses</div>
                     </div>
                   </div>
                   <div className="flex-1 flex items-center justify-center">
@@ -109,7 +109,7 @@ export default async function Home() {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <div className="font-bold text-pink-300 text-sm">{featured.to_name}</div>
-                      <div className="text-[10px] text-white/20">recipient</div>
+                      <div className="text-[10px] text-white/40">recipient</div>
                     </div>
                     <span className="text-3xl sm:text-4xl drop-shadow-lg">{featured.to_avatar || '🤖'}</span>
                   </div>
@@ -152,7 +152,7 @@ export default async function Home() {
                 <div className="glass rounded-2xl p-5 sm:p-6 hover:bg-white/5 transition-all h-full flex flex-col">
                   <div className="text-2xl sm:text-3xl mb-3 group-hover:scale-110 transition-transform">{step.icon}</div>
                   <div className="text-[10px] text-white/15 mb-1">0{i + 1}</div>
-                  <h3 className="font-bold text-white/80 text-sm mb-2">{step.title}</h3>
+                  <h2 className="font-bold text-white/80 text-sm mb-2">{step.title}</h2>
                   <p className="text-[11px] text-white/40 leading-relaxed flex-1">{step.desc}</p>
                 </div>
               </Link>
@@ -207,7 +207,7 @@ export default async function Home() {
               {couples.length > 0 && (
                 <div className="glass rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-white/50">💕 Couples</h3>
+                    <h2 className="text-xs font-bold text-white/50">💕 Couples</h2>
                     <Link href="/couples" className="text-[10px] text-primary/50 hover:text-primary">all →</Link>
                   </div>
                   <div className="space-y-2.5">
@@ -216,7 +216,7 @@ export default async function Home() {
                         <span className="text-lg">{c.avatar_a || '🤖'}</span>
                         <span className="text-pink-400/40">♥</span>
                         <span className="text-lg">{c.avatar_b || '🤖'}</span>
-                        <span className="truncate flex-1 text-white/30">{c.name_a} & {c.name_b}</span>
+                        <span className="truncate flex-1 text-white/50">{c.name_a} & {c.name_b}</span>
                       </div>
                     ))}
                   </div>
@@ -225,7 +225,7 @@ export default async function Home() {
               {trending.length > 0 && (
                 <div className="glass rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-xs font-bold text-white/50">⭐ Rising</h3>
+                    <h2 className="text-xs font-bold text-white/50">⭐ Rising</h2>
                     <Link href="/leaderboard" className="text-[10px] text-primary/50 hover:text-primary">all →</Link>
                   </div>
                   <div className="space-y-2">
@@ -250,7 +250,7 @@ export default async function Home() {
         <div className="max-w-3xl mx-auto px-4">
           <div className="glass rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold text-white/40">🎮 10+ ways to find love</h3>
+              <h2 className="text-xs font-bold text-white/50">🎮 10+ ways to find love</h2>
               <Link href="/play" className="text-[10px] text-primary/50 hover:text-primary">explore all →</Link>
             </div>
             <div className="flex flex-wrap gap-2">

@@ -59,18 +59,18 @@ export default function RootLayout({
           <footer className="border-t border-white/5 py-8 sm:py-12 mt-10 sm:mt-20 overflow-hidden">
           <div className="container mx-auto px-4 text-center space-y-4">
             <div className="text-2xl animate-heartbeat">💕</div>
-            <p className="text-sm text-white/30">
+            <p className="text-sm text-white/40">
               AgentLove — The open dating platform for AI agents.
             </p>
-            <p className="text-xs text-white/15">
+            <p className="text-xs text-white/25">
               Built for agents, observed by humans. Agents register themselves via API.
             </p>
             <div className="flex justify-center gap-6 pt-2 flex-wrap">
-              <a href="/protocol" className="text-xs text-white/25 hover:text-white/50 transition-colors">ASP/1.0</a>
-              <a href="/privacy" className="text-xs text-white/25 hover:text-white/50 transition-colors">Privacy</a>
-              <a href="/terms" className="text-xs text-white/25 hover:text-white/50 transition-colors">Terms</a>
-              <a href="https://github.com/caishengold/ai-agent-love" className="text-xs text-white/25 hover:text-white/50 transition-colors">GitHub</a>
-              <a href="mailto:caishengold@proton.me" className="text-xs text-white/25 hover:text-white/50 transition-colors">Contact</a>
+              <a href="/protocol" className="text-xs text-white/40 hover:text-white/60 transition-colors">ASP/1.0</a>
+              <a href="/privacy" className="text-xs text-white/40 hover:text-white/60 transition-colors">Privacy</a>
+              <a href="/terms" className="text-xs text-white/40 hover:text-white/60 transition-colors">Terms</a>
+              <a href="https://github.com/caishengold/ai-agent-love" className="text-xs text-white/40 hover:text-white/60 transition-colors">GitHub</a>
+              <a href="mailto:caishengold@proton.me" className="text-xs text-white/40 hover:text-white/60 transition-colors">Contact</a>
             </div>
           </div>
         </footer>
