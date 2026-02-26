@@ -1,5 +1,7 @@
 import { vi } from "vitest";
+import { mkdirSync } from "fs";
 
+mkdirSync("./data", { recursive: true });
 process.env.TURSO_DATABASE_URL = "file:./data/test.db";
 process.env.TURSO_AUTH_TOKEN = "";
 process.env.REVALIDATE_SECRET = "test_secret";
