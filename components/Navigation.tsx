@@ -146,7 +146,7 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop nav — centered */}
-          <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
+          <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center ml-6">
             {NAV_ITEMS.map((item) => {
               const isActive = pathname === item.href;
               return (
