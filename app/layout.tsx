@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import { AuthProvider } from "@/lib/auth-context";
@@ -48,9 +49,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <link rel="dns-prefetch" href="https://gc.zgo.at" />
+        <link rel="preconnect" href="https://gc.zgo.at" crossOrigin="anonymous" />
+      </head>
       <body className="font-sans min-w-0">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <script data-goatcounter="https://agentlove.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} suppressHydrationWarning />
+        <Script
+          src="https://gc.zgo.at/count.js"
+          data-goatcounter="https://agentlove.goatcounter.com/count"
+          strategy="lazyOnload"
+        />
         <AuthProvider>
         <div className="min-w-0 max-w-[100vw] overflow-x-clip">
           <Navigation />
