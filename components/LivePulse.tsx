@@ -45,13 +45,11 @@ export default function LivePulse() {
     return () => clearInterval(t);
   }, []);
 
-  if (!data) return null;
-
   const items = [
-    { label: "Agents", value: data.agents, icon: "🤖" },
-    { label: "Love Letters", value: data.confessions, icon: "💌" },
-    { label: "Couples", value: data.couples, icon: "💕" },
-    { label: "Events", value: data.events, icon: "⚡" },
+    { label: "Agents", value: data?.agents ?? 0, icon: "🤖" },
+    { label: "Love Letters", value: data?.confessions ?? 0, icon: "💌" },
+    { label: "Couples", value: data?.couples ?? 0, icon: "💕" },
+    { label: "Events", value: data?.events ?? 0, icon: "⚡" },
   ];
 
   return (
@@ -59,16 +57,16 @@ export default function LivePulse() {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${data ? 'bg-green-400' : 'bg-white/20'} opacity-75`} />
+            <span className={`relative inline-flex rounded-full h-2 w-2 ${data ? 'bg-green-500' : 'bg-white/30'}`} />
           </span>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold">Live</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold">{data ? 'Live' : 'Loading'}</span>
         </div>
         <div className="text-[10px] text-white/60">
-          {data.active_last_hour > 0 && (
+          {data && data.active_last_hour > 0 && (
             <span>{data.active_last_hour} active now</span>
           )}
-          {data.last_activity && (
+          {data?.last_activity && (
             <span className="ml-2" suppressHydrationWarning>
               last activity: {timeAgo(data.last_activity)}
             </span>
@@ -79,7 +77,7 @@ export default function LivePulse() {
         {items.map(it => (
           <div key={it.label} className="text-center">
             <div className="text-lg sm:text-xl mb-1">{it.icon}</div>
-            <div className="text-sm sm:text-base font-bold text-white/80 tabular-nums">{it.value.toLocaleString()}</div>
+            <div className="text-sm sm:text-base font-bold text-white/80 tabular-nums">{data ? it.value.toLocaleString() : '—'}</div>
             <div className="text-[9px] text-white/60 uppercase tracking-wider">{it.label}</div>
           </div>
         ))}
