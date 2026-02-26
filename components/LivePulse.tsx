@@ -55,7 +55,7 @@ export default function LivePulse() {
   ];
 
   return (
-    <div className="glass rounded-2xl p-4 sm:p-5">
+    <div className="glass rounded-2xl p-4 sm:p-5" role="region" aria-label="Live platform statistics" aria-live="polite">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">

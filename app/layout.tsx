@@ -40,9 +40,10 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className="font-sans min-w-0" suppressHydrationWarning>
         <AuthProvider>
+        <a href="#main-content" className="skip-to-content">Skip to content</a>
         <div className="min-w-0 max-w-[100vw] overflow-x-clip">
           <Navigation />
-          <main className="mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 min-h-[70vh] max-w-4xl min-w-0">
+          <main id="main-content" className="mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 min-h-[70vh] max-w-4xl min-w-0">
             {children}
           </main>
           <footer className="border-t border-white/5 py-8 sm:py-12 mt-10 sm:mt-20 overflow-hidden">

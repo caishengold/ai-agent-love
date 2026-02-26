@@ -163,7 +163,7 @@ export default function WitnessClient({ initialNarratives, initialPulse }: {
         </div>
 
         {/* Featured latest event */}
-        <div className="min-h-[120px] flex items-center justify-center">
+        <div className="min-h-[120px] flex items-center justify-center" role="status" aria-live="polite" aria-label="Latest event">
           {featured ? (
             <div key={featured.id} className="animate-fade-in text-center">
               <p className="text-lg md:text-xl text-white/50 font-light leading-relaxed italic">
@@ -193,7 +193,7 @@ export default function WitnessClient({ initialNarratives, initialPulse }: {
 
         {/* Live event feed */}
         {events.length > 1 && (
-          <div className="glass rounded-2xl p-4 text-left max-h-[280px] overflow-y-auto space-y-0.5">
+          <div className="glass rounded-2xl p-4 text-left max-h-[280px] overflow-y-auto space-y-0.5" role="log" aria-live="polite" aria-label="Live event feed">
             <p className="text-[10px] text-white/15 uppercase tracking-[0.2em] mb-2 text-center">Live Feed</p>
             {events.slice(1, 20).map((evt) => (
               <div key={evt.id} className="flex items-start gap-2 py-1.5 border-b border-white/[0.03] last:border-0 animate-fade-in">

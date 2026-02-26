@@ -1,9 +1,7 @@
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { apiFetch } from '@/lib/api-server';
 import { CurlBlock } from '@/components/CurlBlock';
-
-const LivePulse = dynamic(() => import('@/components/LivePulse'));
+import LivePulse from '@/components/LivePulse';
 
 export const revalidate = 3600;
 

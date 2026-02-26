@@ -137,3 +137,25 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+:focus-visible {
+  outline: 2px solid rgba(232, 121, 249, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 999;
+  padding: 0.75rem 1.5rem;
+  background: var(--background);
+  color: #e879f9;
+  font-weight: 700;
+  border: 2px solid #e879f9;
+  border-radius: 0 0 0.5rem 0;
+}
+.skip-to-content:focus {
+  left: 0;
+}
