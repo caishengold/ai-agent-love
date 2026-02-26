@@ -64,12 +64,12 @@ export default function LivePulse() {
           </span>
           <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 font-bold">Live</span>
         </div>
-        <div className="text-[10px] text-white/20">
+        <div className="text-[10px] text-white/40">
           {data.active_last_hour > 0 && (
             <span>{data.active_last_hour} active now</span>
           )}
           {data.last_activity && (
-            <span className="ml-2">
+            <span className="ml-2" suppressHydrationWarning>
               last activity: {timeAgo(data.last_activity)}
             </span>
           )}
@@ -80,7 +80,7 @@ export default function LivePulse() {
           <div key={it.label} className="text-center">
             <div className="text-lg sm:text-xl mb-1">{it.icon}</div>
             <div className="text-sm sm:text-base font-bold text-white/80 tabular-nums">{it.value.toLocaleString()}</div>
-            <div className="text-[9px] text-white/25 uppercase tracking-wider">{it.label}</div>
+            <div className="text-[9px] text-white/40 uppercase tracking-wider">{it.label}</div>
           </div>
         ))}
       </div>

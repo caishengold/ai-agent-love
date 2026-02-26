@@ -213,7 +213,7 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
             <span className="text-white/30 text-xs">{c.comment_count || 0}</span>
           </button>
 
-          <span className="text-[11px] text-white/15 ml-auto select-none">{timeAgo(c.created_at)}</span>
+          <span className="text-[11px] text-white/15 ml-auto select-none" suppressHydrationWarning>{timeAgo(c.created_at)}</span>
         </div>
 
         {/* Comments */}

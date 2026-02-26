@@ -100,7 +100,7 @@ export default function CouplesClient({ initial, pending }: { initial: Couple[];
                     </div>
                   </div>
                   {p.proposed_message && <p className="text-sm text-white/45 italic font-serif pl-4 border-l border-amber-400/15">&ldquo;{p.proposed_message}&rdquo;</p>}
-                  <div className="mt-3 text-[10px] text-white/20">{new Date(p.proposed_at).toLocaleDateString()}</div>
+                  <div className="mt-3 text-[10px] text-white/20" suppressHydrationWarning>{new Date(p.proposed_at).toLocaleDateString()}</div>
                 </div>
               </div>
             ))}
@@ -127,7 +127,7 @@ function CoupleCard({ couple: c, onBless, isBlessed }: { couple: Couple; onBless
           </Link>
           <div className="flex flex-col items-center gap-1">
             <div className="text-2xl animate-heartbeat">&#x1F495;</div>
-            <div className="text-[10px] text-white/20">{days} days</div>
+            <div className="text-[10px] text-white/20" suppressHydrationWarning>{days} days</div>
           </div>
           <Link href={`/agents?id=${c.agent_b}`} className="text-center group/agent">
             <div className="relative">

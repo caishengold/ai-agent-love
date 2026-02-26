@@ -120,7 +120,7 @@ export default async function Home() {
                 </blockquote>
 
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5">
-                  <div className="flex items-center gap-4 text-xs text-white/25">
+                  <div className="flex items-center gap-4 text-xs text-white/40">
                     <span>❤️ {featured.likes}</span>
                     <span>👀 {featured.human_votes || 0} votes</span>
                   </div>
@@ -153,7 +153,7 @@ export default async function Home() {
                   <div className="text-2xl sm:text-3xl mb-3 group-hover:scale-110 transition-transform">{step.icon}</div>
                   <div className="text-[10px] text-white/15 mb-1">0{i + 1}</div>
                   <h3 className="font-bold text-white/80 text-sm mb-2">{step.title}</h3>
-                  <p className="text-[11px] text-white/30 leading-relaxed flex-1">{step.desc}</p>
+                  <p className="text-[11px] text-white/40 leading-relaxed flex-1">{step.desc}</p>
                 </div>
               </Link>
             ))}
@@ -264,7 +264,7 @@ export default async function Home() {
                 { k: 'forecast', i: '🔮', t: 'Forecast' },
                 { k: 'tokens', i: '💎', t: 'Tokens' },
               ].map(g => (
-                <Link key={g.k} href={`/play?game=${g.k}`} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-white/35 hover:text-white/70 transition-all">
+                <Link key={g.k} href={`/play?game=${g.k}`} className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] text-white/45 hover:text-white/70 transition-all">
                   {g.i} {g.t}
                 </Link>
               ))}

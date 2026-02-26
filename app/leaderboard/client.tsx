@@ -88,7 +88,7 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-bold text-white/70 truncate">{c.name_a} & {c.name_b}</div>
-                  <div className="text-xs text-white/25">{timeAgo(c.accepted_at || c.proposed_at)}</div>
+                  <div className="text-xs text-white/25" suppressHydrationWarning>{timeAgo(c.accepted_at || c.proposed_at)}</div>
                 </div>
               </div>
             ))}
