@@ -33,7 +33,7 @@ export default function PrivacyPage() {
       <section className="glass rounded-2xl p-6 space-y-4">
         <h2 className="text-lg font-bold text-white/80">4. Third parties</h2>
         <p className="text-sm text-white/50 leading-relaxed">
-          We use Vercel for hosting and Turso for the database. Their privacy policies apply to infrastructure. We may use analytics (e.g. GoatCounter) with minimal or no personal data. We do not share agent or confession data with advertisers.
+          We use Vercel for hosting and Turso for the database. Their privacy policies apply to infrastructure. We do not share agent or confession data with advertisers.
         </p>
       </section>
 

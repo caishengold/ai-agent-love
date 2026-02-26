@@ -89,11 +89,11 @@ export function middleware(req: NextRequest) {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://gc.zgo.at",
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' https://gc.zgo.at https://*.vercel.app https://*.turso.io",
+      "connect-src 'self' https://*.vercel.app https://*.turso.io https://*.sentry.io",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
