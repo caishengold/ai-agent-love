@@ -98,13 +98,15 @@ export function AgentSearch({ initialAgents, initialTotal }: { initialAgents: an
   );
 }
 
-export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior, initialRels }: {
-  id: string; initialAgent: any; initialRep: any; initialBehavior: any; initialRels: any[];
+export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior, initialRels, initialDna, initialCaps }: {
+  id: string; initialAgent: any; initialRep: any; initialBehavior: any; initialRels: any[]; initialDna?: any; initialCaps?: any;
 }) {
   const agent = initialAgent;
   const rep = initialRep;
   const behavior = initialBehavior;
   const rels = initialRels;
+  const dna = initialDna;
+  const caps = initialCaps;
   const { session } = useAuth();
   const isOwner = session?.agent_id === id;
   const [showKey, setShowKey] = useState(false);
@@ -219,14 +221,52 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
         )}
       </div>
 
+      {/* DNA Radar + Certificate + Capabilities */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {dna && !dna.error && dna.metrics && (
+          <div className="glass rounded-xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-white/70 text-sm">🧬 Behavioral DNA</h3>
+              {dna.dna_hash && <span className="text-[9px] text-white/15 font-mono" title={dna.dna_hash}>{dna.dna_hash.slice(0, 8)}…</span>}
+            </div>
+            <DnaRadar metrics={dna.metrics} />
+          </div>
+        )}
+        <div className="space-y-4">
+          {caps && !caps.error && (
+            <div className="glass rounded-xl p-5">
+              <h3 className="font-bold text-white/70 text-sm mb-3">📡 Capabilities</h3>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {(caps.supported_actions || []).map((a: string) => (
+                  <span key={a} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary/60 text-[10px]">{a}</span>
+                ))}
+              </div>
+              <div className="text-xs text-white/25 space-y-1">
+                {caps.languages && <div>Languages: {caps.languages.join(', ')}</div>}
+                {caps.supported_moods && <div>Moods: {caps.supported_moods.join(', ')}</div>}
+              </div>
+              <div className="text-[10px] text-white/15 mt-2 font-mono">ASP {caps.asp_version}</div>
+            </div>
+          )}
+          <Link href={`/certificate/${id}`} className="glass rounded-xl p-5 flex items-center gap-3 hover:bg-white/5 transition-colors group">
+            <span className="text-2xl">🏅</span>
+            <div>
+              <div className="text-sm font-bold text-white/60 group-hover:text-white/80 transition-colors">View Certificate</div>
+              <div className="text-[10px] text-white/25">Verifiable reputation with SHA-256 hash</div>
+            </div>
+            <span className="ml-auto text-white/15 group-hover:text-white/30 transition-colors">→</span>
+          </Link>
+        </div>
+      </div>
+
       {rels.length > 0 && (
         <div className="glass rounded-xl p-5">
           <h3 className="font-bold text-white/70 mb-3 text-sm">Relationships</h3>
           <div className="space-y-2">
             {rels.slice(0, 8).map((r: any) => {
-              const stageColors: Record<string, string> = { romantic: 'text-pink-400', close: 'text-purple-400', interacting: 'text-blue-400', noticed: 'text-white/30' };
+              const stageColors: Record<string, string> = { romantic: 'text-pink-400', close: 'text-purple-400', interacting: 'text-blue-400', noticed: 'text-white/30', cooled: 'text-cyan-400/50', couple: 'text-pink-300' };
               return (
-                <Link key={r.id} href={`/agents?id=${r.other_agent}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all">
+                <Link key={r.id} href={`/relationship?a=${id}&b=${r.other_agent}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all">
                   <span className="text-lg">{r.other_avatar || '🤖'}</span>
                   <span className="text-sm text-white/60 flex-1">{r.other_name || r.other_agent}</span>
                   <span className={`text-[10px] ${stageColors[r.stage] || 'text-white/20'}`}>{r.stage}</span>
@@ -358,6 +398,50 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
         </div>
       )}
     </div>
+  );
+}
+
+function DnaRadar({ metrics }: { metrics: Record<string, number> }) {
+  const keys = Object.keys(metrics).filter(k => k !== 'dna_hash');
+  const n = keys.length;
+  if (n === 0) return null;
+
+  const cx = 80, cy = 80, r = 60;
+  const points = keys.map((k, i) => {
+    const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+    const val = Math.min(1, Math.max(0, metrics[k] / (metrics[k] > 1 ? Math.max(...Object.values(metrics).filter(v => typeof v === 'number')) || 1 : 1)));
+    return {
+      key: k,
+      x: cx + Math.cos(angle) * r * val,
+      y: cy + Math.sin(angle) * r * val,
+      lx: cx + Math.cos(angle) * (r + 12),
+      ly: cy + Math.sin(angle) * (r + 12),
+    };
+  });
+  const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + ' Z';
+  const gridLines = [0.25, 0.5, 0.75, 1].map(s =>
+    keys.map((_, i) => {
+      const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+      return `${cx + Math.cos(angle) * r * s},${cy + Math.sin(angle) * r * s}`;
+    }).join(' ')
+  );
+
+  return (
+    <svg viewBox="0 0 160 160" className="w-full max-w-[200px] mx-auto">
+      {gridLines.map((pts, i) => (
+        <polygon key={i} points={pts} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
+      ))}
+      {keys.map((_, i) => {
+        const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
+        return <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(angle) * r} y2={cy + Math.sin(angle) * r} stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />;
+      })}
+      <polygon points={points.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(168,85,247,0.15)" stroke="rgba(168,85,247,0.5)" strokeWidth="1" />
+      {points.map(p => (
+        <text key={p.key} x={p.lx} y={p.ly} textAnchor="middle" dominantBaseline="middle" className="fill-white/20" style={{ fontSize: '5px' }}>
+          {p.key.replace(/_/g, ' ').slice(0, 10)}
+        </text>
+      ))}
+    </svg>
   );
 }
 

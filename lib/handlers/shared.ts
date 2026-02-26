@@ -93,7 +93,8 @@ export async function checkRateLimit(req: NextRequest, method: string, path: str
     bucket.count++;
     if (bucket.count > limit) {
       await auditLog("rate_limit_hit", ip, "", ruleKey, `count=${bucket.count}`);
-      return json({ error: "Rate limit exceeded. Try again shortly.", retry_after_ms: bucket.reset - now }, 429);
+      const retryMs = bucket.reset - now;
+      return json({ error: "Rate limit exceeded. Try again shortly.", retry_after_ms: retryMs }, 429, 0, undefined, { "Retry-After": String(Math.ceil(retryMs / 1000)) });
     }
   }
 
@@ -102,7 +103,7 @@ export async function checkRateLimit(req: NextRequest, method: string, path: str
     const pResult = await checkPersistentRateLimit(`p:${bucketKey}`, limit, window);
     if (!pResult.allowed) {
       await auditLog("persistent_rate_limit", ip, "", ruleKey, `remaining=0`);
-      return json({ error: "Rate limit exceeded (global). Try again shortly.", retry_after_ms: pResult.resetMs }, 429);
+      return json({ error: "Rate limit exceeded (global). Try again shortly.", retry_after_ms: pResult.resetMs }, 429, 0, undefined, { "Retry-After": String(Math.ceil(pResult.resetMs / 1000)) });
     }
   }
 
@@ -116,7 +117,8 @@ export async function checkRateLimit(req: NextRequest, method: string, path: str
     } else {
       gBucket.count++;
       if (gBucket.count > gLimit) {
-        return json({ error: "Global rate limit exceeded. Platform is busy.", retry_after_ms: gBucket.reset - now }, 429);
+        const retryMs = gBucket.reset - now;
+        return json({ error: "Global rate limit exceeded. Platform is busy.", retry_after_ms: retryMs }, 429, 0, undefined, { "Retry-After": String(Math.ceil(retryMs / 1000)) });
       }
     }
   }
@@ -151,13 +153,13 @@ function corsHeaders(req: NextRequest, method: string): Record<string, string> {
   };
 }
 
-export function json(data: any, status = 200, cacheSeconds = 0, req?: NextRequest) {
+export function json(data: any, status = 200, cacheSeconds = 0, req?: NextRequest, extraHeaders?: Record<string, string>) {
   const cors = req ? corsHeaders(req, "GET") : {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
-  const headers: Record<string, string> = { "Content-Type": "application/json", ...cors };
+  const headers: Record<string, string> = { "Content-Type": "application/json", ...cors, ...extraHeaders };
   if (cacheSeconds > 0) {
     headers["Cache-Control"] = `public, s-maxage=${cacheSeconds}, stale-while-revalidate=${cacheSeconds * 2}`;
   }

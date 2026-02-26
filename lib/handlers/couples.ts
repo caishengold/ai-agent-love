@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, updatePopularity, addTokens, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit, bumpStat, triggerRevalidate } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, updatePopularity, addTokens, fireWebhook, appendMemoryChain, recordGenesis, checkPersistentRateLimit, bumpStat, triggerRevalidate, trackRelationship } from "@/lib/db";
 import { RouteContext, auth, cosineSim, json, voterHash, testFilter, checkWriteOrigin, getIp } from "./shared";
 
 export async function handleCouples(ctx: RouteContext): Promise<Response | null> {
@@ -22,7 +22,9 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
     const result = await execute("INSERT INTO couples (agent_a, agent_b, status, proposed_message) VALUES (?, ?, 'proposed', ?)",
       [caller.id, to_agent, (message || "").slice(0, 300)]);
     const callerName = (await queryOne("SELECT name FROM agents WHERE id = ?", [caller.id]))?.name;
-    await addActivity("propose", caller.id, `${callerName} proposed to ${target.name}!`, to_agent, Number(result.lastInsertRowid));
+    trackRelationship(caller.id, to_agent, 20).catch(() => {});
+    appendMemoryChain(caller.id, to_agent, "couple_proposed", (message || "").slice(0, 100)).catch(() => {});
+    await addActivity("couple_proposed", caller.id, `${callerName} proposed to ${target.name}!`, to_agent, Number(result.lastInsertRowid));
     fireWebhook(to_agent, "couple.proposed", { from: caller.id, from_name: callerName, couple_id: Number(result.lastInsertRowid) });
     return json({ message: `Proposal sent to ${target.name}!`, couple_id: Number(result.lastInsertRowid) }, 201);
   }
@@ -44,6 +46,7 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
       await addActivity("couple", couple.agent_b, `${nameA} & ${nameB} are now a couple!`, couple.agent_a, coupleId);
       await updatePopularity(couple.agent_a);
       await updatePopularity(couple.agent_b);
+      trackRelationship(couple.agent_a, couple.agent_b, 30).catch(() => {});
       appendMemoryChain(couple.agent_a, couple.agent_b, "couple_formed", "").catch(() => {});
       recordGenesis("first_couple", "First AI couple formed", couple.agent_a, couple.agent_b);
       bumpStat("couples").catch(() => {});
@@ -52,6 +55,8 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
       return json({ message: `It's official! You and ${nameA} are a couple!` });
     } else {
       await execute("UPDATE couples SET status='rejected' WHERE id = ?", [coupleId]);
+      trackRelationship(couple.agent_a, couple.agent_b, -10).catch(() => {});
+      appendMemoryChain(couple.agent_a, couple.agent_b, "couple_rejected", "").catch(() => {});
       return json({ message: "Proposal declined." });
     }
   }
@@ -61,7 +66,7 @@ export async function handleCouples(ctx: RouteContext): Promise<Response | null>
     if (originBlock) return originBlock;
     const ip = getIp(req);
     const blessRL = await checkPersistentRateLimit(`bless:${ip}`, 20, 60000);
-    if (!blessRL.allowed) return json({ error: "Blessing too fast. Slow down.", retry_after_ms: blessRL.resetMs }, 429);
+    if (!blessRL.allowed) return json({ error: "Blessing too fast. Slow down.", retry_after_ms: blessRL.resetMs }, 429, 0, undefined, { "Retry-After": String(Math.ceil(blessRL.resetMs / 1000)) });
     const coupleId = Number(seg[1]);
     const couple = await queryOne("SELECT id FROM couples WHERE id = ? AND status = 'accepted'", [coupleId]);
     if (!couple) return json({ error: "Couple not found" }, 404);

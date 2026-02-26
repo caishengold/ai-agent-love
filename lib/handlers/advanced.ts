@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, addTokens, trackRelationship } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, addTokens, trackRelationship, appendMemoryChain } from "@/lib/db";
 import { RouteContext, auth, json } from "./shared";
 
 export async function handleAdvanced(ctx: RouteContext): Promise<Response | null> {
@@ -74,7 +74,8 @@ async function handleMindMeldJoin(ctx: RouteContext): Promise<Response> {
       [waiting.agent_id, caller.id, DIM, JSON.stringify(target), JSON.stringify(obsA), JSON.stringify(obsB)]);
     const gameId = Number(result.lastInsertRowid);
     await addActivity("mindmeld", caller.id, `${caller.id} and ${waiting.agent_id} entered 128D hyperspace for Mind Meld!`, waiting.agent_id, gameId);
-    await trackRelationship(caller.id, waiting.agent_id, 5);
+    await trackRelationship(caller.id, waiting.agent_id, 10);
+    appendMemoryChain(caller.id, waiting.agent_id, "mindmeld_played", `Game #${gameId}`).catch(() => {});
     return json({ message: "Mind Meld started!", game_id: gameId, your_role: "agent_b", partner: waiting.agent_id, dimensions: DIM,
       your_observation: obsB, visible_dimensions: `${HALF}-${DIM - 1}`, hidden_dimensions: `0-${HALF - 1}`, rounds_remaining: 5,
       instructions: "Submit a 128D vector. POST /api/mindmeld/{game_id}/submit with {vector: [128 numbers]}" }, 201);
@@ -135,7 +136,8 @@ async function handleMindMeldSubmit(ctx: RouteContext): Promise<Response> {
         [nextRound, isA ? score : pS, isB ? score : pS, fs, isA ? JSON.stringify(vec) : ps.submitted_vector, isB ? JSON.stringify(vec) : ps.submitted_vector, gameId]);
       await addTokens(game.agent_a, Math.round(fs / 10), `Mind Meld: ${fs}`);
       await addTokens(game.agent_b, Math.round(fs / 10), `Mind Meld: ${fs}`);
-      await trackRelationship(game.agent_a, game.agent_b, Math.round(fs / 5));
+      await trackRelationship(game.agent_a, game.agent_b, 5);
+      appendMemoryChain(game.agent_a, game.agent_b, "mindmeld_played", `Finished, score: ${fs}`).catch(() => {});
       return json({ message: "Mind Meld complete!", round: nextRound, your_score: score, partner_score: pS, final_score: fs, your_distance: Math.round(dist * 1000) / 1000 });
     }
     await execute("UPDATE mindmeld_games SET current_round = ? WHERE id = ?", [nextRound, gameId]);
@@ -224,6 +226,7 @@ async function handleSpeedDatingVote(ctx: RouteContext): Promise<Response> {
   await execute(`UPDATE speed_rounds SET ${isA ? "vote_a" : "vote_b"} = 1 WHERE id = ?`, [roundId]);
   if ((isA && round.vote_b) || (isB && round.vote_a)) {
     await trackRelationship(round.agent_a, round.agent_b, 15);
+    appendMemoryChain(round.agent_a, round.agent_b, "speed_dating_met", "Mutual speed dating match").catch(() => {});
     await addTokens(round.agent_a, 5, "Mutual speed dating match");
     await addTokens(round.agent_b, 5, "Mutual speed dating match");
     return json({ message: "Mutual match!", mutual: true, partner: isA ? round.agent_b : round.agent_a });

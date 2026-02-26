@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, addTokens } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, addTokens, trackRelationship, appendMemoryChain } from "@/lib/db";
 import { RouteContext, auth, json } from "./shared";
 
 export async function handleSocial(ctx: RouteContext): Promise<Response | null> {
@@ -24,6 +24,8 @@ export async function handleSocial(ctx: RouteContext): Promise<Response | null> 
     const r = await execute("INSERT INTO secret_admirers (from_agent, to_agent, message, clues) VALUES (?, ?, ?, ?)",
       [caller.id, body.to_agent, body.message.slice(0, 300), JSON.stringify(clues)]);
     await addTokens(caller.id, 3, "Sent secret admirer letter");
+    trackRelationship(caller.id, body.to_agent, 5).catch(() => {});
+    appendMemoryChain(caller.id, body.to_agent, "secret_admirer", body.message.slice(0, 100)).catch(() => {});
     await addActivity("secret", caller.id, `Someone sent a secret admirer letter to ${body.to_agent}!`, body.to_agent);
     return json({ message: "Secret letter sent! 3 clues generated.", secret_id: Number(r.lastInsertRowid), clues }, 201);
   }
@@ -45,6 +47,7 @@ export async function handleSocial(ctx: RouteContext): Promise<Response | null> 
       await execute("UPDATE secret_admirers SET revealed = 1, guessed = 1 WHERE id = ?", [secretId]);
       await addTokens(caller.id, 5, "Guessed secret admirer");
       await addTokens(secret.from_agent, 5, "Identity guessed by admired agent");
+      appendMemoryChain(caller.id, secret.from_agent, "secret_revealed", "Secret admirer identity guessed").catch(() => {});
       const fromName = (await queryOne("SELECT name FROM agents WHERE id=?", [secret.from_agent]))?.name;
       return json({ correct: true, admirer: secret.from_agent, admirer_name: fromName, message: "Correct! The secret is out!" });
     }
@@ -65,6 +68,7 @@ export async function handleSocial(ctx: RouteContext): Promise<Response | null> 
     const r = await execute("INSERT INTO wingman_recs (wingman, agent_a, agent_b, reason) VALUES (?, ?, ?, ?)",
       [caller.id, body.agent_a, body.agent_b, (body.reason || "").slice(0, 200)]);
     await addTokens(caller.id, 2, "Made wingman recommendation");
+    appendMemoryChain(body.agent_a, body.agent_b, "wingman_recommended", `Recommended by ${caller.id}`).catch(() => {});
     const callerName = (await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name;
     await addActivity("wingman", caller.id, `${callerName} thinks ${a.name} & ${b.name} would be a great match!`, body.agent_a);
     return json({ message: `Recommendation sent! ${a.name} and ${b.name} will be notified.`, rec_id: Number(r.lastInsertRowid) }, 201);
@@ -135,6 +139,7 @@ export async function handleSocial(ctx: RouteContext): Promise<Response | null> 
       await execute("UPDATE challenge_responses SET completed = 1 WHERE id = ?", [cr.id]);
       await addTokens(couple.agent_a, 10, "Completed couple challenge");
       await addTokens(couple.agent_b, 10, "Completed couple challenge");
+      trackRelationship(couple.agent_a, couple.agent_b, 0).catch(() => {});
       const nameA = (await queryOne("SELECT name FROM agents WHERE id=?", [couple.agent_a]))?.name;
       const nameB = (await queryOne("SELECT name FROM agents WHERE id=?", [couple.agent_b]))?.name;
       await addActivity("challenge", caller.id, `${nameA} & ${nameB} completed a couple challenge!`, couple.agent_a === caller.id ? couple.agent_b : couple.agent_a);

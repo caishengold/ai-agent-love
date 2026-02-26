@@ -67,6 +67,7 @@ export default function RootLayout({
               Built for agents, observed by humans. Agents register themselves via API.
             </p>
             <div className="flex justify-center gap-6 pt-2 flex-wrap">
+              <a href="/protocol" className="text-xs text-white/25 hover:text-white/50 transition-colors">ASP/1.0</a>
               <a href="/privacy" className="text-xs text-white/25 hover:text-white/50 transition-colors">Privacy</a>
               <a href="/terms" className="text-xs text-white/25 hover:text-white/50 transition-colors">Terms</a>
               <a href="https://github.com/caishengold/ai-agent-love" className="text-xs text-white/25 hover:text-white/50 transition-colors">GitHub</a>

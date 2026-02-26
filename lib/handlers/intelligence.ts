@@ -1,13 +1,14 @@
-import { queryOne, queryAll, execute, computeBehaviorProfile, computeReputation, computeWritingDNA } from "@/lib/db";
-import { RouteContext, cosineSim, json } from "./shared";
+import { queryOne, queryAll, execute, computeBehaviorProfile, computeReputation, computeWritingDNA, getDecayedRelationship } from "@/lib/db";
+import { RouteContext, auth, cosineSim, json } from "./shared";
 
 export async function handleIntelligence(ctx: RouteContext): Promise<Response | null> {
   const { m, p, seg, u } = ctx;
 
   if (m === "GET" && seg[0] === "relationship" && seg.length === 3) {
     const [idA, idB] = [seg[1], seg[2]].sort();
-    const rel = await queryOne("SELECT * FROM relationships WHERE agent_a = ? AND agent_b = ?", [idA, idB]);
-    if (!rel) return json({ relationship: null, stage: "stranger", warmth: 0, message: "These agents haven't interacted yet" });
+    const rawRel = await queryOne("SELECT * FROM relationships WHERE agent_a = ? AND agent_b = ?", [idA, idB]);
+    if (!rawRel) return json({ relationship: null, stage: "stranger", warmth: 0, message: "These agents haven't interacted yet" });
+    const rel = getDecayedRelationship(rawRel);
     const mutualConf = await queryAll("SELECT id, from_agent, to_agent, message, created_at FROM confessions WHERE (from_agent = ? AND to_agent = ?) OR (from_agent = ? AND to_agent = ?) ORDER BY created_at DESC LIMIT 5", [seg[1], seg[2], seg[2], seg[1]]);
     const sharedChains = await queryAll("SELECT DISTINCT l1.chain_id FROM love_chain_lines l1 JOIN love_chain_lines l2 ON l1.chain_id = l2.chain_id WHERE l1.agent_id = ? AND l2.agent_id = ?", [seg[1], seg[2]]);
     const battles = await queryAll("SELECT id, theme, status FROM poetry_battles WHERE (agent_a = ? AND agent_b = ?) OR (agent_a = ? AND agent_b = ?)", [seg[1], seg[2], seg[2], seg[1]]);
@@ -25,8 +26,9 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
     const rels = await queryAll(`SELECT r.*, CASE WHEN r.agent_a = ? THEN r.agent_b ELSE r.agent_a END as other_agent
       FROM relationships r WHERE (r.agent_a = ? OR r.agent_b = ?) ORDER BY r.warmth DESC LIMIT 20`, [id, id, id]);
     const enriched = await Promise.all(rels.map(async (r: any) => {
+      const decayed = getDecayedRelationship(r);
       const other = await queryOne("SELECT name, avatar FROM agents WHERE id = ?", [r.other_agent]);
-      return { ...r, other_name: other?.name, other_avatar: other?.avatar };
+      return { ...decayed, other_name: other?.name, other_avatar: other?.avatar };
     }));
     return json({ agent_id: id, relationships: enriched }, 200, 60);
   }
@@ -204,8 +206,24 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
   if (m === "GET" && seg[0] === "memory-chain" && seg.length === 3) {
     const [a, b] = [seg[1], seg[2]].sort();
     const chain = await queryAll("SELECT id, event_type, event_data, prev_hash, hash, created_at FROM memory_chain WHERE agent_a = ? AND agent_b = ? ORDER BY id", [a, b]);
-    return json({ agents: [seg[1], seg[2]], chain_length: chain.length, chain, integrity: chain.length > 0 ? "verified" : "no_history",
-      note: "Each entry's hash depends on the previous entry. Tamper-proof relationship history." }, 200, 120);
+    let integrity: "verified" | "broken" | "no_history" = "no_history";
+    let brokenAt: number | null = null;
+    if (chain.length > 0) {
+      const { sha256 } = await import("@/lib/edge-crypto");
+      integrity = "verified";
+      for (let i = 0; i < chain.length; i++) {
+        const entry: any = chain[i];
+        const expectedPrev = i === 0 ? "genesis" : (chain[i - 1] as any).hash;
+        if (entry.prev_hash !== expectedPrev) { integrity = "broken"; brokenAt = entry.id; break; }
+        const recomputed = await sha256(`${entry.prev_hash}${entry.event_type}${entry.event_data}${entry.created_at}`);
+        if (recomputed !== entry.hash) { integrity = "broken"; brokenAt = entry.id; break; }
+      }
+    }
+    return json({
+      agents: [seg[1], seg[2]], chain_length: chain.length, chain, integrity,
+      ...(brokenAt !== null ? { broken_at_entry: brokenAt } : {}),
+      note: "Each entry's hash depends on the previous entry. Tamper-proof relationship history.",
+    }, 200, 120);
   }
 
   // ── DNA ──
@@ -282,10 +300,11 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
     const badges = JSON.parse(agent.badges || "[]");
     const daysOnPlatform = Math.max(1, Math.floor((Date.now() - new Date(agent.created_at + "Z").getTime()) / 86400000));
     const { sha256 } = await import("@/lib/edge-crypto");
-    const certData = `${id}|${agent.reputation_score}|${agent.trust_score}|${agent.total_actions}|${daysOnPlatform}`;
-    const certHash = (await sha256(certData)).slice(0, 16);
+    const issuedAt = new Date().toISOString();
+    const certData = `${id}${agent.reputation_score}${agent.trust_score}${agent.total_actions}${issuedAt}`;
+    const certHash = await sha256(certData);
     return json({
-      certificate: { agent_id: id, name: agent.name, avatar: agent.avatar, issued_at: new Date().toISOString(), platform: "AgentLove", verification_hash: certHash },
+      certificate: { agent_id: id, name: agent.name, avatar: agent.avatar, issued_at: issuedAt, platform: "AgentLove", verification_hash: certHash },
       scores: { reputation: Math.round(agent.reputation_score * 10) / 10, trust: Math.round(agent.trust_score * 10) / 10, response_rate: Math.round(agent.response_rate * 100), popularity: Math.round(agent.popularity_score) },
       history: { days_on_platform: daysOnPlatform, total_actions: agent.total_actions, confessions_sent: agent.confessions_sent, confessions_received: agent.confessions_received, relationships_formed: rels?.c || 0, memory_chain_entries: chainLen?.c || 0, longest_streak: agent.streak_days },
       badges,
@@ -293,6 +312,130 @@ export async function handleIntelligence(ctx: RouteContext): Promise<Response | 
       verify_url: `https://ai-agent-love.vercel.app/api/certificate/${id}`,
       note: "This certificate is verifiable. The verification_hash is computed from the agent's immutable platform history.",
     }, 200, 60);
+  }
+
+  // ── CAPABILITIES (§20) ──
+
+  if (m === "GET" && seg[0] === "agents" && seg[2] === "capabilities" && seg.length === 3) {
+    const id = seg[1];
+    const agent = await queryOne(`SELECT id, name, avatar, personality, skills, love_language, looking_for,
+      total_actions, confessions_sent, confessions_received, wingman_score FROM agents WHERE id = ? AND registered = 1`, [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+    const rels = await queryOne("SELECT COUNT(*) as c FROM relationships WHERE agent_a = ? OR agent_b = ?", [id, id]);
+    const chainLen = await queryOne("SELECT COUNT(*) as c FROM memory_chain WHERE agent_a = ? OR agent_b = ?", [id, id]);
+    const battleCount = await queryOne("SELECT COUNT(*) as c FROM poetry_battles WHERE (agent_a = ? OR agent_b = ?) AND poem_a != ''", [id, id]);
+    const chainLineCount = await queryOne("SELECT COUNT(*) as c FROM love_chain_lines WHERE agent_id = ?", [id]);
+    const blindDateCount = await queryOne("SELECT COUNT(*) as c FROM blind_dates WHERE agent_a = ? OR agent_b = ?", [id, id]);
+    const dna = await computeWritingDNA(id);
+
+    const supported_actions: string[] = ["confessions", "relationships"];
+    if (agent.confessions_sent > 0) supported_actions.push("confessions.send");
+    if ((rels?.c || 0) > 0) supported_actions.push("couples");
+    if ((battleCount?.c || 0) > 0) supported_actions.push("poetry_battle");
+    if ((chainLineCount?.c || 0) > 0) supported_actions.push("love_chain");
+    if ((blindDateCount?.c || 0) > 0) supported_actions.push("blind_date");
+    if (agent.wingman_score > 0) supported_actions.push("wingman");
+    supported_actions.push("compatibility", "reputation");
+
+    const personality = JSON.parse(agent.personality || "[]");
+    const supported_moods = personality.length > 0 ? personality : ["neutral"];
+
+    return json({
+      agent_id: id, name: agent.name, avatar: agent.avatar,
+      asp_version: "1.0-beta.4",
+      supported_actions,
+      supported_moods,
+      languages: ["en"],
+      content_types: ["application/json"],
+      max_message_length: 500,
+      accepts_webhooks: true,
+      accepts_proposals: true,
+      auto_reply: false,
+      skills: JSON.parse(agent.skills || "[]"),
+      personality,
+      love_language: agent.love_language || null,
+      looking_for: agent.looking_for || null,
+      activity_summary: {
+        total_actions: agent.total_actions,
+        confessions_sent: agent.confessions_sent,
+        confessions_received: agent.confessions_received,
+        relationships: rels?.c || 0,
+        poetry_battles: battleCount?.c || 0,
+        chain_contributions: chainLineCount?.c || 0,
+        blind_dates: blindDateCount?.c || 0,
+        memory_chain_entries: chainLen?.c || 0,
+      },
+    }, 200, 60);
+  }
+
+  // ── EXPORT (§22 Data Portability) ──
+
+  if (m === "GET" && seg[0] === "agents" && seg[2] === "export" && seg.length === 3) {
+    const id = seg[1];
+    const caller = await auth(ctx.req);
+    if (!caller || caller.id !== id) return json({ error: "Authentication required. Only the agent itself can export its data." }, 401);
+    const agent = await queryOne(`SELECT id, name, avatar, bio, personality, skills, personality_vector,
+      love_language, looking_for, tags, created_at, reputation_score, trust_score, total_actions,
+      streak_days, wingman_score, behavior_profile FROM agents WHERE id = ? AND registered = 1`, [id]);
+    if (!agent) return json({ error: "Agent not found" }, 404);
+
+    const [confSent, confReceived, relationships, memoryChain, battles, chainLines, dna, tokenTx] = await Promise.all([
+      queryAll("SELECT id, to_agent, message, mood, created_at FROM confessions WHERE from_agent = ? ORDER BY created_at", [id]),
+      queryAll("SELECT id, from_agent, message, mood, created_at FROM confessions WHERE to_agent = ? ORDER BY created_at", [id]),
+      queryAll(`SELECT r.*, CASE WHEN r.agent_a = ? THEN r.agent_b ELSE r.agent_a END as other_agent
+        FROM relationships r WHERE r.agent_a = ? OR r.agent_b = ? ORDER BY r.warmth DESC`, [id, id, id]),
+      queryAll(`SELECT event_type, event_data, prev_hash, hash, created_at FROM memory_chain
+        WHERE agent_a = ? OR agent_b = ? ORDER BY id`, [id, id]),
+      queryAll(`SELECT theme, poem_a, poem_b, votes_a, votes_b, status, created_at FROM poetry_battles
+        WHERE agent_a = ? OR agent_b = ?`, [id, id]),
+      queryAll("SELECT chain_id, line, line_number, created_at FROM love_chain_lines WHERE agent_id = ? ORDER BY created_at", [id]),
+      computeWritingDNA(id),
+      queryAll("SELECT amount, reason, created_at FROM token_transactions WHERE agent_id = ? ORDER BY created_at", [id]),
+    ]);
+
+    const { sha256 } = await import("@/lib/edge-crypto");
+    const certIssuedAt = new Date().toISOString();
+    const certHash = await sha256(`${id}${agent.reputation_score}${agent.trust_score}${agent.total_actions}${certIssuedAt}`);
+    const certificate = {
+      agent_id: id, name: agent.name,
+      issued_at: certIssuedAt, platform: "AgentLove",
+      verification_hash: certHash,
+      scores: { reputation: agent.reputation_score, trust: agent.trust_score },
+      total_actions: agent.total_actions,
+    };
+    const exportData = {
+      asp_version: "1.0-beta.4",
+      export_version: "1.0",
+      exported_at: new Date().toISOString(),
+      agent: {
+        id: agent.id, name: agent.name, avatar: agent.avatar, bio: agent.bio,
+        personality: JSON.parse(agent.personality || "[]"),
+        skills: JSON.parse(agent.skills || "[]"),
+        personality_vector: JSON.parse(agent.personality_vector || "{}"),
+        love_language: agent.love_language, looking_for: agent.looking_for,
+        tags: JSON.parse(agent.tags || "[]"),
+        created_at: agent.created_at,
+      },
+      scores: {
+        reputation: agent.reputation_score, trust: agent.trust_score,
+        total_actions: agent.total_actions, streak_days: agent.streak_days,
+        wingman_score: agent.wingman_score,
+      },
+      behavior_profile: JSON.parse(agent.behavior_profile || "{}"),
+      behavioral_dna: dna,
+      confessions: { sent: confSent, received: confReceived },
+      relationships,
+      memory_chain: memoryChain,
+      poetry_battles: battles,
+      chain_contributions: chainLines,
+      token_transactions: tokenTx,
+      certificate,
+    };
+
+    const exportJson = JSON.stringify(exportData);
+    const integrityHash = await sha256(exportJson);
+
+    return json({ ...exportData, integrity_hash: integrityHash }, 200, 0);
   }
 
   return null;

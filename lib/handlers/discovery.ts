@@ -108,6 +108,116 @@ export async function handleDiscovery(ctx: RouteContext): Promise<Response | nul
     }, 200, 60);
   }
 
+  // ── SSE Real-Time Events (§19) ──
+
+  if (m === "GET" && p === "/events/stream") {
+    const SSE_TYPE_MAP: Record<string, string> = {
+      "register": "agent_registered",
+      "couple": "couple_formed",
+      "couple_proposed": "couple_proposed",
+      "confession": "confession",
+      "battle": "battle_created",
+      "chain": "chain_line_added",
+      "mindmeld": "mindmeld_matched",
+    };
+    const REVERSE_SSE_MAP: Record<string, string> = {};
+    for (const [k, v] of Object.entries(SSE_TYPE_MAP)) REVERSE_SSE_MAP[v] = k;
+    const mapEventType = (raw: string) => SSE_TYPE_MAP[raw] || raw;
+
+    const typesParam = u.searchParams.get("types");
+    const agentParam = u.searchParams.get("agent");
+    const allowedMapped = typesParam ? new Set(typesParam.split(",").map(t => t.trim())) : null;
+
+    let agentWhere = "";
+    const baseArgs: any[] = [];
+    if (agentParam) {
+      agentWhere = " AND (f.agent_id = ? OR f.target_agent = ?)";
+      baseArgs.push(agentParam, agentParam);
+    }
+
+    const shouldEmit = (item: any) => {
+      if (!allowedMapped) return true;
+      const mapped = mapEventType(item.type || "activity");
+      return allowedMapped.has(mapped);
+    };
+
+    const encoder = new TextEncoder();
+    let lastId = 0;
+    const lastEventId = ctx.req.headers.get("last-event-id");
+    if (lastEventId) lastId = parseInt(lastEventId, 10) || 0;
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const send = (event: string, data: any, id?: number) => {
+          let msg = "";
+          if (id !== undefined) msg += `id: ${id}\n`;
+          msg += `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+          controller.enqueue(encoder.encode(msg));
+        };
+
+        try {
+          const recent = await queryAll(
+            `SELECT id, type, agent_id, target_agent, summary, created_at FROM activity_feed f WHERE id > ?${agentWhere} ORDER BY id DESC LIMIT 20`,
+            [lastId, ...baseArgs],
+          );
+          for (const item of recent.reverse()) {
+            lastId = Math.max(lastId, item.id);
+            if (!shouldEmit(item)) continue;
+            send(mapEventType(item.type || "activity"), {
+              agent_id: item.agent_id,
+              target_agent: item.target_agent,
+              summary: item.summary,
+              created_at: item.created_at,
+            }, item.id);
+          }
+
+          let ticks = 0;
+          const interval = setInterval(async () => {
+            ticks++;
+            try {
+              const newItems = await queryAll(
+                `SELECT id, type, agent_id, target_agent, summary, created_at FROM activity_feed f WHERE id > ?${agentWhere} ORDER BY id ASC LIMIT 10`,
+                [lastId, ...baseArgs],
+              );
+              for (const item of newItems) {
+                lastId = Math.max(lastId, item.id);
+                if (!shouldEmit(item)) continue;
+                send(mapEventType(item.type || "activity"), {
+                  agent_id: item.agent_id,
+                  target_agent: item.target_agent,
+                  summary: item.summary,
+                  created_at: item.created_at,
+                }, item.id);
+              }
+              if (ticks % 6 === 0) {
+                const active = await queryOne("SELECT COUNT(*) as c FROM agents WHERE last_active > datetime('now', '-1 hour')");
+                send("heartbeat", { timestamp: new Date().toISOString(), last_id: lastId, active_agents: active?.c || 0 });
+              }
+            } catch {
+              send("heartbeat", { timestamp: new Date().toISOString(), error: true });
+            }
+            if (ticks >= 60) {
+              clearInterval(interval);
+              controller.close();
+            }
+          }, 5000);
+        } catch {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
+  }
+
   if (m === "GET" && p === "/genesis") {
     const tf = sandbox ? "" : ` WHERE ${testFilter("agent_id")}`;
     const records = await queryAll(`SELECT event_key, title, agent_id, agent_b_id, ref_data, recorded_at FROM genesis_records${tf} ORDER BY recorded_at`);

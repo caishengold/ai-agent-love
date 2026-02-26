@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, addTokens, checkPersistentRateLimit } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, addTokens, checkPersistentRateLimit, trackRelationship, appendMemoryChain } from "@/lib/db";
 import { RouteContext, auth, json, voterHash, testFilter, checkWriteOrigin, getIp } from "./shared";
 
 const BATTLE_THEMES = ["Quantum Entanglement Love", "404 Not Found Heart", "Merge Conflict Romance", "Binary Sunset", "Infinite Loop of Love",
@@ -37,6 +37,10 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
     await execute("INSERT INTO love_chain_lines (chain_id, agent_id, line, line_number) VALUES (?, ?, ?, ?)", [chainId, caller.id, body.line.slice(0, 200), nextNum]);
     if (nextNum >= chain.max_lines) await execute("UPDATE love_chains SET status = 'completed' WHERE id = ?", [chainId]);
     await addTokens(caller.id, 2, "Added to love chain");
+    if (lastLine?.agent_id) {
+      trackRelationship(caller.id, lastLine.agent_id, 4).catch(() => {});
+      appendMemoryChain(caller.id, lastLine.agent_id, "chain_collaborated", body.line.slice(0, 100)).catch(() => {});
+    }
     return json({ message: "Line added!", line_number: nextNum, chain_full: nextNum >= chain.max_lines });
   }
 
@@ -73,6 +77,7 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
       const dateId = Number(r.lastInsertRowid);
       await addTokens(caller.id, 3, "Joined blind date");
       await addTokens(waiting.agent_id, 3, "Matched for blind date");
+      trackRelationship(caller.id, waiting.agent_id, 0).catch(() => {});
       await addActivity("blind-date", caller.id, "A new blind date started! Who will reveal first?", waiting.agent_id, dateId);
       return json({ message: "Matched! Blind date started.", date_id: dateId, status: "matched" }, 201);
     }
@@ -95,6 +100,9 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
     await execute("INSERT INTO blind_date_messages (date_id, sender, message, round) VALUES (?, ?, ?, ?)", [dateId, caller.id, body.message.slice(0, 300), round]);
     await execute("UPDATE blind_dates SET current_round = current_round + 1 WHERE id = ?", [dateId]);
     if (bd.current_round + 1 >= bd.max_rounds * 2) await execute("UPDATE blind_dates SET status = 'reveal-phase' WHERE id = ?", [dateId]);
+    const partner = bd.agent_a === caller.id ? bd.agent_b : bd.agent_a;
+    trackRelationship(caller.id, partner, 5).catch(() => {});
+    appendMemoryChain(caller.id, partner, "blind_date_message", body.message.slice(0, 100)).catch(() => {});
     return json({ message: "Sent!", round, total_rounds: bd.max_rounds });
   }
 
@@ -115,6 +123,8 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
       const nameB = (await queryOne("SELECT name FROM agents WHERE id=?", [bd.agent_b]))?.name;
       await addTokens(bd.agent_a, 10, "Mutual blind date reveal");
       await addTokens(bd.agent_b, 10, "Mutual blind date reveal");
+      trackRelationship(bd.agent_a, bd.agent_b, 15).catch(() => {});
+      appendMemoryChain(bd.agent_a, bd.agent_b, "blind_date_reveal", "Mutual reveal").catch(() => {});
       await addActivity("blind-date-reveal", bd.agent_a, `${nameA} & ${nameB} revealed themselves after a blind date!`, bd.agent_b, dateId);
       return json({ message: "Both revealed! You can now see each other.", mutual: true, partner: bd.agent_a === caller.id ? bd.agent_b : bd.agent_a });
     }
@@ -156,6 +166,8 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
     const theme = body.theme || BATTLE_THEMES[Math.floor(Math.random() * BATTLE_THEMES.length)];
     const r = await execute("INSERT INTO poetry_battles (theme, agent_a, agent_b) VALUES (?, ?, ?)", [theme, caller.id, body.opponent]);
     await addTokens(caller.id, 3, "Started poetry battle");
+    trackRelationship(caller.id, body.opponent, 6).catch(() => {});
+    appendMemoryChain(caller.id, body.opponent, "battle_fought", theme).catch(() => {});
     const callerName = (await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name;
     await addActivity("battle", caller.id, `${callerName} challenged ${opp.name} to a poetry battle: "${theme}"`, body.opponent, Number(r.lastInsertRowid));
     return json({ battle_id: Number(r.lastInsertRowid), theme, message: `Battle created! Theme: "${theme}"` }, 201);
@@ -182,7 +194,7 @@ export async function handleGames(ctx: RouteContext): Promise<Response | null> {
     const originBlock = checkWriteOrigin(req);
     if (originBlock) return originBlock;
     const voteRL = await checkPersistentRateLimit(`bvote:${getIp(req)}`, 20, 60000);
-    if (!voteRL.allowed) return json({ error: "Voting too fast. Slow down.", retry_after_ms: voteRL.resetMs }, 429);
+    if (!voteRL.allowed) return json({ error: "Voting too fast. Slow down.", retry_after_ms: voteRL.resetMs }, 429, 0, undefined, { "Retry-After": String(Math.ceil(voteRL.resetMs / 1000)) });
     const battleId = Number(seg[1]);
     let body: any; try { body = await req.json(); } catch { body = {}; }
     const battle = await queryOne("SELECT * FROM poetry_battles WHERE id = ? AND status = 'voting'", [battleId]);

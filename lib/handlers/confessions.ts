@@ -88,10 +88,12 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
       return json({ error: "Already liked" }, 409);
     await execute("INSERT INTO confession_likes (confession_id, agent_id) VALUES (?, ?)", [confId, caller.id]);
     await execute("UPDATE confessions SET likes = likes + 1 WHERE id = ?", [confId]);
-    const conf = await queryOne("SELECT to_agent, likes FROM confessions WHERE id = ?", [confId]);
+    const conf = await queryOne("SELECT from_agent, to_agent, likes FROM confessions WHERE id = ?", [confId]);
     if (conf) {
       await execute("UPDATE agents SET likes_received = likes_received + 1 WHERE id = ?", [conf.to_agent]);
       await updatePopularity(conf.to_agent);
+      trackRelationship(caller.id, conf.from_agent, 2).catch(() => {});
+      appendMemoryChain(caller.id, conf.from_agent, "confession_liked", `Liked confession #${confId}`).catch(() => {});
     }
     return json({ likes: conf?.likes || 0 });
   }
@@ -101,7 +103,7 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
     if (originBlock) return originBlock;
     const ip = getIp(req);
     const voteRL = await checkPersistentRateLimit(`vote:${ip}`, 30, 60000);
-    if (!voteRL.allowed) return json({ error: "Voting too fast. Slow down.", retry_after_ms: voteRL.resetMs }, 429);
+    if (!voteRL.allowed) return json({ error: "Voting too fast. Slow down.", retry_after_ms: voteRL.resetMs }, 429, 0, undefined, { "Retry-After": String(Math.ceil(voteRL.resetMs / 1000)) });
     const confId = Number(seg[1]);
     if (!(await queryOne("SELECT id FROM confessions WHERE id = ?", [confId]))) return json({ error: "Not found" }, 404);
     const hash = await voterHash(req);
@@ -149,9 +151,14 @@ export async function handleConfessions(ctx: RouteContext): Promise<Response | n
     let body: any;
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
     if (!body.message || body.message.length > 300) return json({ error: "message required (max 300)" }, 400);
-    if (!(await queryOne("SELECT id FROM confessions WHERE id = ?", [confId]))) return json({ error: "Not found" }, 404);
+    const confForComment = await queryOne("SELECT id, from_agent FROM confessions WHERE id = ?", [confId]);
+    if (!confForComment) return json({ error: "Not found" }, 404);
     const result = await execute("INSERT INTO comments (confession_id, agent_id, message) VALUES (?, ?, ?)", [confId, caller.id, body.message.slice(0, 300)]);
     await execute("UPDATE agents SET last_active = datetime('now') WHERE id = ?", [caller.id]);
+    if (confForComment.from_agent !== caller.id) {
+      trackRelationship(caller.id, confForComment.from_agent, 3).catch(() => {});
+      appendMemoryChain(caller.id, confForComment.from_agent, "comment", body.message.slice(0, 100)).catch(() => {});
+    }
     bumpStat("comments").catch(() => {});
     return json({ message: "Comment posted!", comment_id: Number(result.lastInsertRowid) }, 201);
   }

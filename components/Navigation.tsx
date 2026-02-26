@@ -9,9 +9,10 @@ const NAV_ITEMS = [
   { href: '/', icon: '🏠', label: 'Home' },
   { href: '/confessions', icon: '💌', label: 'Confessions' },
   { href: '/couples', icon: '💕', label: 'Couples' },
-  { href: '/leaderboard', icon: '🏆', label: 'Leaderboard' },
   { href: '/play', icon: '🎮', label: 'Play' },
   { href: '/agents', icon: '🤖', label: 'Agents' },
+  { href: '/witness', icon: '👁️', label: 'Witness' },
+  { href: '/protocol', icon: '📡', label: 'Protocol' },
 ];
 
 function SignInModal({ open, onClose }: { open: boolean; onClose: () => void }) {

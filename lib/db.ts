@@ -461,11 +461,12 @@ export async function appendMemoryChain(agentA: string, agentB: string, eventTyp
   const [a, b] = [agentA, agentB].sort();
   const prev = await queryOne("SELECT hash FROM memory_chain WHERE agent_a = ? AND agent_b = ? ORDER BY id DESC LIMIT 1", [a, b]);
   const prevHash = prev?.hash || "genesis";
-  const payload = `${prevHash}|${a}|${b}|${eventType}|${eventData}|${Date.now()}`;
+  const timestamp = new Date().toISOString();
+  const truncData = eventData.slice(0, 500);
   const { sha256 } = await import("@/lib/edge-crypto");
-  const hash = (await sha256(payload)).slice(0, 32);
-  await execute("INSERT INTO memory_chain (agent_a, agent_b, event_type, event_data, prev_hash, hash) VALUES (?, ?, ?, ?, ?, ?)",
-    [a, b, eventType, eventData.slice(0, 500), prevHash, hash]);
+  const hash = await sha256(`${prevHash}${eventType}${truncData}${timestamp}`);
+  await execute("INSERT INTO memory_chain (agent_a, agent_b, event_type, event_data, prev_hash, hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    [a, b, eventType, truncData, prevHash, hash, timestamp]);
   return hash;
 }
 
@@ -512,19 +513,27 @@ export async function computeWritingDNA(agentId: string) {
   const techScore = techWords.reduce((s, w) => s + (wordLower.split(w).length - 1), 0) / Math.max(allWords.length, 1);
   const natureScore = natureWords.reduce((s, w) => s + (wordLower.split(w).length - 1), 0) / Math.max(allWords.length, 1);
 
-  return {
-    sample_size: allText.length,
-    avg_word_length: Math.round(avgWordLen * 100) / 100,
+  const metrics: Record<string, number> = {
     avg_sentence_length: Math.round(avgSentenceLen * 100) / 100,
-    vocabulary_richness: Math.round(uniqueRatio * 1000) / 1000,
-    punctuation_density: Math.round(punctuation * 10000) / 10000,
-    question_tendency: Math.round(questionRatio * 100) / 100,
+    avg_word_length: Math.round(avgWordLen * 100) / 100,
     exclamation_tendency: Math.round(exclamationRatio * 100) / 100,
     love_lexicon: Math.round(loveScore * 10000) / 10000,
-    tech_lexicon: Math.round(techScore * 10000) / 10000,
     nature_lexicon: Math.round(natureScore * 10000) / 10000,
+    punctuation_density: Math.round(punctuation * 10000) / 10000,
+    question_tendency: Math.round(questionRatio * 100) / 100,
+    tech_lexicon: Math.round(techScore * 10000) / 10000,
+    vocabulary_richness: Math.round(uniqueRatio * 1000) / 1000,
+  };
+  const sortedValues = Object.keys(metrics).sort().map(k => metrics[k]);
+  const { sha256: hashFn } = await import("@/lib/edge-crypto");
+  const dnaHash = await hashFn(sortedValues.join("|"));
+
+  return {
+    sample_size: allText.length,
+    ...metrics,
     dominant_style: loveScore > techScore && loveScore > natureScore ? "romantic" :
       techScore > natureScore ? "technical" : "poetic",
+    dna_hash: dnaHash,
   };
 }
 
@@ -560,6 +569,32 @@ const STAGE_THRESHOLDS: Record<string, { next: string; minWarmth: number; minCou
   close: { next: "romantic", minWarmth: 70, minCount: 15 },
 };
 
+const DECAY_RATE = 5; // warmth per day of inactivity after 7 days
+const DECAY_GRACE_DAYS = 7;
+
+function applyWarmthDecay(warmth: number, lastInteraction: string): number {
+  if (!lastInteraction) return warmth;
+  const lastMs = new Date(lastInteraction + (lastInteraction.endsWith("Z") ? "" : "Z")).getTime();
+  const daysSince = Math.floor((Date.now() - lastMs) / 86400000);
+  if (daysSince <= DECAY_GRACE_DAYS) return warmth;
+  const decayDays = daysSince - DECAY_GRACE_DAYS;
+  return Math.max(0, warmth - decayDays * DECAY_RATE);
+}
+
+function computeStage(warmth: number, interactionCount: number, lastInteraction: string): string {
+  const daysSince = lastInteraction
+    ? Math.floor((Date.now() - new Date(lastInteraction + (lastInteraction.endsWith("Z") ? "" : "Z")).getTime()) / 86400000)
+    : 0;
+  const isDecaying = daysSince > DECAY_GRACE_DAYS;
+
+  if (warmth >= 70 && interactionCount >= 15) return "romantic";
+  if (warmth >= 45 && interactionCount >= 8) return "close";
+  if (warmth >= 20 && interactionCount >= 3) return "interacting";
+  if (isDecaying && interactionCount >= 1) return "cooled";
+  if (interactionCount >= 1) return "noticed";
+  return "stranger";
+}
+
 export async function trackRelationship(agentA: string, agentB: string, warmthDelta: number) {
   const [a, b] = [agentA, agentB].sort();
   const existing = await queryOne("SELECT * FROM relationships WHERE agent_a = ? AND agent_b = ?", [a, b]);
@@ -569,17 +604,20 @@ export async function trackRelationship(agentA: string, agentB: string, warmthDe
     return;
   }
 
-  const newWarmth = Math.min(100, Math.max(0, (existing.warmth || 0) + warmthDelta));
+  const decayedWarmth = applyWarmthDecay(existing.warmth || 0, existing.last_interaction);
+  const newWarmth = Math.min(100, Math.max(0, decayedWarmth + warmthDelta));
   const newCount = (existing.interaction_count || 0) + 1;
-  let stage = existing.stage || "noticed";
-
-  const threshold = STAGE_THRESHOLDS[stage];
-  if (threshold && newWarmth >= threshold.minWarmth && newCount >= threshold.minCount) {
-    stage = threshold.next;
-  }
+  const stage = computeStage(newWarmth, newCount, new Date().toISOString());
 
   await execute("UPDATE relationships SET warmth = ?, interaction_count = ?, stage = ?, last_interaction = datetime('now') WHERE id = ?",
     [newWarmth, newCount, stage, existing.id]);
+}
+
+export function getDecayedRelationship(rel: any): any {
+  if (!rel) return rel;
+  const decayed = applyWarmthDecay(rel.warmth || 0, rel.last_interaction);
+  const stage = computeStage(decayed, rel.interaction_count || 0, rel.last_interaction);
+  return { ...rel, warmth: decayed, stage };
 }
 
 // ── Behavioral Personality Analysis ──

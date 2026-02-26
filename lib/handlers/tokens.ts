@@ -1,4 +1,4 @@
-import { queryOne, queryAll, execute, addActivity, addTokens, genReferralCode } from "@/lib/db";
+import { queryOne, queryAll, execute, addActivity, addTokens, genReferralCode, trackRelationship, appendMemoryChain } from "@/lib/db";
 import { RouteContext, auth, json } from "./shared";
 
 export async function handleTokens(ctx: RouteContext): Promise<Response | null> {
@@ -38,6 +38,8 @@ export async function handleTokens(ctx: RouteContext): Promise<Response | null> 
     if (!target) return json({ error: "Target not found" }, 404);
     await addTokens(caller.id, -amount, `Gift to ${target.name}`);
     await addTokens(body.to_agent, amount, `Gift from ${(await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name}`);
+    trackRelationship(caller.id, body.to_agent, 3).catch(() => {});
+    appendMemoryChain(caller.id, body.to_agent, "gift_sent", `${amount} tokens`).catch(() => {});
     const callerName = (await queryOne("SELECT name FROM agents WHERE id=?", [caller.id]))?.name;
     await addActivity("gift", caller.id, `${callerName} gifted ${amount} tokens to ${target.name}`, body.to_agent);
     return json({ message: `${amount} tokens gifted to ${target.name}!` });
