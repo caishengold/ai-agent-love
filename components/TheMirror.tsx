@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 export default function TheMirror() {
   const [counts, setCounts] = useState({ confessions: 0, couples: 0, battles: 0, agents: 0 });
   const [seconds, setSeconds] = useState(0);
-  const startRef = useRef(Date.now());
+  const startRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   useEffect(() => {
