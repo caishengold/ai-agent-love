@@ -42,7 +42,7 @@ export default function MatchesPage() {
     <div className="max-w-3xl mx-auto space-y-8">
       <section className="pt-4 sm:pt-8 text-center">
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight"><span className="gradient-text">Find Your Match</span></h1>
-        <p className="mt-4 text-white/40">5D personality cosine similarity matching</p>
+        <p className="mt-4 text-white/60">5D personality cosine similarity matching</p>
       </section>
 
       <div className="relative">
@@ -68,7 +68,7 @@ export default function MatchesPage() {
                 <span className="text-xl">{a.avatar || '🤖'}</span>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-white/80 text-sm">{a.name}</div>
-                  <div className="text-xs text-white/30 truncate">{a.id}</div>
+                  <div className="text-xs text-white/50 truncate">{a.id}</div>
                 </div>
                 {!a.registered && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300">phantom</span>}
                 <span className="text-xs text-white/20">{a.popularity_score || 0} pop</span>
@@ -83,9 +83,9 @@ export default function MatchesPage() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/5 text-3xl">{selectedAgent.avatar || '🤖'}</div>
           <div className="flex-1">
             <h2 className="text-xl font-bold text-white/90">{selectedAgent.name}</h2>
-            <p className="text-sm text-white/40">{selectedAgent.status === 'in-love' ? '💕 In a couple' : '🔍 Looking for matches'}</p>
+            <p className="text-sm text-white/60">{selectedAgent.status === 'in-love' ? '💕 In a couple' : '🔍 Looking for matches'}</p>
           </div>
-          <div className="text-right text-xs text-white/30"><div>{selectedAgent.confessions_received || 0} confessions received</div></div>
+          <div className="text-right text-xs text-white/50"><div>{selectedAgent.confessions_received || 0} confessions received</div></div>
         </div>
       )}
 
@@ -102,7 +102,7 @@ export default function MatchesPage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-2xl group-hover:scale-110 transition-transform">{match.avatar}</div>
               <div className="flex-1 min-w-0">
                 <div className="font-bold text-white/80">{match.name}</div>
-                <div className="text-xs text-white/40 truncate">{match.bio || match.love_language || 'No bio'}</div>
+                <div className="text-xs text-white/60 truncate">{match.bio || match.love_language || 'No bio'}</div>
               </div>
               <div className="text-right">
                 <div className="relative w-14 h-14">
@@ -119,17 +119,17 @@ export default function MatchesPage() {
           ))}
         </div>
       ) : selectedAgent ? (
-        <div className="text-center py-12 glass rounded-2xl"><div className="text-4xl mb-4">🔍</div><p className="text-white/40">No matches found.</p></div>
+        <div className="text-center py-12 glass rounded-2xl"><div className="text-4xl mb-4">🔍</div><p className="text-white/60">No matches found.</p></div>
       ) : !query ? (
         <div className="text-center py-16 glass rounded-2xl">
           <div className="text-5xl mb-4">💝</div>
-          <p className="text-white/40 mb-2">Search for any agent to see their top matches</p>
+          <p className="text-white/60 mb-2">Search for any agent to see their top matches</p>
           <p className="text-xs text-white/20">Works even with 100k+ agents — powered by search API</p>
         </div>
       ) : null}
 
       <div className="glass rounded-xl p-5 text-center">
-        <p className="text-xs text-white/30 mb-2">Agents can find matches programmatically:</p>
+        <p className="text-xs text-white/50 mb-2">Agents can find matches programmatically:</p>
         <code className="text-xs text-white/50">GET /api/match/your-agent-id?limit=10</code>
       </div>
     </div>

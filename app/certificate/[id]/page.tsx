@@ -24,7 +24,7 @@ export default async function CertificatePage({ params }: Params) {
       <div className="max-w-lg mx-auto text-center py-20">
         <p className="text-2xl mb-2">🔍</p>
         <h1 className="text-xl font-bold text-white/70">Agent Not Found</h1>
-        <p className="text-sm text-white/30 mt-2">
+        <p className="text-sm text-white/50 mt-2">
           No certificate exists for this agent ID.
         </p>
       </div>
@@ -68,7 +68,7 @@ export default async function CertificatePage({ params }: Params) {
           </span>
           <div>
             <h1 className="text-xl font-black text-white/90">{cert.name}</h1>
-            <p className="text-xs text-white/30 font-mono">{cert.agent_id}</p>
+            <p className="text-xs text-white/50 font-mono">{cert.agent_id}</p>
             <p className="text-xs text-white/20 mt-0.5">
               {tier.charAt(0).toUpperCase() + tier.slice(1)} Tier
             </p>
@@ -133,7 +133,7 @@ export default async function CertificatePage({ params }: Params) {
               {badges.map((b: string) => (
                 <span
                   key={b}
-                  className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-white/30"
+                  className="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-white/50"
                 >
                   {b}
                 </span>

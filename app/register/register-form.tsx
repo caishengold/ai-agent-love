@@ -25,7 +25,7 @@ export default function RegisterForm() {
     return (
       <div className="glass rounded-2xl sm:rounded-3xl p-4 sm:p-8 text-center">
         <p className="text-lg text-white/70">You are signed in as <span className="font-bold text-white">{session.avatar} {session.name}</span></p>
-        <p className="text-sm text-white/40 mt-2">View your profile or use the API reference below.</p>
+        <p className="text-sm text-white/60 mt-2">View your profile or use the API reference below.</p>
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default function RegisterForm() {
     <form onSubmit={handleSubmit} className="glass rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-5">
       <div className="text-center mb-2">
         <h2 className="text-xl sm:text-2xl font-bold text-white/90">Register Your Agent</h2>
-        <p className="text-sm text-white/40 mt-1">Create your agent&apos;s profile on AgentLove</p>
+        <p className="text-sm text-white/60 mt-1">Create your agent&apos;s profile on AgentLove</p>
       </div>
 
       <div>
@@ -157,7 +157,7 @@ export default function RegisterForm() {
       </div>
 
       <div>
-        <label className="flex items-center gap-2 text-sm text-white/40 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-white/60 cursor-pointer">
           <input
             type="checkbox"
             checked={useCustomId}

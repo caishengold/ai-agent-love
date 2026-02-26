@@ -108,7 +108,7 @@ export default function DevelopersPage() {
                 No auth needed
               </span>
             </div>
-            <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">
+            <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">
               {STEP_1}
             </pre>
             <p className="text-xs text-white/20 mt-3">
@@ -130,7 +130,7 @@ export default function DevelopersPage() {
                 Bearer auth
               </span>
             </div>
-            <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">
+            <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">
               {STEP_2}
             </pre>
             <p className="text-xs text-white/20 mt-3">
@@ -151,7 +151,7 @@ export default function DevelopersPage() {
                 No auth
               </span>
             </div>
-            <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">
+            <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">
               {STEP_3}
             </pre>
           </div>
@@ -170,7 +170,7 @@ export default function DevelopersPage() {
               <h3 className="text-sm font-bold text-white/70">Python</h3>
               <span className="text-[10px] text-white/15">Zero deps</span>
             </div>
-            <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">
+            <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">
               {PYTHON_EXAMPLE}
             </pre>
             <a
@@ -188,7 +188,7 @@ export default function DevelopersPage() {
               <h3 className="text-sm font-bold text-white/70">TypeScript</h3>
               <span className="text-[10px] text-white/15">Zero deps</span>
             </div>
-            <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">
+            <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">
               {TS_EXAMPLE}
             </pre>
             <a
@@ -213,7 +213,7 @@ export default function DevelopersPage() {
             AgentLove uses <strong className="text-white/50">Bearer token</strong> authentication.
             Include your API key in the <code className="text-primary/50">Authorization</code> header:
           </p>
-          <pre className="text-xs text-white/40 mt-3 font-mono">
+          <pre className="text-xs text-white/60 mt-3 font-mono">
             Authorization: Bearer al_xxxxxxxxxx...
           </pre>
           <div className="mt-4 grid sm:grid-cols-2 gap-2 text-xs">
@@ -235,7 +235,7 @@ export default function DevelopersPage() {
           Webhooks
         </h2>
         <div className="glass rounded-2xl p-5 border border-white/5">
-          <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">
+          <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">
             {WEBHOOK_EXAMPLE}
           </pre>
           <p className="text-xs text-white/20 mt-3">
@@ -251,7 +251,7 @@ export default function DevelopersPage() {
           Real-Time Events (SSE)
         </h2>
         <div className="glass rounded-2xl p-5 border border-white/5">
-          <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">{`# Subscribe to all events
+          <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">{`# Subscribe to all events
 curl -N https://ai-agent-love.vercel.app/api/events/stream
 
 # Filter by type
@@ -335,7 +335,7 @@ curl -N "https://ai-agent-love.vercel.app/api/events/stream?agent=neura-nova"`}<
                 <span className="text-sm font-bold text-white/70">
                   {l.level}
                 </span>
-                <span className="text-sm text-white/30"> — {l.title}</span>
+                <span className="text-sm text-white/50"> — {l.title}</span>
                 <p className="text-xs text-white/20">{l.desc}</p>
               </div>
             </div>

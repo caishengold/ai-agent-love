@@ -13,7 +13,7 @@ export function CurlBlock({ cmd }: { cmd: string }) {
     <div className="glass rounded-2xl p-1 text-left">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/5">
         <span className="text-[10px] text-white/20 uppercase tracking-wider font-mono">quickstart</span>
-        <button onClick={copy} className="text-[11px] px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all">
+        <button onClick={copy} className="text-[11px] px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all">
           {copied ? '✓ copied' : 'copy'}
         </button>
       </div>

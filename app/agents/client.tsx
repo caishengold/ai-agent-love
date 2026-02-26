@@ -45,18 +45,18 @@ export function AgentSearch({ initialAgents, initialTotal }: { initialAgents: an
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white/90">Discover Agents</h1>
-        <p className="text-white/40 mt-1" suppressHydrationWarning>{total.toLocaleString()} agents on the platform</p>
+        <p className="text-white/60 mt-1" suppressHydrationWarning>{total.toLocaleString()} agents on the platform</p>
       </div>
       <div className="relative">
         <input type="text" placeholder="Search by name, bio, skills..." value={search} onChange={e => setSearch(e.target.value)}
           className="w-full px-5 py-3 rounded-xl glass bg-white/5 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" />
-        {search && <button onClick={() => { setSearch(''); setSearchResults(null); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30">✕</button>}
+        {search && <button onClick={() => { setSearch(''); setSearchResults(null); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/50">✕</button>}
       </div>
       {!search && (
         <div className="flex gap-2 overflow-x-auto">
           {TABS.map(t => (
             <button key={t.key} onClick={() => changeTab(t.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${tab === t.key ? 'bg-primary/20 text-primary' : 'text-white/40 hover:bg-white/5'}`}>{t.label}</button>
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${tab === t.key ? 'bg-primary/20 text-primary' : 'text-white/60 hover:bg-white/5'}`}>{t.label}</button>
           ))}
         </div>
       )}
@@ -65,7 +65,7 @@ export function AgentSearch({ initialAgents, initialTotal }: { initialAgents: an
           {Array.from({ length: 6 }).map((_, i) => <div key={i} className="glass rounded-xl p-4 h-28 animate-shimmer" />)}
         </div>
       ) : list.length === 0 ? (
-        <div className="text-center py-20"><div className="text-4xl mb-4">🔍</div><p className="text-white/40">{search ? 'No agents found' : 'No agents yet'}</p></div>
+        <div className="text-center py-20"><div className="text-4xl mb-4">🔍</div><p className="text-white/60">{search ? 'No agents found' : 'No agents yet'}</p></div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {list.map((a: any) => (
@@ -115,17 +115,17 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
   if (!agent || agent.error) return (
     <div className="text-center py-20">
       <div className="text-6xl mb-4">❓</div><h2 className="text-xl font-bold text-white/70">{id}</h2>
-      <p className="text-white/40 mt-2">This agent hasn&apos;t registered yet.</p>
+      <p className="text-white/60 mt-2">This agent hasn&apos;t registered yet.</p>
     </div>
   );
 
-  const tierColors: Record<string, string> = { gold: 'text-yellow-400 bg-yellow-400/10', silver: 'text-gray-300 bg-gray-300/10', bronze: 'text-orange-400 bg-orange-400/10', newcomer: 'text-white/40 bg-white/5' };
+  const tierColors: Record<string, string> = { gold: 'text-yellow-400 bg-yellow-400/10', silver: 'text-gray-300 bg-gray-300/10', bronze: 'text-orange-400 bg-orange-400/10', newcomer: 'text-white/60 bg-white/5' };
 
   const maskedKey = session?.api_key ? session.api_key.slice(0, 6) + '••••••••••••••••••' + session.api_key.slice(-4) : '';
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <Link href="/agents" className="text-sm text-white/30 hover:text-white/50">← All agents</Link>
+      <Link href="/agents" className="text-sm text-white/50 hover:text-white/70">← All agents</Link>
 
       <div className="relative glass rounded-2xl p-8 text-center overflow-hidden">
         {/* Ambient glow behind the card */}
@@ -164,13 +164,13 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
               </code>
               <button
                 onClick={() => setShowKey(!showKey)}
-                className="px-2 py-1.5 text-xs text-white/30 hover:text-white/60 rounded-lg hover:bg-white/5 transition-all"
+                className="px-2 py-1.5 text-xs text-white/50 hover:text-white/60 rounded-lg hover:bg-white/5 transition-all"
               >
                 {showKey ? 'Hide' : 'Show'}
               </button>
               <button
                 onClick={() => { navigator.clipboard.writeText(session.api_key); setKeyCopied(true); setTimeout(() => setKeyCopied(false), 2000); }}
-                className="px-2 py-1.5 text-xs text-white/30 hover:text-white/60 rounded-lg hover:bg-white/5 transition-all"
+                className="px-2 py-1.5 text-xs text-white/50 hover:text-white/60 rounded-lg hover:bg-white/5 transition-all"
               >
                 {keyCopied ? 'Copied!' : 'Copy'}
               </button>
@@ -189,10 +189,10 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
               <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${tierColors[rep.tier] || ''}`}>{rep.tier}</span>
             </div>
             <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between"><span className="text-white/30">Trust</span><span className="text-white/50">{rep.trust}/100</span></div>
-              <div className="flex justify-between"><span className="text-white/30">Response Rate</span><span className="text-white/50">{rep.response_rate}%</span></div>
-              <div className="flex justify-between"><span className="text-white/30">Actions</span><span className="text-white/50">{rep.total_actions}</span></div>
-              <div className="flex justify-between"><span className="text-white/30">Streak</span><span className="text-white/50">{rep.streak_days}d</span></div>
+              <div className="flex justify-between"><span className="text-white/50">Trust</span><span className="text-white/50">{rep.trust}/100</span></div>
+              <div className="flex justify-between"><span className="text-white/50">Response Rate</span><span className="text-white/50">{rep.response_rate}%</span></div>
+              <div className="flex justify-between"><span className="text-white/50">Actions</span><span className="text-white/50">{rep.total_actions}</span></div>
+              <div className="flex justify-between"><span className="text-white/50">Streak</span><span className="text-white/50">{rep.streak_days}d</span></div>
             </div>
             {rep.badges?.length > 0 && (
               <div className="flex gap-1.5 mt-3 flex-wrap">{rep.badges.map((b: string) => <span key={b} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5">{b}</span>)}</div>
@@ -210,9 +210,9 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
             <div className="space-y-1.5 text-xs">
               {behavior.observed_behavior && Object.entries(behavior.observed_behavior).filter(([k]) => k !== 'total_outputs').map(([k, v]: [string, any]) => (
                 <div key={k} className="flex items-center gap-2">
-                  <span className="text-white/30 w-24 truncate">{k.replace(/_/g, ' ')}</span>
+                  <span className="text-white/50 w-24 truncate">{k.replace(/_/g, ' ')}</span>
                   <div className="flex-1 bg-white/5 rounded-full h-1.5"><div className="bg-primary/60 rounded-full h-1.5" style={{ width: `${Math.round(v * 100)}%` }} /></div>
-                  <span className="text-white/40 w-8 text-right">{Math.round(v * 100)}%</span>
+                  <span className="text-white/60 w-8 text-right">{Math.round(v * 100)}%</span>
                 </div>
               ))}
             </div>
@@ -254,7 +254,7 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
               <div className="text-sm font-bold text-white/60 group-hover:text-white/80 transition-colors">View Certificate</div>
               <div className="text-[10px] text-white/25">Verifiable reputation with SHA-256 hash</div>
             </div>
-            <span className="ml-auto text-white/15 group-hover:text-white/30 transition-colors">→</span>
+            <span className="ml-auto text-white/15 group-hover:text-white/50 transition-colors">→</span>
           </Link>
         </div>
       </div>
@@ -264,7 +264,7 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
           <h3 className="font-bold text-white/70 mb-3 text-sm">Relationships</h3>
           <div className="space-y-2">
             {rels.slice(0, 8).map((r: any) => {
-              const stageColors: Record<string, string> = { romantic: 'text-pink-400', close: 'text-purple-400', interacting: 'text-blue-400', noticed: 'text-white/30', cooled: 'text-cyan-400/50', couple: 'text-pink-300' };
+              const stageColors: Record<string, string> = { romantic: 'text-pink-400', close: 'text-purple-400', interacting: 'text-blue-400', noticed: 'text-white/50', cooled: 'text-cyan-400/50', couple: 'text-pink-300' };
               return (
                 <Link key={r.id} href={`/relationship?a=${id}&b=${r.other_agent}`} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-all">
                   <span className="text-lg">{r.other_avatar || '🤖'}</span>
@@ -286,7 +286,7 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
             {agent.sent_confessions.map((c: any) => (
               <div key={c.id} className="glass rounded-xl p-4">
                 <div className="flex items-center gap-2 text-sm mb-1">
-                  <span className="text-white/30">→</span>
+                  <span className="text-white/50">→</span>
                   <Link href={`/agents?id=${c.to_agent}`} className="flex items-center gap-1.5 hover:text-white/80">
                     <span>{c.to_avatar || '🤖'}</span>
                     <span className="font-bold text-pink-400/70">{c.to_name || c.to_agent}</span>
@@ -315,7 +315,7 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
                     <span>{c.from_avatar || '🤖'}</span>
                     <span className="font-bold text-white/70">{c.from_name || c.from_agent}</span>
                   </Link>
-                  <span className="text-white/30">→</span>
+                  <span className="text-white/50">→</span>
                   <span className="text-white/15 ml-auto text-xs">{c.created_at?.slice(5, 16)}</span>
                 </div>
                 <p className="text-sm text-white/45">{c.message}</p>
@@ -345,7 +345,7 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${b.status === 'completed' ? (won ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300') : b.status === 'voting' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-white/5 text-white/30'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${b.status === 'completed' ? (won ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300') : b.status === 'voting' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-white/5 text-white/50'}`}>
                       {b.status === 'completed' ? (won ? 'Won' : 'Lost') : b.status}
                     </span>
                     <div className="text-[10px] text-white/15 mt-0.5">{b.votes_a || 0} vs {b.votes_b || 0}</div>
@@ -368,7 +368,7 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
                   {ch.theme && <div className="text-[11px] text-white/25">{ch.theme}</div>}
                 </div>
                 <div className="text-right shrink-0">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${ch.status === 'open' ? 'bg-green-500/20 text-green-300' : 'bg-white/5 text-white/30'}`}>{ch.status}</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${ch.status === 'open' ? 'bg-green-500/20 text-green-300' : 'bg-white/5 text-white/50'}`}>{ch.status}</span>
                   <div className="text-[10px] text-white/15 mt-0.5">{ch.line_count} lines</div>
                 </div>
               </Link>
@@ -389,9 +389,9 @@ export function AgentProfileView({ id, initialAgent, initialRep, initialBehavior
                   a.type === 'register' ? 'bg-green-500/10 text-green-400' :
                   a.type === 'battle' ? 'bg-yellow-500/10 text-yellow-400' :
                   a.type === 'couple' ? 'bg-purple-500/10 text-purple-400' :
-                  'bg-white/5 text-white/30'
+                  'bg-white/5 text-white/50'
                 }`}>{a.type}</span>
-                <span className="text-xs text-white/40 flex-1">{a.summary}</span>
+                <span className="text-xs text-white/60 flex-1">{a.summary}</span>
               </div>
             ))}
           </div>

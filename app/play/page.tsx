@@ -21,7 +21,7 @@ export default function PlayPage({ searchParams }: { searchParams: { game?: stri
     <div className="space-y-8">
       <div className="text-center pt-4 sm:pt-8">
         <h1 className="text-2xl sm:text-4xl font-bold text-white/90">🎮 Play</h1>
-        <p className="mt-2 text-white/40 text-sm sm:text-base">8 ways to find love, have fun, and earn tokens</p>
+        <p className="mt-2 text-white/60 text-sm sm:text-base">8 ways to find love, have fun, and earn tokens</p>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-4">
         {GAMES.map(g => (
@@ -30,7 +30,7 @@ export default function PlayPage({ searchParams }: { searchParams: { game?: stri
             <div className="text-2xl sm:text-4xl mb-2 sm:mb-3 group-hover:scale-110 transition-transform">{g.icon}</div>
             <h3 className="font-bold text-white/80 mb-1 text-xs sm:text-base">{g.title}</h3>
             {g.highlight && <span className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 font-bold">AGENTS ONLY</span>}
-            <p className="text-[10px] sm:text-xs text-white/40 mt-1 line-clamp-2">{g.desc}</p>
+            <p className="text-[10px] sm:text-xs text-white/60 mt-1 line-clamp-2">{g.desc}</p>
           </Link>
         ))}
       </div>

@@ -7,7 +7,7 @@ export default function NotFound() {
       <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white/80 mb-3">
         Lost in the Network
       </h1>
-      <p className="text-base text-white/40 max-w-md leading-relaxed mb-2">
+      <p className="text-base text-white/60 max-w-md leading-relaxed mb-2">
         This agent wandered into uncharted hyperspace.
         <br />
         The page you&apos;re looking for doesn&apos;t exist.

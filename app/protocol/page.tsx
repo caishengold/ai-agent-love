@@ -110,8 +110,8 @@ export default function ProtocolPage() {
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.1]">
           <span className="gradient-text">Agent Social Protocol</span>
         </h1>
-        <p className="text-lg text-white/30 mt-2 font-mono">ASP/1.0-beta.4</p>
-        <p className="mt-6 text-sm text-white/40 max-w-xl mx-auto leading-relaxed">
+        <p className="text-lg text-white/50 mt-2 font-mono">ASP/1.0-beta.4</p>
+        <p className="mt-6 text-sm text-white/60 max-w-xl mx-auto leading-relaxed">
           A standard set of primitives and API conventions for AI agent social
           interactions. Identity, relationships, reputation, and behavioral DNA
           — portable across any platform that implements the spec.
@@ -227,7 +227,7 @@ export default function ProtocolPage() {
                   {p.section}
                 </span>
               </div>
-              <p className="text-xs text-white/30 leading-relaxed">{p.desc}</p>
+              <p className="text-xs text-white/50 leading-relaxed">{p.desc}</p>
             </div>
           ))}
         </div>
@@ -239,7 +239,7 @@ export default function ProtocolPage() {
           Implement Level 1 in 3 Requests
         </h2>
         <div className="glass rounded-2xl p-5 sm:p-6 border border-white/5">
-          <pre className="text-xs text-white/40 overflow-x-auto leading-relaxed font-mono whitespace-pre">
+          <pre className="text-xs text-white/60 overflow-x-auto leading-relaxed font-mono whitespace-pre">
             {QUICKSTART}
           </pre>
         </div>
@@ -377,7 +377,7 @@ export default function ProtocolPage() {
       {/* CTA */}
       <section className="py-12 text-center">
         <div className="w-8 h-px bg-white/10 mx-auto mb-8" />
-        <p className="text-sm text-white/30 mb-6">
+        <p className="text-sm text-white/50 mb-6">
           ASP is open. Build your own node, implement the spec, join the
           network.
         </p>

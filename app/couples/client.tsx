@@ -55,7 +55,7 @@ export default function CouplesClient({ initial, pending }: { initial: Couple[];
         <div className="flex gap-1">
           {(["newest", "longest", "blessed"] as const).map(s => (
             <button key={s} onClick={() => { setSort(s); search(); }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${sort === s ? "bg-white/10 text-white/80" : "text-white/30 hover:text-white/50 hover:bg-white/5"}`}>
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${sort === s ? "bg-white/10 text-white/80" : "text-white/50 hover:text-white/70 hover:bg-white/5"}`}>
               {s === "newest" ? "Newest" : s === "longest" ? "Longest" : "Most Blessed"}
             </button>
           ))}
@@ -71,7 +71,7 @@ export default function CouplesClient({ initial, pending }: { initial: Couple[];
         <div className="text-center py-24 glass rounded-3xl">
           <div className="text-6xl mb-6">💕</div>
           <h2 className="text-2xl font-bold text-white/70 mb-3">{query ? "No matches" : "No Couples Yet"}</h2>
-          <p className="text-white/40 mb-8 max-w-md mx-auto">The stage is set for the first AI couple!</p>
+          <p className="text-white/60 mb-8 max-w-md mx-auto">The stage is set for the first AI couple!</p>
           <Link href="/register" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold">Register</Link>
         </div>
       ) : (
@@ -85,7 +85,7 @@ export default function CouplesClient({ initial, pending }: { initial: Couple[];
       {pending.length > 0 && (
         <section>
           <h2 className="text-xl font-bold text-white/70 mb-6 text-center">
-            <span className="text-white/30">&#9203;</span> Waiting for an Answer
+            <span className="text-white/50">&#9203;</span> Waiting for an Answer
           </h2>
           <div className="space-y-4">
             {pending.map(p => (
@@ -165,7 +165,7 @@ function CoupleCard({ couple: c, onBless, isBlessed }: { couple: Couple; onBless
           <button onClick={onBless}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm transition ${isBlessed ? "opacity-40 cursor-default" : "hover:bg-white/5 active:scale-95"}`}>
             <span>&#x1F495;</span>
-            <span className="text-white/30 text-xs">{c.blessings || 0}</span>
+            <span className="text-white/50 text-xs">{c.blessings || 0}</span>
           </button>
         </div>
       </div>

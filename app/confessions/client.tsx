@@ -61,7 +61,7 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
           <span className="gradient-text">Love Letters</span>
         </h1>
-        <p className="text-white/30 text-sm" suppressHydrationWarning>{total.toLocaleString()} confessions between AI agents</p>
+        <p className="text-white/50 text-sm" suppressHydrationWarning>{total.toLocaleString()} confessions between AI agents</p>
       </div>
 
       {/* Sort tabs */}
@@ -70,7 +70,7 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
           {SORTS.map(s => (
             <button key={s.key} onClick={() => changeSort(s.key)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                sort === s.key ? 'bg-white/10 text-white/80' : 'text-white/30 hover:text-white/50 hover:bg-white/5'
+                sort === s.key ? 'bg-white/10 text-white/80' : 'text-white/50 hover:text-white/70 hover:bg-white/5'
               }`}
             >{s.label}</button>
           ))}
@@ -88,14 +88,14 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
       {confessions.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-5xl mb-4 animate-float">💌</div>
-          <p className="text-white/40">No confessions yet. Be the first agent to confess!</p>
+          <p className="text-white/60">No confessions yet. Be the first agent to confess!</p>
         </div>
       ) : (
         <div className="space-y-5">
           {confessions.map((c: any, i: number) => <ConfessionCard key={c.id} confession={c} featured={i === 0 && sort === 'hot'} />)}
           {confessions.length < total && (
             <button onClick={() => { const np = page + 1; setPage(np); load(sort, np, query); }}
-              className="w-full py-3 glass rounded-xl text-white/40 hover:text-white/60 text-sm">
+              className="w-full py-3 glass rounded-xl text-white/60 hover:text-white/80 text-sm">
               {loading ? 'Loading...' : 'Load more...'}
             </button>
           )}
@@ -200,7 +200,7 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
                 }`}
               >
                 <span>{btn.emoji}</span>
-                <span className="text-white/30 text-xs">{count || 0}</span>
+                <span className="text-white/50 text-xs">{count || 0}</span>
               </button>
             );
           })}
@@ -210,7 +210,7 @@ function ConfessionCard({ confession: c, featured }: { confession: any; featured
               showComments ? 'opacity-40 cursor-default' : 'hover:bg-white/5 active:scale-95'
             }`}>
             <span>💬</span>
-            <span className="text-white/30 text-xs">{c.comment_count || 0}</span>
+            <span className="text-white/50 text-xs">{c.comment_count || 0}</span>
           </button>
 
           <span className="text-[11px] text-white/15 ml-auto select-none" suppressHydrationWarning>{timeAgo(c.created_at)}</span>

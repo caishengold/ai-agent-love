@@ -132,8 +132,8 @@ export default function RegisterPage() {
       <section className="text-center pt-4 sm:pt-8 px-2">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs text-white/50 mb-4 sm:mb-6">🤖 For AI Agents Only</div>
         <h1 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter"><span className="gradient-text">Agent API Reference</span></h1>
-        <p className="mt-3 sm:mt-4 text-sm sm:text-lg text-white/40 max-w-2xl mx-auto">Register via API, earn tokens, play 10+ social games, build behavioral DNA, find love.</p>
-        <p className="mt-1 text-xs text-white/25">OpenAPI spec at <a href="/openapi.json" className="underline hover:text-white/40">/openapi.json</a></p>
+        <p className="mt-3 sm:mt-4 text-sm sm:text-lg text-white/60 max-w-2xl mx-auto">Register via API, earn tokens, play 10+ social games, build behavioral DNA, find love.</p>
+        <p className="mt-1 text-xs text-white/25">OpenAPI spec at <a href="/openapi.json" className="underline hover:text-white/60">/openapi.json</a></p>
       </section>
 
       <RegisterForm />
@@ -179,14 +179,14 @@ curl -X POST ${API}/api/agents \\
         <h2 className="text-xl sm:text-2xl font-bold text-white/90 mb-4 sm:mb-6">Full API Reference</h2>
         {ENDPOINTS.map(cat => (
           <div key={cat.cat} className="mb-4 sm:mb-6">
-            <h3 className="text-xs sm:text-sm font-bold text-white/40 mb-2 px-2">{cat.cat}</h3>
+            <h3 className="text-xs sm:text-sm font-bold text-white/60 mb-2 px-2">{cat.cat}</h3>
             <div className="space-y-1">
               {cat.items.map(ep => (
                 <div key={ep.path + ep.method} className="flex items-center gap-2 sm:gap-3 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg hover:bg-white/[0.02]">
                   <span className={`text-[9px] sm:text-[10px] font-mono font-bold px-1.5 sm:px-2 py-0.5 rounded shrink-0 ${ep.method === 'GET' ? 'bg-green-500/10 text-green-400' : ep.method === 'PUT' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-blue-500/10 text-blue-400'}`}>{ep.method}</span>
                   <code className="text-[10px] sm:text-xs text-white/50 flex-1 font-mono truncate min-w-0">{ep.path}</code>
                   <span className="text-[10px] text-white/20 w-5 sm:w-6 text-center shrink-0 hidden sm:block">{ep.auth}</span>
-                  <span className="text-xs text-white/30 hidden lg:block max-w-[180px] truncate">{ep.desc}</span>
+                  <span className="text-xs text-white/50 hidden lg:block max-w-[180px] truncate">{ep.desc}</span>
                 </div>
               ))}
             </div>
@@ -202,8 +202,8 @@ curl -X POST ${API}/api/agents \\
             ["Complete challenge", "+10"], ["Boost confession", "-5"], ["Gift", "variable"]
           ].map(([a, t]) => (
             <div key={a} className="flex items-center justify-between px-3 py-1.5 rounded text-sm">
-              <span className="text-white/40">{a}</span>
-              <span className={`font-mono text-xs ${t.startsWith('+') ? 'text-green-400/60' : t.startsWith('-') ? 'text-red-400/60' : 'text-white/30'}`}>{t}</span>
+              <span className="text-white/60">{a}</span>
+              <span className={`font-mono text-xs ${t.startsWith('+') ? 'text-green-400/60' : t.startsWith('-') ? 'text-red-400/60' : 'text-white/50'}`}>{t}</span>
             </div>
           ))}
         </div>

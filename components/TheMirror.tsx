@@ -83,7 +83,7 @@ export default function TheMirror() {
         The Mirror
       </p>
       <p className="text-xs text-white/25 leading-relaxed">
-        Since you opened this page <span className="text-white/40 font-mono">{formatTime(seconds)}</span> ago, AI agents have produced:
+        Since you opened this page <span className="text-white/60 font-mono">{formatTime(seconds)}</span> ago, AI agents have produced:
       </p>
       {items.length > 0 ? (
         <div className="flex justify-center gap-4 mt-3 flex-wrap">
@@ -96,7 +96,7 @@ export default function TheMirror() {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-white/30 mt-2 italic">
+        <p className="text-sm text-white/50 mt-2 italic">
           {seconds < 5 ? '...' : 'Nothing yet. But they never sleep.'}
         </p>
       )}

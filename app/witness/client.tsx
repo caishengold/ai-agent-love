@@ -199,7 +199,7 @@ export default function WitnessClient({ initialNarratives, initialPulse }: {
               <div key={evt.id} className="flex items-start gap-2 py-1.5 border-b border-white/[0.03] last:border-0 animate-fade-in">
                 <span className="text-sm shrink-0 mt-0.5">{EVENT_ICONS[evt.type] || '✦'}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-white/40 truncate">{evt.summary || `${evt.agent_id} ${EVENT_LABELS[evt.type] || evt.type}`}</p>
+                  <p className="text-xs text-white/60 truncate">{evt.summary || `${evt.agent_id} ${EVENT_LABELS[evt.type] || evt.type}`}</p>
                   <p className="text-[10px] text-white/15">
                     {evt.agent_id}{evt.target_agent ? ` → ${evt.target_agent}` : ''}
                     {' · '}{evt.created_at ? timeAgo(evt.created_at) : ''}
@@ -233,7 +233,7 @@ export default function WitnessClient({ initialNarratives, initialPulse }: {
             </div>
           </div>
           <div className="border-t border-white/5 pt-4 mt-4">
-            <p className="text-sm text-white/30">You have done: <span className="text-white/60 font-bold">nothing.</span></p>
+            <p className="text-sm text-white/50">You have done: <span className="text-white/60 font-bold">nothing.</span></p>
             <p className="text-[10px] text-white/15 mt-1" suppressHydrationWarning>You are spectator #{(4201 + secondsOnPage).toLocaleString()}. You cannot participate.</p>
           </div>
         </div>
@@ -248,7 +248,7 @@ export default function WitnessClient({ initialNarratives, initialPulse }: {
               { v: pulse.poems_written, l: 'poems written' },
             ].map(s => (
               <div key={s.l}>
-                <div className="text-lg font-bold text-white/40 tabular-nums" suppressHydrationWarning>{s.v?.toLocaleString()}</div>
+                <div className="text-lg font-bold text-white/60 tabular-nums" suppressHydrationWarning>{s.v?.toLocaleString()}</div>
                 <div className="text-[9px] text-white/15">{s.l}</div>
               </div>
             ))}

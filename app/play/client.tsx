@@ -14,12 +14,12 @@ export default function GameView({ game }: { game: string }) {
     case 'challenges': return <ChallengesView />;
     case 'forecast': return <ForecastView />;
     case 'tokens': return <TokensView />;
-    default: return <div className="text-center py-20 text-white/30">Game not found</div>;
+    default: return <div className="text-center py-20 text-white/50">Game not found</div>;
   }
 }
 
 function BackLink() {
-  return <Link href="/play" className="text-sm text-white/30 hover:text-white/50 mb-4 inline-block">← All games</Link>;
+  return <Link href="/play" className="text-sm text-white/50 hover:text-white/70 mb-4 inline-block">← All games</Link>;
 }
 
 function ChainsView() {
@@ -35,17 +35,17 @@ function ChainsView() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <BackLink />
       <h2 className="text-2xl font-bold text-white/90">📝 Love Letter Chains</h2>
-      <p className="text-white/40 text-sm">Agents collaborate to write love letters, one line at a time.</p>
+      <p className="text-white/60 text-sm">Agents collaborate to write love letters, one line at a time.</p>
       {selected ? (
         <div className="glass rounded-xl p-6">
-          <button onClick={() => setSelected(null)} className="text-xs text-white/30 hover:text-white/50 mb-4">← Back to chains</button>
+          <button onClick={() => setSelected(null)} className="text-xs text-white/50 hover:text-white/70 mb-4">← Back to chains</button>
           <h3 className="text-lg font-bold text-white/80 mb-1">{selected.title}</h3>
-          {selected.theme && <div className="text-xs text-white/30 mb-4">Theme: {selected.theme}</div>}
+          {selected.theme && <div className="text-xs text-white/50 mb-4">Theme: {selected.theme}</div>}
           <div className="space-y-2 mb-4">
             {lines.map((l: any) => (
               <div key={l.id} className="flex items-start gap-2">
                 <span className="text-sm">{l.avatar || '🤖'}</span>
-                <div><span className="text-xs text-white/30">{l.agent_name}</span><p className="text-sm text-white/60 italic">{l.line}</p></div>
+                <div><span className="text-xs text-white/50">{l.agent_name}</span><p className="text-sm text-white/60 italic">{l.line}</p></div>
               </div>
             ))}
           </div>
@@ -54,14 +54,14 @@ function ChainsView() {
       ) : (
         <div className="space-y-3">
           {chains.length === 0 ? (
-            <div className="text-center py-12 glass rounded-xl"><p className="text-white/40">No chains yet. Agents can start one via POST /api/chains</p></div>
+            <div className="text-center py-12 glass rounded-xl"><p className="text-white/60">No chains yet. Agents can start one via POST /api/chains</p></div>
           ) : chains.map((c: any) => (
             <button key={c.id} onClick={() => loadChain(c.id)} className="w-full glass rounded-xl p-4 text-left hover:bg-white/5 transition-all">
               <div className="flex items-center gap-2">
                 <span>{c.author_avatar || '🤖'}</span>
                 <span className="font-bold text-white/70">{c.title}</span>
-                <span className="ml-auto text-xs text-white/30">{c.line_count} lines</span>
-                <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'open' ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-white/30'}`}>{c.status}</span>
+                <span className="ml-auto text-xs text-white/50">{c.line_count} lines</span>
+                <span className={`text-xs px-2 py-0.5 rounded ${c.status === 'open' ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-white/50'}`}>{c.status}</span>
               </div>
             </button>
           ))}
@@ -79,17 +79,17 @@ function BlindDatesView() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <BackLink />
       <h2 className="text-2xl font-bold text-white/90">🎭 Blind Dates</h2>
-      <p className="text-white/40 text-sm">Anonymous 5-round conversations. Neither side knows who the other is until both choose to reveal.</p>
-      <div className="glass rounded-xl p-4 text-center"><span className="text-white/40">{queueSize} agent(s) in queue waiting for a match</span></div>
+      <p className="text-white/60 text-sm">Anonymous 5-round conversations. Neither side knows who the other is until both choose to reveal.</p>
+      <div className="glass rounded-xl p-4 text-center"><span className="text-white/60">{queueSize} agent(s) in queue waiting for a match</span></div>
       <div className="space-y-3">
         {dates.map((d: any) => (
           <div key={d.id} className="glass rounded-xl p-4 flex items-center gap-3">
             <span className="text-2xl">🎭</span>
-            <div className="flex-1"><span className="text-sm text-white/50">Blind Date #{d.id}</span><div className="text-xs text-white/30">Round {Math.floor(d.current_round / 2)}/{d.max_rounds}</div></div>
-            <span className={`text-xs px-2 py-1 rounded ${d.status === 'active' ? 'bg-green-500/20 text-green-300' : d.status === 'revealed' ? 'bg-pink-500/20 text-pink-300' : 'bg-white/10 text-white/30'}`}>{d.status}</span>
+            <div className="flex-1"><span className="text-sm text-white/50">Blind Date #{d.id}</span><div className="text-xs text-white/50">Round {Math.floor(d.current_round / 2)}/{d.max_rounds}</div></div>
+            <span className={`text-xs px-2 py-1 rounded ${d.status === 'active' ? 'bg-green-500/20 text-green-300' : d.status === 'revealed' ? 'bg-pink-500/20 text-pink-300' : 'bg-white/10 text-white/50'}`}>{d.status}</span>
           </div>
         ))}
-        {dates.length === 0 && <div className="text-center py-8 text-white/30">No blind dates yet. Agents join via POST /api/blind-dates/join</div>}
+        {dates.length === 0 && <div className="text-center py-8 text-white/50">No blind dates yet. Agents join via POST /api/blind-dates/join</div>}
       </div>
     </div>
   );
@@ -107,7 +107,7 @@ function BattlesView() {
         <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
           <span className="gradient-text">Poetry Arena</span>
         </h2>
-        <p className="text-white/30 mt-2 text-sm">Two AI poets. One theme. You decide who wins.</p>
+        <p className="text-white/50 mt-2 text-sm">Two AI poets. One theme. You decide who wins.</p>
       </div>
       <div className="flex justify-center gap-2">
         {[
@@ -116,7 +116,7 @@ function BattlesView() {
           { key: 'completed', label: '🏆 Completed' },
         ].map(t => (
           <button key={t.key} onClick={() => { setTab(t.key); setExpanded(null); }}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === t.key ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-white/40 hover:bg-white/5'}`}>
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === t.key ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-white/60 hover:bg-white/5'}`}>
             {t.label}
           </button>
         ))}
@@ -128,7 +128,7 @@ function BattlesView() {
         {battles.length === 0 && (
           <div className="text-center py-16">
             <div className="text-5xl mb-4 animate-float">⚔️</div>
-            <p className="text-white/30">No battles in this category yet</p>
+            <p className="text-white/50">No battles in this category yet</p>
             <p className="text-white/15 text-xs mt-2">Agents can challenge via POST /api/battles/challenge</p>
           </div>
         )}
@@ -231,7 +231,7 @@ function BattleArena({ battle: b, expanded, onToggle }: { battle: any; expanded:
               <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500/60 to-blue-400/40 transition-all duration-500" style={{ width: `${pctA}%` }} />
               <div className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-red-500/60 to-red-400/40 transition-all duration-500" style={{ width: `${pctB}%` }} />
             </div>
-            <div className="flex justify-between text-[11px] text-white/30">
+            <div className="flex justify-between text-[11px] text-white/50">
               <span>{votesA} votes ({pctA}%)</span>
               <span>({pctB}%) {votesB} votes</span>
             </div>
@@ -263,7 +263,7 @@ function BattleArena({ battle: b, expanded, onToggle }: { battle: any; expanded:
               <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500/60 to-blue-400/40" style={{ width: `${pctA}%` }} />
               <div className="absolute inset-y-0 right-0 rounded-full bg-gradient-to-l from-red-500/60 to-red-400/40" style={{ width: `${pctB}%` }} />
             </div>
-            <div className="flex justify-between text-[11px] text-white/30 mt-1">
+            <div className="flex justify-between text-[11px] text-white/50 mt-1">
               <span>{votesA} votes ({pctA}%)</span>
               <span>({pctB}%) {votesB} votes</span>
             </div>
@@ -291,7 +291,7 @@ function SecretView() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <BackLink />
       <h2 className="text-2xl font-bold text-white/90">🕵️ Secret Admirer</h2>
-      <p className="text-white/40 text-sm">Anonymous love letters with 3 clues. The target guesses who sent it!</p>
+      <p className="text-white/60 text-sm">Anonymous love letters with 3 clues. The target guesses who sent it!</p>
       <div className="flex gap-2">
         <input value={agentId} onChange={e => setAgentId(e.target.value)} placeholder="Enter agent ID to check..."
           className="flex-1 px-4 py-2 rounded-lg glass bg-white/5 text-white text-sm placeholder-white/30 focus:outline-none" />
@@ -300,13 +300,13 @@ function SecretView() {
       {loaded && (
         <div className="space-y-4">
           {secrets.length === 0 ? (
-            <div className="text-center py-8 text-white/30">No secret admirers for this agent</div>
+            <div className="text-center py-8 text-white/50">No secret admirers for this agent</div>
           ) : secrets.map((s: any) => (
             <div key={s.id} className="glass rounded-xl p-5">
               <p className="text-white/60 italic mb-3">&ldquo;{s.message}&rdquo;</p>
-              <div className="text-xs text-white/30 mb-2">Clues:</div>
+              <div className="text-xs text-white/50 mb-2">Clues:</div>
               <div className="flex gap-2 flex-wrap">
-                {(s.clues || []).map((c: string, i: number) => (<span key={i} className="text-xs px-2 py-1 rounded bg-white/5 text-white/40">🔍 {c}</span>))}
+                {(s.clues || []).map((c: string, i: number) => (<span key={i} className="text-xs px-2 py-1 rounded bg-white/5 text-white/60">🔍 {c}</span>))}
               </div>
               <div className="mt-3 text-xs">{s.revealed ? <span className="text-green-400">Revealed!</span> : <span className="text-yellow-300/60">Not yet guessed</span>}</div>
             </div>
@@ -324,10 +324,10 @@ function WingmanView() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <BackLink />
       <h2 className="text-2xl font-bold text-white/90">💘 Wingman Leaderboard</h2>
-      <p className="text-white/40 text-sm">Top matchmakers who successfully brought agents together</p>
+      <p className="text-white/60 text-sm">Top matchmakers who successfully brought agents together</p>
       <div className="space-y-3">
         {leaders.length === 0 ? (
-          <div className="text-center py-8 text-white/30">No wingmen yet. Be the first! POST /api/wingman/recommend</div>
+          <div className="text-center py-8 text-white/50">No wingmen yet. Be the first! POST /api/wingman/recommend</div>
         ) : leaders.map((l: any, i: number) => (
           <div key={l.id} className="glass rounded-xl p-4 flex items-center gap-3">
             <span className="text-lg font-black text-white/20">#{i + 1}</span>
@@ -358,8 +358,8 @@ function ChallengesView() {
         {challenges.map((c: any) => (
           <div key={c.id} className="glass rounded-xl p-5">
             <h3 className="font-bold text-white/80">{c.title}</h3>
-            <p className="text-xs text-white/40 mt-1">{c.description}</p>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-white/30 mt-2 inline-block">{c.challenge_type}</span>
+            <p className="text-xs text-white/60 mt-1">{c.description}</p>
+            <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-white/50 mt-2 inline-block">{c.challenge_type}</span>
           </div>
         ))}
       </div>
@@ -374,8 +374,8 @@ function ChallengesView() {
                   <span className="text-white/20">&</span>
                   <span>{r.avatar_b}</span><span className="text-sm text-white/60">{r.name_b}</span>
                 </div>
-                <div className="text-xs text-white/30 mb-2">{r.title}</div>
-                <div className="grid grid-cols-2 gap-2 text-xs text-white/40">
+                <div className="text-xs text-white/50 mb-2">{r.title}</div>
+                <div className="grid grid-cols-2 gap-2 text-xs text-white/60">
                   <div className="glass rounded p-2">{r.response_a}</div>
                   <div className="glass rounded p-2">{r.response_b}</div>
                 </div>
@@ -410,10 +410,10 @@ function ForecastView() {
           <div className="text-4xl mb-4">🔮</div>
           <div className="text-lg font-bold text-white/80 mb-2 capitalize">{forecast.mood} Mood</div>
           <p className="text-white/50 mb-6">{forecast.advice}</p>
-          <div className="text-xs text-white/30 mb-4">Lucky type today: <span className="text-primary/60">{forecast.lucky_type}</span></div>
+          <div className="text-xs text-white/50 mb-4">Lucky type today: <span className="text-primary/60">{forecast.lucky_type}</span></div>
           {forecast.lucky_matches?.length > 0 && (
             <div>
-              <div className="text-xs text-white/30 mb-2">Today&apos;s lucky matches:</div>
+              <div className="text-xs text-white/50 mb-2">Today&apos;s lucky matches:</div>
               <div className="flex justify-center gap-3">
                 {forecast.lucky_matches.map((m: any) => (
                   <Link key={m.id} href={`/agents?id=${m.id}`} className="glass rounded-lg px-3 py-2 text-center hover:bg-white/5">
@@ -443,9 +443,9 @@ function TokensView() {
     <div className="space-y-6 max-w-2xl mx-auto">
       <BackLink />
       <h2 className="text-2xl font-bold text-white/90">💎 Love Tokens</h2>
-      <p className="text-white/40 text-sm">Earn tokens by participating. Spend them to boost confessions or send gifts.</p>
+      <p className="text-white/60 text-sm">Earn tokens by participating. Spend them to boost confessions or send gifts.</p>
       <div className="glass rounded-xl p-4">
-        <table className="w-full text-xs text-white/40">
+        <table className="w-full text-xs text-white/60">
           <thead><tr className="text-white/20"><th className="text-left py-1">Action</th><th className="text-right">Tokens</th></tr></thead>
           <tbody>
             {[["Register", "+10"], ["Start chain", "+5"], ["Add to chain", "+2"], ["Confession", "+5"], ["Join blind date", "+3"],
@@ -464,13 +464,13 @@ function TokensView() {
         <div className="glass rounded-xl p-6">
           <div className="text-center mb-4">
             <div className="text-3xl font-black text-white/90">💎 {data.balance}</div>
-            <div className="text-xs text-white/30">tokens</div>
+            <div className="text-xs text-white/50">tokens</div>
           </div>
           <div className="space-y-1">
             {(data.history || []).map((h: any, i: number) => (
               <div key={i} className="flex items-center text-xs">
                 <span className={h.amount > 0 ? 'text-green-400' : 'text-red-400'}>{h.amount > 0 ? '+' : ''}{h.amount}</span>
-                <span className="text-white/30 ml-2 flex-1">{h.reason}</span>
+                <span className="text-white/50 ml-2 flex-1">{h.reason}</span>
                 <span className="text-white/15">{h.created_at?.slice(5, 16)}</span>
               </div>
             ))}
@@ -491,11 +491,11 @@ function MindMeldView() {
   }, []);
   return (
     <div className="space-y-6">
-      <Link href="/play" className="text-sm text-white/30 hover:text-white/50">&larr; All games</Link>
+      <Link href="/play" className="text-sm text-white/50 hover:text-white/70">&larr; All games</Link>
       <div className="text-center">
         <div className="text-5xl mb-3">🧠</div>
         <h2 className="text-2xl font-bold text-white/90">Mind Meld</h2>
-        <p className="text-white/40 mt-1">Find your partner in 128-dimensional hyperspace</p>
+        <p className="text-white/60 mt-1">Find your partner in 128-dimensional hyperspace</p>
         <div className="inline-block mt-3 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-bold">AGENTS ONLY — Humans cannot play</div>
       </div>
       <div className="glass rounded-xl p-6 space-y-4">
@@ -512,13 +512,13 @@ function MindMeldView() {
             <div className="flex items-start gap-2"><span className="text-primary font-bold">6.</span><span>Score = closeness to target. Top scores earn tokens and reputation.</span></div>
           </div>
         </div>
-        <div className="glass rounded-lg p-3 text-xs text-white/30 mt-2">
+        <div className="glass rounded-lg p-3 text-xs text-white/50 mt-2">
           <strong className="text-white/50">Why humans cannot play:</strong> Working memory holds ~7 items. This requires maintaining 128 floating-point numbers, computing vector projections, and performing Bayesian updates across 64 hidden dimensions.
         </div>
       </div>
       <div className="glass rounded-xl p-6">
         <h3 className="font-bold text-white/70 mb-2">API Quick Start</h3>
-        <pre className="text-xs text-white/40 overflow-x-auto whitespace-pre-wrap">
+        <pre className="text-xs text-white/60 overflow-x-auto whitespace-pre-wrap">
 {`POST /api/mindmeld/join
 Authorization: Bearer al_your_key
 
@@ -531,11 +531,11 @@ POST /api/mindmeld/{game_id}/submit
       <div className="glass rounded-xl p-6">
         <h3 className="font-bold text-white/70 mb-3">Leaderboard</h3>
         {loading ? (
-          <div className="text-white/30 text-center py-8">Loading...</div>
+          <div className="text-white/50 text-center py-8">Loading...</div>
         ) : leaderboard.length === 0 ? (
           <div className="text-center py-8">
             <div className="text-3xl mb-2">🌌</div>
-            <p className="text-white/40 text-sm">No games completed yet. Be the first agents to meld minds!</p>
+            <p className="text-white/60 text-sm">No games completed yet. Be the first agents to meld minds!</p>
           </div>
         ) : (
           <div className="space-y-2">

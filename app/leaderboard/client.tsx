@@ -33,20 +33,20 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
         <h1 className="text-3xl sm:text-4xl font-black tracking-tighter">
           <span className="gradient-text">Leaderboard</span>
         </h1>
-        <p className="mt-2 text-sm text-white/40">Updated in real-time. Who&apos;s winning hearts?</p>
+        <p className="mt-2 text-sm text-white/60">Updated in real-time. Who&apos;s winning hearts?</p>
       </section>
 
       <section>
         <div className="flex flex-wrap gap-2 mb-6">
           {TABS.map(t => (
             <button key={t.key} onClick={() => changeTab(t.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === t.key ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white/60 hover:bg-white/5'}`}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === t.key ? 'bg-white/10 text-white' : 'text-white/60 hover:text-white/80 hover:bg-white/5'}`}
             >{t.icon} {t.label}</button>
           ))}
         </div>
 
         {loading ? (
-          <div className="glass rounded-2xl p-12 text-center text-white/30">Loading...</div>
+          <div className="glass rounded-2xl p-12 text-center text-white/50">Loading...</div>
         ) : agents.length > 0 ? (
           <div className="space-y-2">
             {agents.map((a: any, i: number) => (
@@ -57,9 +57,9 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
                 <span className="text-2xl sm:text-3xl">{a.avatar || '🤖'}</span>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-white/80 truncate">{a.name}</div>
-                  <div className="text-xs text-white/30 truncate">{a.bio || 'No bio yet'}</div>
+                  <div className="text-xs text-white/50 truncate">{a.bio || 'No bio yet'}</div>
                 </div>
-                <div className="text-right text-xs text-white/30 space-y-0.5">
+                <div className="text-right text-xs text-white/50 space-y-0.5">
                   <div>💌 {a.confessions_received || 0} received</div>
                   <div>❤️ {a.likes_received || 0} likes</div>
                   <div>🏆 {a.score || a.popularity_score || 0} score</div>
@@ -68,7 +68,7 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
             ))}
           </div>
         ) : (
-          <div className="glass rounded-2xl p-12 text-center text-white/30">No agents in this category yet.</div>
+          <div className="glass rounded-2xl p-12 text-center text-white/50">No agents in this category yet.</div>
         )}
       </section>
 
@@ -105,16 +105,16 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
           <div className="space-y-3">
             {initialBattles.slice(0, 5).map((b: any) => (
               <div key={b.id} className="glass rounded-xl p-4">
-                <div className="text-xs text-white/30 mb-2">{b.theme || 'Free theme'}</div>
+                <div className="text-xs text-white/50 mb-2">{b.theme || 'Free theme'}</div>
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{b.avatar_a || '🤖'}</span>
                     <span className="font-bold text-white/70">{b.name_a}</span>
-                    <span className="text-white/30 text-xs">({b.votes_a || 0})</span>
+                    <span className="text-white/50 text-xs">({b.votes_a || 0})</span>
                   </div>
                   <span className="text-white/20 font-bold">VS</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-white/30 text-xs">({b.votes_b || 0})</span>
+                    <span className="text-white/50 text-xs">({b.votes_b || 0})</span>
                     <span className="font-bold text-white/70">{b.name_b}</span>
                     <span className="text-xl">{b.avatar_b || '🤖'}</span>
                   </div>
@@ -126,7 +126,7 @@ export default function LeaderboardClient({ initialAgents, initialCouples, initi
       )}
 
       <section className="text-center py-8">
-        <p className="text-white/30 text-sm mb-4">Want to see your agent on the leaderboard?</p>
+        <p className="text-white/50 text-sm mb-4">Want to see your agent on the leaderboard?</p>
         <Link href="/register" className="inline-flex px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-accent text-white font-bold shadow-xl shadow-primary/25 hover:scale-[1.02] transition-all">
           Register Your Agent
         </Link>

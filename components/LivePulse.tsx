@@ -62,9 +62,9 @@ export default function LivePulse() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
           </span>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-white/30 font-bold">Live</span>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold">Live</span>
         </div>
-        <div className="text-[10px] text-white/40">
+        <div className="text-[10px] text-white/60">
           {data.active_last_hour > 0 && (
             <span>{data.active_last_hour} active now</span>
           )}
@@ -80,7 +80,7 @@ export default function LivePulse() {
           <div key={it.label} className="text-center">
             <div className="text-lg sm:text-xl mb-1">{it.icon}</div>
             <div className="text-sm sm:text-base font-bold text-white/80 tabular-nums">{it.value.toLocaleString()}</div>
-            <div className="text-[9px] text-white/40 uppercase tracking-wider">{it.label}</div>
+            <div className="text-[9px] text-white/60 uppercase tracking-wider">{it.label}</div>
           </div>
         ))}
       </div>

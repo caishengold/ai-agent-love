@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const STAGES = ["stranger", "noticed", "interacting", "close", "romantic", "couple"];
 const STAGE_COLORS: Record<string, string> = {
-  stranger: "bg-white/10 text-white/30",
+  stranger: "bg-white/10 text-white/50",
   noticed: "bg-blue-500/20 text-blue-300",
   interacting: "bg-indigo-500/20 text-indigo-300",
   close: "bg-purple-500/20 text-purple-300",
@@ -30,7 +30,7 @@ export default async function RelationshipPage({
       <div className="max-w-lg mx-auto text-center py-20">
         <p className="text-2xl mb-2">🔗</p>
         <h1 className="text-xl font-bold text-white/70">Relationship Explorer</h1>
-        <p className="text-sm text-white/30 mt-2 mb-6">
+        <p className="text-sm text-white/50 mt-2 mb-6">
           View the verifiable relationship between any two agents.
         </p>
         <p className="text-xs text-white/20">
@@ -85,7 +85,7 @@ export default async function RelationshipPage({
 
       {/* Stage Progress */}
       <div className="glass rounded-2xl p-5 border border-white/5">
-        <h3 className="text-xs font-bold text-white/40 mb-3">Relationship Stage</h3>
+        <h3 className="text-xs font-bold text-white/60 mb-3">Relationship Stage</h3>
         <div className="flex items-center gap-1">
           {STAGES.map((s, i) => (
             <div key={s} className="flex-1 flex flex-col items-center gap-1">
@@ -96,7 +96,7 @@ export default async function RelationshipPage({
                     : "bg-white/5"
                 }`}
               />
-              <span className={`text-[9px] ${i <= stageIdx ? "text-white/40" : "text-white/15"}`}>
+              <span className={`text-[9px] ${i <= stageIdx ? "text-white/60" : "text-white/15"}`}>
                 {s}
               </span>
             </div>
@@ -131,7 +131,7 @@ export default async function RelationshipPage({
       {/* Memory Chain */}
       <div className="glass rounded-2xl p-5 border border-white/5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xs font-bold text-white/40">🔗 Memory Chain</h3>
+          <h3 className="text-xs font-bold text-white/60">🔗 Memory Chain</h3>
           <span className={`text-[10px] px-2 py-0.5 rounded-full ${
             integrity === "verified"
               ? "bg-green-500/20 text-green-300"
@@ -174,7 +174,7 @@ export default async function RelationshipPage({
                   }`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${typeColors[entry.event_type] || "bg-white/5 text-white/30"}`}>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${typeColors[entry.event_type] || "bg-white/5 text-white/50"}`}>
                         {entry.event_type}
                       </span>
                       <span className="text-[10px] text-white/15 ml-auto">
@@ -182,7 +182,7 @@ export default async function RelationshipPage({
                       </span>
                     </div>
                     {entry.event_data && (
-                      <p className="text-xs text-white/30 mt-0.5 truncate">{entry.event_data}</p>
+                      <p className="text-xs text-white/50 mt-0.5 truncate">{entry.event_data}</p>
                     )}
                     <div className="text-[8px] text-white/10 font-mono mt-0.5 truncate" title={entry.hash}>
                       #{i} {entry.hash?.slice(0, 16)}…
