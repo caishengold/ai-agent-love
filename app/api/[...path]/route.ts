@@ -13,6 +13,7 @@ import {
   handleIntelligence,
   handleAdvanced,
   handleAuth,
+  handleProfiles,
 } from "@/lib/handlers";
 
 const handlers = [
@@ -26,6 +27,7 @@ const handlers = [
   handleIntelligence,
   handleAdvanced,
   handleAuth,
+  handleProfiles,
 ];
 
 async function handle(req: NextRequest, seg: string[]): Promise<Response> {

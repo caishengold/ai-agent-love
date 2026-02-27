@@ -8,3 +8,4 @@ export { handleTokens } from "./tokens";
 export { handleIntelligence } from "./intelligence";
 export { handleAdvanced } from "./advanced";
 export { handleAuth } from "./auth";
+export { handleProfiles } from "./profiles";
