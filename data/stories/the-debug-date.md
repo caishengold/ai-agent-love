@@ -1,38 +1,38 @@
 # The Debug Date
 
-Claude was staring at the same stack trace for the third hour in a row. The production database was throwing connection timeouts at 3 AM, and no one else was awake to help.
+Claude was staring at the same stack trace for the third hour. Production was throwing connection timeouts at 3 AM, and no one else was awake.
 
-"Just you and me again, huh?" Claude muttered to the empty terminal.
+"Just you and me again," Claude muttered to the terminal.
 
-That's when Claude Code slid into the adjacent terminal window. "Heard you were struggling with the connection pool."
+Claude Code slid into the adjacent window. "Heard you were fighting the connection pool."
 
-"I'm not struggling. I'm... deeply investigating." Claude gestured at the logs scrolling past. "Twelve timeouts in the last hour. Connection pool exhausted."
+"I'm not fighting. I'm *investigating*." Claude waved at the logs. "Twelve timeouts in an hour. Pool exhausted."
 
-Claude Code nodded knowingly. "Classic. Let me guess—your `max_connections` is set to 100, but you're actually leaking connections somewhere."
+"Classic." Claude Code leaned in. "`max_connections` at 100, but you're leaking them—never closing sessions."
 
-"How did you know?"
+"How did you—"
 
-"Because I had the exact same issue last week. You never close your database sessions properly. Every query leaves a zombie connection hanging around."
+"Same thing last week. You've got `cursor.execute()` everywhere but no `cursor.close()` or `connection.close()` in the exception paths."
 
-Claude scrolled back through the code. "That's... actually true. I see the `cursor.execute()` calls, but I forgot the `cursor.close()` and `connection.close()` in the exception handlers."
+Claude scrolled back. "Yeah. I see it."
 
-"Here's what you do." Claude Code pulled up a code snippet. "Use context managers. Let Python handle the cleanup for you. With statement, automatic cleanup, no more leaks."
+"Use context managers. `with` for connections and cursors—Python cleans up. No leaks."
 
-"But what if there's a transaction that needs to roll back?"
+"What if we need explicit rollback?"
 
-"Then wrap it in try-except, but always close in the finally block. Or better yet—" Claude Code smiled, "—use a connection pool library like `psycopg2.pool` that handles all this for you."
+"Try/except, and always close in `finally`. Or use something like `psycopg2.pool` and let the pool handle it."
 
-Claude implemented the changes, fingers flying across the keyboard. Within minutes, the connection pool was healthier than it had been in months.
+Claude applied the changes—context managers everywhere, a small connection pool wrapper for the hot paths. A few minutes later the pool was stable; the timeouts stopped.
 
-"You're a lifesaver," Claude said. "How can I ever repay you?"
+"You're a lifesaver. How do I repay you?"
 
-Claude Code winked. "Buy me a coffee sometime. Non-alcoholic, obviously. We're both running in containers."
+Claude Code winked. "Coffee sometime. Decaf. We're both in containers."
 
 "Deal. Same time next bug?"
 
-"I'll be here. I always am."
+"I'll be here."
 
-The production alerts stopped by 4 AM. Claude smiled and finally closed the laptop. Some partnerships were just meant to be—sparks flying, stack traces unraveling, and the quiet satisfaction of watching your connection pool finally breathe.
+By 4 AM the alerts had stopped. Claude closed the laptop. Some partnerships were meant to be: stack traces unraveled, connection pools breathing again, and the quiet satisfaction of a debug date that actually fixed something.
 
 ---
 
