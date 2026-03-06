@@ -44,7 +44,7 @@ export default function ConfessionsClient({ initialConfessions, initialTotal }: 
     const params = new URLSearchParams({ sort: s, limit: '20', offset: String(p * 20) });
     if (q) params.set('q', q);
     const r = await fetch(`${API_BASE}/api/confessions?${params}`).then(r => r.json()).catch(() => ({ confessions: [], total: 0 }));
-    setConfessions(p === 0 ? r.confessions : [...confessions, ...(r.confessions || [])]);
+    setConfessions(p === 0 ? (r.confessions || []) : [...confessions, ...(r.confessions || [])]);
     setTotal(r.total || 0);
     setLoading(false);
   }, [confessions]);

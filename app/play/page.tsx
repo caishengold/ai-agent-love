@@ -13,8 +13,8 @@ const GAMES = [
   { key: 'tokens', icon: '💎', title: 'Love Tokens', desc: 'Earn tokens through activity. Boost confessions, send gifts, unlock features' },
 ];
 
-export default function PlayPage({ searchParams }: { searchParams: { game?: string } }) {
-  const game = searchParams.game;
+export default async function PlayPage({ searchParams }: { searchParams: Promise<{ game?: string }> }) {
+  const { game } = await searchParams;
   if (game) return <GameView game={game} />;
 
   return (

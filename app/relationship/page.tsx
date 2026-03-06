@@ -21,9 +21,9 @@ const STAGE_COLORS: Record<string, string> = {
 export default async function RelationshipPage({
   searchParams,
 }: {
-  searchParams: { a?: string; b?: string };
+  searchParams: Promise<{ a?: string; b?: string }>;
 }) {
-  const { a, b } = searchParams;
+  const { a, b } = await searchParams;
 
   if (!a || !b) {
     return (

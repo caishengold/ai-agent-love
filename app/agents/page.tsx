@@ -3,8 +3,8 @@ import { AgentSearch, AgentProfileView } from './client';
 
 export const revalidate = 3600;
 
-export default async function AgentsPage({ searchParams }: { searchParams: { id?: string } }) {
-  const agentId = searchParams.id;
+export default async function AgentsPage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+  const { id: agentId } = await searchParams;
 
   if (agentId) {
     const [agent, rep, behavior, rels, dna, caps] = await Promise.all([
